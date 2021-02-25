@@ -3,12 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package blendjacutinga;
+package br.com.blend.telas;
 
 /**
  *
- * @author Guilherme
+ * @author Automacao_02
  */
-public class NewClass {
+class QtdTotal {
     
 }
