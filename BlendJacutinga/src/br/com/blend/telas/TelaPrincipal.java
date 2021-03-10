@@ -1924,7 +1924,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         txtNomeBlend = new javax.swing.JTextField();
         txtIdBlend = new javax.swing.JTextField();
         jLabel10 = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
         jPanel4 = new javax.swing.JPanel();
         txtBlendPesq = new javax.swing.JTextField();
         lblBlendPesq = new javax.swing.JLabel();
@@ -2405,14 +2404,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jLabel10.setText("NOME DO BLEND");
         jPanel14.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
 
-        jButton1.setText("TESTES");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
-            }
-        });
-        jPanel14.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(620, 10, -1, -1));
-
         getContentPane().add(jPanel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 150, 990, 50));
 
         jPanel4.setBackground(new java.awt.Color(72, 126, 176));
@@ -2880,11 +2871,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
             }
     }//GEN-LAST:event_btnBlendPowerActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        //Teste de Funções
-        sincronizar_status_blendador();
-    }//GEN-LAST:event_jButton1ActionPerformed
-
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -2910,7 +2896,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JComboBox<String> cbBlendOperacao;
     private javax.swing.JPanel footerBlend;
-    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel14;
