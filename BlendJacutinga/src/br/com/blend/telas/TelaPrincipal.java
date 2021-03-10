@@ -398,7 +398,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 lblBlendHeader.setForeground(new Color(255,255,255));
                 set_blendando = false;
                 contador_tempo = 0;
-                btnBlendEnviar.setEnabled(true);
+                if(Metodo != "adicionar" || Metodo != "editar"){
+                    btnBlendEnviar.setEnabled(true);
+                }
             }
         } catch (Exception e) {
             System.out.println(e);
