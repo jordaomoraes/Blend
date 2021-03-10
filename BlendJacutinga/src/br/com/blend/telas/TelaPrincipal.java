@@ -1096,7 +1096,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 block_campos();
             }
             else if((check_float(QtdSilo1) == false || check_float(QtdSilo2) == false || check_float(QtdSilo3) == false || check_float(QtdSilo4) == false)){
-                JOptionPane.showMessageDialog(null, "Insira um valorválido para a Quantidade!");
+                JOptionPane.showMessageDialog(null, "Insira um valor válido para a Quantidade!");
                 buscar_blend_atual();
                 block_campos();
             }
@@ -1190,7 +1190,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 
             }
             else if((check_float(QtdSilo1) == false || check_float(QtdSilo2) == false || check_float(QtdSilo3) == false || check_float(QtdSilo4) == false)){
-                JOptionPane.showMessageDialog(null, "Insira um valorválido para a Quantidade!");
+                JOptionPane.showMessageDialog(null, "Insira um valor válido para a Quantidade!");
                 buscar_blend_atual();
                 block_campos();
             }
@@ -2017,6 +2017,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnModBus.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/cpu (1).png"))); // NOI18N
         btnModBus.setBorderPainted(false);
         btnModBus.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnModBus.setFocusPainted(false);
         btnModBus.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnModBusActionPerformed(evt);
