@@ -49,6 +49,7 @@ public class TelaSenhaModbus extends javax.swing.JFrame {
         btnLogarModbus.setForeground(new java.awt.Color(250, 250, 250));
         btnLogarModbus.setText("Acessar");
         btnLogarModbus.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnLogarModbus.setFocusPainted(false);
         btnLogarModbus.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnLogarModbusActionPerformed(evt);
@@ -63,14 +64,14 @@ public class TelaSenhaModbus extends javax.swing.JFrame {
 
         jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(250, 250, 250));
-        jLabel2.setText("ENDEREÇAMENTO DO PLC");
+        jLabel2.setText("ENDEREÇAMENTO DO CLP");
         panel1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 10, -1, -1));
 
         jPanel1.setBackground(new java.awt.Color(68, 141, 41));
 
         jLabel3.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel3.setForeground(new java.awt.Color(250, 250, 250));
-        jLabel3.setText("Insira a senha para acessar essa  página");
+        jLabel3.setText("Insira a senha para acessar essa página");
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -79,7 +80,7 @@ public class TelaSenhaModbus extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jLabel3)
-                .addContainerGap(96, Short.MAX_VALUE))
+                .addContainerGap(107, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)

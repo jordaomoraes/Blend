@@ -1734,15 +1734,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         return false;
     }
     
-    
-    
-    
-    
-    private void terminou_blend(){
-        lblBlendHeader.setText("BLEND SELECIONADO");
-        lblBlendHeader.setForeground(new Color(240,240,240));
-    }
-       
+           
     private void enviar_para_clp(){
         // Envia dados do blend para o PLC
         if(clp_conectado == false){

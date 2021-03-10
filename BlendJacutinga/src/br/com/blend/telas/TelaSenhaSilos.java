@@ -39,7 +39,7 @@ public class TelaSenhaSilos extends javax.swing.JFrame {
         txtSilosSenhaa = new javax.swing.JPasswordField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-        setTitle("Autenticação Silos");
+        setTitle("Controle de Silos");
         setBackground(new java.awt.Color(25, 42, 86));
         setResizable(false);
 
@@ -51,6 +51,7 @@ public class TelaSenhaSilos extends javax.swing.JFrame {
         btnLogarModbus2.setForeground(new java.awt.Color(250, 250, 250));
         btnLogarModbus2.setText("Acessar");
         btnLogarModbus2.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnLogarModbus2.setFocusPainted(false);
         btnLogarModbus2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnLogarModbus2ActionPerformed(evt);
@@ -72,7 +73,7 @@ public class TelaSenhaSilos extends javax.swing.JFrame {
 
         jLabel9.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel9.setForeground(new java.awt.Color(250, 250, 250));
-        jLabel9.setText("Insira a senha para acessar essa  página");
+        jLabel9.setText("Insira a senha para acessar essa página");
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
@@ -102,7 +103,7 @@ public class TelaSenhaSilos extends javax.swing.JFrame {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(panel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(panel3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         setSize(new java.awt.Dimension(445, 353));
