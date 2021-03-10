@@ -1988,6 +1988,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlend.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/coffee-bean (1).png"))); // NOI18N
         btnBlend.setBorderPainted(false);
         btnBlend.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlend.setFocusPainted(false);
         btnBlend.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendActionPerformed(evt);
@@ -2245,6 +2246,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendSalvar.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendSalvar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/save_48px.png"))); // NOI18N
         btnBlendSalvar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendSalvar.setFocusPainted(false);
         btnBlendSalvar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendSalvarActionPerformed(evt);
@@ -2257,6 +2259,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendAdd.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendAdd.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/add_48px.png"))); // NOI18N
         btnBlendAdd.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendAdd.setFocusPainted(false);
         btnBlendAdd.setPreferredSize(new java.awt.Dimension(62, 62));
         btnBlendAdd.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -2270,6 +2273,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendEditar.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendEditar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/edit_48px.png"))); // NOI18N
         btnBlendEditar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendEditar.setFocusPainted(false);
         btnBlendEditar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendEditarActionPerformed(evt);
@@ -2282,6 +2286,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendCancelar.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendCancelar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/cancel_48px.png"))); // NOI18N
         btnBlendCancelar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendCancelar.setFocusPainted(false);
         btnBlendCancelar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendCancelarActionPerformed(evt);
@@ -2294,6 +2299,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendDeletar.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendDeletar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/delete_bin_48px.png"))); // NOI18N
         btnBlendDeletar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendDeletar.setFocusPainted(false);
         btnBlendDeletar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendDeletarActionPerformed(evt);
@@ -2305,6 +2311,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         btnBlendAdd1.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendAdd1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/info.png"))); // NOI18N
+        btnBlendAdd1.setFocusPainted(false);
         btnBlendAdd1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendAdd1ActionPerformed(evt);
@@ -2629,6 +2636,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendEnviar.setForeground(new java.awt.Color(255, 255, 255));
         btnBlendEnviar.setText("Enviar para CLP");
         btnBlendEnviar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendEnviar.setFocusPainted(false);
         btnBlendEnviar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendEnviarActionPerformed(evt);
@@ -2639,6 +2647,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendAtual.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendAtual.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         btnBlendAtual.setText("ULTIMO BLEND ENVIADO");
+        btnBlendAtual.setFocusPainted(false);
         btnBlendAtual.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendAtualActionPerformed(evt);
