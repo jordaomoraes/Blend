@@ -1,6 +1,7 @@
 package br.com.blend.telas;
 
 import br.com.blend.dal.ModuloConexao;
+import br.com.blend.dal.ModuloConexaoNuvem;
 import br.com.blend.dal.modbus;
 import com.intelligt.modbus.jlibmodbus.Modbus;
 import com.intelligt.modbus.jlibmodbus.exception.ModbusIOException;
@@ -29,7 +30,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import javax.swing.JList;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 import javax.swing.JTextArea;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
@@ -42,32 +49,66 @@ import net.proteanit.sql.DbUtils;
 
 
 public class TelaPrincipal extends javax.swing.JFrame {
-
+    
     Connection conexao = null;
+    Connection nuvem = null;
     PreparedStatement pst = null;
     ResultSet rs = null;
+    PreparedStatement pstNuvem = null;
+    ResultSet rsNuvem = null;
     String Metodo;
     
+    //Variáveis de CONTROLE GERAL
+    int POWER = 0;
+    boolean blendando = false, terminou_blendar = false, novo_blend;
+    int blendador_ligado = 0;
+    boolean inseriu_msg_blnd1 = false, inseriu_msg_blnd2 = false;
+    boolean inseriu_blendando1 = false, inseriu_blendando2 = false;
+    
+    boolean set_blendando = false;
+    boolean [] array_coils;
+    
+    
+    //Variáveis para tesar url
+    boolean temos_internet = false, reconectado_internet = false;
+    boolean operando_offline = false;
+    static URL conexaoURL;
+    static URLConnection conn;
+    static InputStream fechar;
+    
     int i = 0;
+    
+    //Variaveis para sincronizar
+    String ultimo_id_nuvem;
+    String ultimo_id_registro_nuvem;
+    boolean precisa_sincrinizar = false, sincronizar_ao_ligar = false;
+    int sincronizado = 0;
+    
+    //sincrnonizar estoque silos
+    float []array_silos_sinc;
+    
     
     //Variaveis Blend
     String IdBlend, NomeBlend, QtdSilo1, QtdSilo2, QtdSilo3, QtdSilo4;
     float QtdTotal = 0;
+    boolean blend = false;
     
     //Variaveis estoque
     float Qtd_estoque_s1 = 0, Qtd_estoque_s2 = 0, Qtd_estoque_s3 = 0, Qtd_estoque_s4 = 0;
-    float Qtd_estoque = 0;
-    float Qtd_estoque_att = 0;
-    float []array_silos;
+    float Qtd_estoque = 0, Qtd_estoque_moido = 0, Qtd_estoque_att = 0;
+    float []array_silos, array_silos_nuvem;
     
     //Variaveis status (Caixa mensagens)
     StyledDocument caixa_mensagens;
     SimpleAttributeSet cor_mensagem_erro = new SimpleAttributeSet();
     SimpleAttributeSet cor_tentando_conectar = new SimpleAttributeSet();
     SimpleAttributeSet cor_conectado = new SimpleAttributeSet();
+    SimpleAttributeSet cor_conectado_internet = new SimpleAttributeSet();
     SimpleAttributeSet cor_novo_processo = new SimpleAttributeSet();
     SimpleAttributeSet cor_sincronizar = new SimpleAttributeSet();
-
+    
+    boolean inseriu_mensagem1 = false, inseriu_mensagem2 = false;
+    
     //Variaveis ModBus
     String VALOR_SILO_1, VALOR_SILO_2, VALOR_SILO_3, VALOR_SILO_4, ACC_MEXEDOR, FATOR, LASTRO_SECUR, PESO, LIGA, SILO_1, SILO_2, SILO_3, SILO_4, ESTEIRA, SEN_CAFE_MIST, MEXEDOR, PISTAO_MEXEDOR, EMERGENCIA, BLEND, MANUAL_01, MANUAL_02, MANUAL_03, MANUAL_04, TARAR, BLENDADO;
     
@@ -81,31 +122,348 @@ public class TelaPrincipal extends javax.swing.JFrame {
     TcpParameters tcpParameters = new TcpParameters();
     ModbusMaster m = ModbusMasterFactory.createModbusMasterTCP(tcpParameters);
     ModbusSlave slave = ModbusSlaveFactory.createModbusSlaveTCP(tcpParameters);
+    
+    //Variaveis timer
+    final private Timer timer = new Timer();
+    private TimerTask timer_cronometro;
+    int tempo_cronometro = (1000);
+    int contador_tempo=0;
 
     public TelaPrincipal() {
         initComponents();
         conexao = ModuloConexao.conector();
-        buscar_blend_atual();
+        conecta_nuvem();
+        
+        //Caixa de saida
         caixa_mensagens = txtStatus.getStyledDocument();
         define_cores_mensagens();
         
-        if(clp_conectado == false){
+        //Checa conexao com banco nuvem
+        //E
+        //Checa conexao com CLP
+        checa_conexao();
+        
+        
+        //Busca blend atual
+        buscar_blend_atual();
+        
+        //Block Campos
+        block_campos();
+
+        
+        // Consulta banco para pegar variaveis do ModBus
+        buscar_modbus();
+        
+        //Data
+        Date data = new Date();
+        DateFormat formatador = DateFormat.getDateInstance(DateFormat.SHORT);
+        lblData.setText(formatador.format(data)+" - Crie seu blend selecionando as quantidades de café vindas de cada silo");
+        
+        //Checa se dados estão sincronizados
+        check_sincronizar();
+        
+        //Checa se existe algum blend
+        check_blend();
+    }
+    
+    
+    //Checa se tem net e conecta com banco na nuvem
+    private void conecta_nuvem(){
+        if(testa_url("http://192.169.80.2")){
             try {
-            //Conecta com clp
-            conecta_com_clp();
-            clp_conectado = true;
-            } catch (ModbusProtocolException ex) {
-                Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (ModbusNumberException ex) {
-                Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+                nuvem = ModuloConexaoNuvem.conector();
+                temos_internet = true;
+            } catch (Exception e) {
+                System.out.println("Falha ao conectar com banco online, sistema no OFFLINE");
             }
+            System.out.println("Operando NORMALMENTE");
         }
         else{
-            return;
+            System.out.println("Operando OFFLINE");
+            temos_internet = false;
         }
     }
     
     
+    //Para testar se tem net e determinar para qual banco vai
+    public boolean testa_url(String endereco) {
+        try {
+            conexaoURL = new URL(endereco);
+            conn = conexaoURL.openConnection();
+            conn.setConnectTimeout(1000);
+            conn.connect();
+            temos_internet = true;
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    
+    //Esta função foi modificada para testar a conexao com clp juntamente com o banco de dados na nuvem
+    public void checa_conexao() {
+        if (timer_cronometro != null) {
+            return;
+        }
+        timer_cronometro = new TimerTask() {
+            @Override
+            public void run() {
+                //Checa conexao com CLP (tenta ler valor)
+                //System.out.println("vou checar connection");
+                try {
+                    m.writeSingleRegister(escravo, 49, 1);
+                } catch (Exception e) {
+                    clp_conectado = false;
+                }
+                if(clp_conectado == false){
+                    System.out.println("Tentando se conectar com CLP...");
+                    
+                    //Tenta reconectar
+                    try {
+                        limpa_mensagens();
+                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "Tentando se reconectar com CLP..." , cor_tentando_conectar);
+                        //Conecta com clp
+                        conecta_com_clp();
+                    } catch (ModbusProtocolException | ModbusNumberException ex) {
+                        clp_conectado = false;
+                        Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (BadLocationException ex) {
+                        Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch(Exception e){
+                        System.out.println(e);
+                    }
+                }
+                
+                
+                //Checa se BLENDADOR está ON ou OFF
+                if(check_blendador() == true){
+                    blendador_ligado = 1;
+                    btnBlendPower.setText("OFF");
+                    btnBlendPower.setBackground(new Color(255,51,51));
+                    lblBlendLigado.setForeground(new Color(68,141,41));
+                    lblBlendLigado.setText("BLENDADOR LIGADO");
+                    inseriu_msg_blnd2 = false;
+                    if(inseriu_msg_blnd1 == false){
+                        try {
+                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nBlendador ligado! " , cor_conectado);
+                            inseriu_msg_blnd1 = true;
+                            //Insere no banco falando que está desligado
+                            if(temos_internet == true){
+                                set_blendador_nuvem_1();
+                            }
+                            else{
+                                precisa_sincrinizar = true;
+                            }
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        }
+                    }
+                }
+                else if(check_blendador() == false){
+                    blendador_ligado = 0;
+                    btnBlendPower.setText("ON");
+                    btnBlendPower.setBackground(new Color(68,141,41));
+                    lblBlendLigado.setForeground(new Color(255,51,51));
+                    lblBlendLigado.setText("BLENDADOR DESLIGADO");
+                    inseriu_msg_blnd1 = false;
+                    if(inseriu_msg_blnd2 == false){
+                        try {
+                           caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nBlendador desligado! " , cor_mensagem_erro);
+                           inseriu_msg_blnd2 = true;
+                           //Insere no banco falando que está desligado
+                            if(temos_internet == true){
+                                set_blendador_nuvem_0();
+                            }
+                            else{
+                                precisa_sincrinizar = true;
+                            }
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        }  
+                    }
+                }
+                
+                
+                //Checa conexao com BANCO na NUVEM
+                if(testa_url("http://192.169.80.2")){
+                    temos_internet = true;
+                    reconectado_internet = true;
+                    lblBlendWifi.setVisible(false);
+                    lblWifiDesc.setVisible(false);
+                    inseriu_mensagem2 = false;
+                    if(inseriu_mensagem1 == false){
+                        try {
+                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nConectado na internet! " , cor_novo_processo);
+                            inseriu_mensagem1 = true;
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        }
+                    }
+                  
+                    if(clp_conectado == false){
+                        btnBlendEditar.setEnabled(false);
+                    }
+                    else{
+                       if(Metodo != "adicionar")
+                       {
+                        btnBlendEditar.setEnabled(true); 
+                       }
+                    }
+                }
+                
+                else if(!testa_url("http://192.169.80.2")){
+                    temos_internet = false;
+                    operando_offline = true;
+                    lblBlendWifi.setVisible(true);
+                    lblWifiDesc.setVisible(true);
+                    btnBlendEditar.setEnabled(false);
+                    btnBlendDeletar.setEnabled(false);
+                    inseriu_mensagem1 = false;
+                    if(inseriu_mensagem2 == false){
+                        try {
+                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nDesconectado da internet... " , cor_tentando_conectar);
+                            inseriu_mensagem2 = true;
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        }
+                    }
+                    //System.out.println(temos_internet);
+                }
+                
+                
+                //Sincroniza tudo
+                if(precisa_sincrinizar == true && reconectado_internet == true && temos_internet == true || sincronizado == 1){
+                    precisa_sincrinizar = false;
+                    reconectado_internet = false;
+                    //sincronizar_ao_ligar = false;
+                    try {
+                        sincronizar_status_blendador();
+                        check_sincronizar();
+                    } catch (Exception e) {
+                        JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados!");
+                        System.out.println(e);
+                    }
+                }
+                
+                //Cancela as operações de editar e deletar caso internet caia no meio do processo
+                if(temos_internet == false && Metodo == "editar"){
+                    Metodo = null;
+                    block_campos();
+                    buscar_blend_atual();
+                }
+                
+                //Verifica se está blendando
+                esta_blendando();
+                if(set_blendando == true && clp_conectado == true && blendador_ligado == 1){
+                    timer_blendando();
+                    inseriu_blendando2 = false;
+                    if(inseriu_blendando1 == false){
+                       try {
+                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nBlendando... " , cor_novo_processo);
+                            inseriu_blendando1 = true;
+                            terminou_blendar = true;
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        } 
+                    }
+                }
+                else if(set_blendando == false && clp_conectado == true && blendador_ligado == 1 && inseriu_blendando2 == false && terminou_blendar == true){
+                    inseriu_blendando1 = false;
+                    if(inseriu_blendando2 == false){
+                       try {
+                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nBlend Pronto! " , cor_conectado_internet);
+                            terminou_blendar = false;
+                            inseriu_blendando2 = true;
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        } 
+                    }
+                }
+            }
+        };
+        timer.scheduleAtFixedRate(timer_cronometro, 1, tempo_cronometro);
+    }
+    
+    private void esta_blendando(){
+        boolean [] array_coils;
+        try {
+            array_coils = m.readCoils(escravo, 1, 1);
+            //System.out.println(array_coils[0]);
+            if(array_coils[0] == true){
+                set_blendando = true;
+                btnBlendEnviar.setEnabled(false);
+            }
+            else{
+                lblBlendHeader.setText("BLEND SELECIONADO");
+                lblBlendHeader.setForeground(new Color(255,255,255));
+                set_blendando = false;
+                contador_tempo = 0;
+                btnBlendEnviar.setEnabled(true);
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void timer_blendando(){
+        contador_tempo++;
+        lblBlendHeader.setText("BLENDANDO!");
+        lblBlendHeader.setForeground(new Color(255,51,51));
+        //System.out.println(contador_tempo);
+        if(set_blendando == false){
+            set_blendando = false;
+            
+        }
+    }
+    
+    
+    //Metodos referentes a PROCESSOS GERAIS
+    private boolean check_blendador(){
+        try {
+            boolean [] array_coils;
+            array_coils = m.readCoils(escravo, 0, 1);
+            
+            if(array_coils[0] == false){
+                return false;
+            }
+            else{
+                return true;
+            }
+                                   
+        } catch (ModbusIOException | ModbusNumberException | ModbusProtocolException ex) {
+            System.out.println(ex);
+        }
+        return false;
+    }
+    
+    
+    private void set_blendador_nuvem_0(){
+        nuvem = ModuloConexaoNuvem.conector();
+        String sql = "update tb_modbus set STATUS_BLENDADOR = 0 where id_modbus";
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.executeUpdate();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void set_blendador_nuvem_1(){
+        nuvem = ModuloConexaoNuvem.conector();
+        String sql = "update tb_modbus set STATUS_BLENDADOR = 1 where id_modbus";
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.executeUpdate();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+    
+    
+    //Metodos referentes ao CLP
+      
     private void conecta_com_clp() throws ModbusProtocolException, ModbusNumberException {
         try {
             tcpParameters.setHost(InetAddress.getByName(host));
@@ -118,28 +476,85 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     m.connect();
                 }
                 try {
-                    System.out.println("conectou");
+                    clp_conectado = true;
+                    recupera_conexao();
+                    limpa_mensagens();
                     caixa_mensagens.insertString(caixa_mensagens.getLength(), "Conexão com CLP iniciada! " , cor_conectado);
+                    System.out.println("Conectado ao CLP com sucesso");
                 } catch (Exception e) {
-                     System.out.println("Erro ao exibir mensagem" + e);
+                    falha_conexao();
+                    System.out.println(e);
                 }
             } catch (ModbusIOException e) {
-                clp_conectado = false;
-                System.out.println("Erro ao se conectar com clp" + e);
+                falha_conexao();
+                //JOptionPane.showMessageDialog(null, "Erro ao se conectar com CLP");
+                System.out.println(e);
             } finally {
                 try {
                     m.disconnect();
                 } catch (ModbusIOException e) {
-                    System.out.println("Erro ao se desconectar com clp" + e);
+                   falha_conexao();
+                  //JOptionPane.showMessageDialog(null, "Erro ao se conectar com CLP");
+                  System.out.println(e);
                 }
             }
         } catch (RuntimeException e) {
-            clp_conectado = false;
+            falha_conexao();
             throw (e);
         } catch (UnknownHostException e) {
-            clp_conectado = false;
-            System.out.println("Erro "+e);;
+            falha_conexao();
+            System.out.println("Erro "+e);
         }
+    }
+    
+    
+    private void falha_conexao(){
+        lblBlendLigado.setVisible(false);
+        
+        footerBlend.setBackground(new Color(255,51,51));
+        
+        btnBlendPower.setEnabled(false);
+        
+        btnSilos.setEnabled(false);
+        btnModBus.setEnabled(false);
+        
+        lblBlendHeader.setText("BLEND SELECIONADO");
+        lblBlendHeader.setForeground(new Color(255,255,255));
+        
+        btnBlendAdd.setEnabled(false);
+        btnBlendEditar.setEnabled(false);
+        btnBlendDeletar.setEnabled(false);
+        btnBlendSalvar.setEnabled(false);
+        btnBlendCancelar.setEnabled(false);
+        
+        cbBlendOperacao.setEnabled(false);
+        btnBlendEnviar.setEnabled(false);
+        btnBlendAtual.setEnabled(false);
+        tbBlend.setEnabled(false);
+        txtBlendPesq.setEnabled(false);        
+        lblBlendPesq.setEnabled(false);
+    }
+    
+    
+    private void recupera_conexao(){
+        //Volta estilo ao padrão
+        footerBlend.setBackground(new Color(68,141,41));
+        
+        block_campos();
+        btnBlendSalvar.setEnabled(true);
+        btnBlendCancelar.setEnabled(true);
+        cbBlendOperacao.setEnabled(true);
+        btnBlendEnviar.setEnabled(true);
+        btnBlendAtual.setEnabled(true);
+        tbBlend.setEnabled(true);
+        txtBlendPesq.setEnabled(true);        
+        lblBlendPesq.setEnabled(true);
+        
+        lblBlendLigado.setVisible(true);
+        btnBlendPower.setEnabled(true);
+        
+        btnSilos.setEnabled(true);
+        btnModBus.setEnabled(true); 
     }
     
     
@@ -178,16 +593,20 @@ public class TelaPrincipal extends javax.swing.JFrame {
             }
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e);
+            JOptionPane.showMessageDialog(null, "Falha ao buscar endereçamento de PLC");
+            System.out.println(e);
         }
     }
-
+    
+    
     public void define_cores_mensagens() {
         StyleConstants.setForeground(cor_mensagem_erro, new Color(205, 0, 0));
 
         StyleConstants.setForeground(cor_tentando_conectar, new Color(255, 140, 0));
 
         StyleConstants.setForeground(cor_conectado, new Color(34, 139, 34));
+        
+        StyleConstants.setForeground(cor_conectado_internet, new Color(10, 10, 10));
 
         StyleConstants.setForeground(cor_novo_processo, new Color(25, 25, 112));
 
@@ -203,11 +622,326 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 caixa_mensagens.remove(i, caixa_mensagens.getLength());
             }
         } catch (BadLocationException ex) {
-            System.out.println("Falha ao limpar console!");;
+            System.out.println("Falha ao limpar console!");
         }
     }
     
-    //Funções referentes ao Blend
+    //Metodos para sincronizar cadastros e estoque
+    
+    private void sincronizar(){
+        try {
+            set_sincronizar_0();
+            nuvem = ModuloConexaoNuvem.conector();
+            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSincronizando dados..." , cor_tentando_conectar);
+            ultimo_adicionado_nuvem();
+            consultar_estoque_silos();
+            consultar_estoque_grao();
+            consultar_estoque_moido();
+            ultimo_registro_nuvem();
+            sincronizar_cadastros();
+            sincronizar_estoque_silos();
+            sincronizar_estoque_grao();
+            sincronizar_estoque_moido();
+            sincronizar_blend_atual();
+            sincronizar_registros();
+            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nDados sincronizados! " , cor_sincronizar);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados!");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void check_sincronizar(){
+        String sql = "select SINCRONIZADO from tb_modbus";
+        
+        try {
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
+            
+            if(rs.next()){
+                sincronizado = (rs.getInt(1));
+                if(sincronizado == 1 && temos_internet == true){
+                    sincronizar();
+                }
+                else if(sincronizado == 0){
+                    System.out.println("Sistema sincronizado!");
+                }
+            }
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados ao iniciar");
+            System.out.println(e);
+        }
+    }
+      
+    
+    private void set_sincronizar_1(){
+        String sql = "update tb_modbus set SINCRONIZADO = 1 where id_modbus";
+        
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao alterar variavel sincronizado para 1");
+            System.out.println(e);
+        }
+    }
+    
+    private void set_sincronizar_0(){
+        String sql = "update tb_modbus set SINCRONIZADO = 0 where id_modbus";
+        
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao alterar variavel sincronizado para 0");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void sincronizar_status_blendador(){
+        nuvem = ModuloConexaoNuvem.conector();
+        try {
+            boolean []array_coils_nuvem;
+            array_coils_nuvem = m.readCoils(escravo, 0, 1);
+            
+            if(array_coils_nuvem[0] == true){
+                //System.out.println(array_coils_nuvem[0]);
+                set_blendador_nuvem_1();
+            }
+            else{
+                //System.out.println(array_coils_nuvem[0]);
+                set_blendador_nuvem_0();
+            }
+        } catch (ModbusIOException | ModbusNumberException | ModbusProtocolException e) {
+            System.out.println("Falha ao sincronizar status do blendador (nuvem)");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void sincronizar_cadastros(){
+    nuvem = ModuloConexaoNuvem.conector();
+        
+        String sql = "select * from tb_blend where id_blend > ?";
+        String sql_insert_nuvem = "insert into tb_blend(nome, fk_silo1, qtd_silo1, fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4) values (?, 1, ?, 2, ?, 3, ?, 4, ?)";
+        try {
+            //Pega dados salvos apenas localmente
+            pst = conexao.prepareStatement(sql);
+            pst.setString(1, ultimo_id_nuvem);
+            rs = pst.executeQuery();
+            
+            //Insere dados obtidos na local e os insere na nuvem
+            pstNuvem = nuvem.prepareStatement(sql_insert_nuvem);
+            
+            while(rs.next()){
+                try {
+                    pstNuvem.setString(1, rs.getString(2));
+                    pstNuvem.setString(2, rs.getString(4));
+                    pstNuvem.setString(3, rs.getString(6));
+                    pstNuvem.setString(4, rs.getString(8));
+                    pstNuvem.setString(5, rs.getString(10));
+
+                    pstNuvem.executeUpdate();
+                    
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            }
+            
+            
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados!");
+            System.out.println(ex);
+        }
+    }
+    
+    
+    private void ultimo_adicionado_nuvem(){
+        nuvem = ModuloConexaoNuvem.conector();
+         //1 - Obter ultimo registro da tabela offline
+        String sql = "select max(id_blend) as id from tb_blend;";
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            rsNuvem = pstNuvem.executeQuery();
+
+            if(rsNuvem.next()){
+                ultimo_id_nuvem = rsNuvem.getString(1);
+                //System.out.println(ultimo_id_nuvem);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao obter ultimo blend adicionado (nuvem)!");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void sincronizar_estoque_silos(){
+        nuvem = ModuloConexaoNuvem.conector();
+        String sql = "update tb_silos set qtd_atual=? where id_silo=?";
+        float value = 0;
+        
+        for(int i =0; i<=3; i++ ){
+            try {
+                value = array_silos[i];
+                pstNuvem = nuvem.prepareStatement(sql);
+                
+                pstNuvem.setFloat(1, array_silos[i]);
+                pstNuvem.setInt(2, i + 1);
+                
+                //System.out.println(value);
+                pstNuvem.executeUpdate();
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados locais com estoque dos silos (nuvem)");
+                System.out.println(e);         
+            }
+        }
+    }
+   
+    
+    private void sincronizar_estoque_grao(){
+        nuvem = ModuloConexaoNuvem.conector();
+        String sql = "update tb_cafe_grao set quantidade=? where id_cafe_grao";
+        
+        try {
+                pstNuvem = nuvem.prepareStatement(sql);
+
+                //System.out.println(Qtd_estoque_att);
+                pstNuvem.setFloat(1, Qtd_estoque);
+                pstNuvem.executeUpdate();
+                
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de grãos (nuvem)");
+                System.out.println(e); 
+            }
+    }
+    
+    
+    private void sincronizar_estoque_moido(){
+        nuvem = ModuloConexaoNuvem.conector();
+        String sql = "update tb_cafe_moido set quantidade=? where id_cafe_moido";
+        
+        try {
+                pstNuvem = nuvem.prepareStatement(sql);
+                
+                //System.out.println(Qtd_estoque_att);
+                pstNuvem.setFloat(1, Qtd_estoque_moido);
+                pstNuvem.executeUpdate();
+                
+            } catch (Exception e) {
+               JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de café moído (nuvem)");
+                System.out.println(e); 
+        }
+    }
+    
+    
+    private void sincronizar_blend_atual(){
+       nuvem = ModuloConexaoNuvem.conector();
+        String sql = "update tb_blend_atual set id_blend_atual=?, nome=?, qtd_silo1=?, qtd_silo2=?, qtd_silo3=?, qtd_silo4=? where id_blend_atual";
+        
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            
+            IdBlend = txtIdBlend.getText();
+            NomeBlend = txtNomeBlend.getText();
+            QtdSilo1 = txtQtdSilo1.getText();
+            QtdSilo2 = txtQtdSilo2.getText();
+            QtdSilo3 = txtQtdSilo3.getText();
+            QtdSilo4 = txtQtdSilo4.getText();
+            
+            pstNuvem.setString(1,IdBlend);
+            pstNuvem.setString(2,NomeBlend);
+            pstNuvem.setFloat(3,Float.parseFloat(QtdSilo1));
+            pstNuvem.setFloat(4,Float.parseFloat(QtdSilo2));
+            pstNuvem.setFloat(5,Float.parseFloat(QtdSilo3));
+            pstNuvem.setFloat(6,Float.parseFloat(QtdSilo4));
+            
+            pstNuvem.executeUpdate();
+            
+        }
+        catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao setar blend atual na nuvem");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void sincronizar_registros(){
+        nuvem = ModuloConexaoNuvem.conector();
+        
+        String sql = "select * from tb_blend_registros where id_registro > ?";
+        String sql_insert_nuvem = "insert into tb_blend_registros(nome, fk_silo1, qtd_silo1, fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4, operacao, data) values (?, 1, ?, 2, ?, 3, ?, 4, ?, ?, ?)";
+        try {
+            //Pega dados salvos apenas localmente
+            pst = conexao.prepareStatement(sql);
+            pst.setString(1, ultimo_id_registro_nuvem);
+            rs = pst.executeQuery();
+            
+            //Insere dados obtidos na local e os insere na nuvem
+            pstNuvem = nuvem.prepareStatement(sql_insert_nuvem);
+            
+            while(rs.next()){
+                try {
+                    pstNuvem.setString(1, rs.getString(2));
+                    pstNuvem.setString(2, rs.getString(4));
+                    pstNuvem.setString(3, rs.getString(6));
+                    pstNuvem.setString(4, rs.getString(8));
+                    pstNuvem.setString(5, rs.getString(10));
+                    pstNuvem.setString(6, rs.getString(11));
+                    pstNuvem.setString(7, rs.getString(12));
+
+                    pstNuvem.executeUpdate();
+                    
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            }
+            
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Falha ao sincronizar Registros (nuvem)!");
+            System.out.println(ex);
+        }
+    }
+    
+    private void ultimo_registro_nuvem(){
+        nuvem = ModuloConexaoNuvem.conector();
+         //1 - Obter ultimo registro da tabela offline
+        String sql = "select max(id_registro) as id from tb_blend_registros;";
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            rsNuvem = pstNuvem.executeQuery();
+
+            if(rsNuvem.next()){
+                ultimo_id_registro_nuvem = rsNuvem.getString(1);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao obter ultimo registro (nuvem)!");
+            System.out.println(e);
+        }
+    }
+    
+           
+    //Metodos referentes ao Blend
+    private void check_blend(){
+        String sql = "select * from tb_blend";
+        
+        try {
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
+            
+            if(rs.next()){
+                blend = true;
+            }
+            else{
+                blend = false;
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+    
     
     private void buscar_blend_atual(){
         //Busca blend atual, ultimo enviado ao plc
@@ -228,7 +962,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 caixa_mensagens.insertString(caixa_mensagens.getLength(), "Blend Atual ainda não cadastrado!" , cor_mensagem_erro);
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e);
+            JOptionPane.showMessageDialog(null, "Falha ao buscar blend atual");
+            System.out.println(e);
         }
     }
     
@@ -263,7 +998,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             tbBlend.setModel(DbUtils.resultSetToTableModel(rs));
             remove_colunas();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e);
+            JOptionPane.showMessageDialog(null, "Falha ao pesquisar blend");
         }
         
     }
@@ -338,8 +1073,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     private void add_blend(){
         String sql = "insert into tb_blend(nome,fk_silo1, qtd_silo1,fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4) values (?,1,?,2,?,3,?,4,?)";
-        
+
         try {
+            
             pst = conexao.prepareStatement(sql);
             
             NomeBlend = txtNomeBlend.getText();
@@ -357,25 +1093,70 @@ public class TelaPrincipal extends javax.swing.JFrame {
             if((NomeBlend.isEmpty() || QtdSilo2.isEmpty() || QtdSilo3.isEmpty() || QtdSilo4.isEmpty())){
                 JOptionPane.showMessageDialog(null, "Preencha todos os campos!");
                 buscar_blend_atual();
+                block_campos();
             }
             else if((check_float(QtdSilo1) == false || check_float(QtdSilo2) == false || check_float(QtdSilo3) == false || check_float(QtdSilo4) == false)){
                 JOptionPane.showMessageDialog(null, "Insira um valorválido para a Quantidade!");
                 buscar_blend_atual();
+                block_campos();
             }
             else{
-                int adicionado = pst.executeUpdate();
-                if(adicionado > 0 ){
-                    JOptionPane.showMessageDialog(null, "Blend cadastrado com sucesso!");
-                    //limpa_campos();
-                    buscar_blend_atual();
-                }
+                    int adicionado = pst.executeUpdate();
+                    
+                    if(adicionado > 0){
+                        JOptionPane.showMessageDialog(null, "Blend cadastrado com sucesso!");
+                        blend = true;
+                        System.out.println("Cadastrado LOCALMENTE");
+                    }
                 else{
                     JOptionPane.showMessageDialog(null, "Falha ao cadastrar Blend!");
                     buscar_blend_atual();
+                    block_campos();
                 }
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e);
+            JOptionPane.showMessageDialog(null, "Falha ao cadastrar Blend!");
+            System.out.println(e);
+            block_campos();
+        }
+    }
+    
+    
+    private void add_blend_nuvem(){
+        
+        nuvem = ModuloConexaoNuvem.conector();
+        
+        String sql = "insert into tb_blend(nome,fk_silo1, qtd_silo1,fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4) values (?,1,?,2,?,3,?,4,?)";
+        
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            
+            NomeBlend = txtNomeBlend.getText();
+            QtdSilo1 = txtQtdSilo1.getText();
+            QtdSilo2 = txtQtdSilo2.getText();
+            QtdSilo3 = txtQtdSilo3.getText();
+            QtdSilo4 = txtQtdSilo4.getText();
+            
+            pstNuvem.setString(1,NomeBlend);
+            pstNuvem.setString(2,QtdSilo1);
+            pstNuvem.setString(3,QtdSilo2);
+            pstNuvem.setString(4,QtdSilo3);
+            pstNuvem.setString(5,QtdSilo4);
+            
+            int adicionadoNuvem = pstNuvem.executeUpdate();
+                    
+            if(adicionadoNuvem > 0){
+                System.out.println("Cadastrado NUVEM");
+            }
+            else{
+                JOptionPane.showMessageDialog(null, "Falha ao cadastrar Blend na nuvem!");
+                buscar_blend_atual();
+                block_campos();
+            }
+                        
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao cadastrar Blend na nuvem!");
+            block_campos();
         }
     }
     
@@ -384,6 +1165,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
        String sql = "update tb_blend set nome=?, qtd_silo1=?, qtd_silo2=?, qtd_silo3=?, qtd_silo4=? where id_blend=?";
         
         try {
+            
             pst = conexao.prepareStatement(sql);
             
             NomeBlend = txtNomeBlend.getText();
@@ -404,24 +1186,62 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(null, "Preencha todos os campos!");
                 //limpa_campos();
                 buscar_blend_atual();
+                block_campos();
+                
             }
             else if((check_float(QtdSilo1) == false || check_float(QtdSilo2) == false || check_float(QtdSilo3) == false || check_float(QtdSilo4) == false)){
                 JOptionPane.showMessageDialog(null, "Insira um valorválido para a Quantidade!");
                 buscar_blend_atual();
+                block_campos();
             }
             else{
                 int adicionado = pst.executeUpdate();
                 if(adicionado > 0 ){
                     JOptionPane.showMessageDialog(null, "Blend editado com sucesso!");
-                    buscar_blend();
                 }
                 else{
                     JOptionPane.showMessageDialog(null, "Falha ao editar blend!");
                     buscar_blend_atual();
+                    block_campos();
                 }
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e);
+            JOptionPane.showMessageDialog(null, "Falha ao editar blend!");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void editar_blend_nuvem(){
+        nuvem = ModuloConexaoNuvem.conector();
+        
+        String sql = "update tb_blend set nome=?, qtd_silo1=?, qtd_silo2=?, qtd_silo3=?, qtd_silo4=? where id_blend=?";
+        
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            
+            NomeBlend = txtNomeBlend.getText();
+            QtdSilo1 = txtQtdSilo1.getText();
+            QtdSilo2 = txtQtdSilo2.getText();
+            QtdSilo3 = txtQtdSilo3.getText();
+            QtdSilo4 = txtQtdSilo4.getText();
+            
+            pstNuvem.setString(1,NomeBlend);
+            pstNuvem.setString(2,QtdSilo1);
+            pstNuvem.setString(3,QtdSilo2);
+            pstNuvem.setString(4,QtdSilo3);
+            pstNuvem.setString(5,QtdSilo4);
+            pstNuvem.setString(6, txtIdBlend.getText());
+            
+            int editado = pstNuvem.executeUpdate();
+            
+            if(editado > 0 ){
+                System.out.println("Editado no online");
+            }
+
+        } catch (Exception e) {
+            System.out.println("Falha ao editar blend na nuvem");
+            System.out.println(e);
         }
     }
     
@@ -429,10 +1249,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void remover_blend(){
         String sql = "delete from tb_blend where id_blend=?";
 
-        int confirma = JOptionPane.showConfirmDialog(null,"Tem certeza de que quer deletar o Blend?","Atenção",JOptionPane.YES_NO_OPTION);
-
-        if(confirma == JOptionPane.YES_OPTION ){
-            
         try {
             pst = conexao.prepareStatement(sql);
             pst.setString(1,txtIdBlend.getText());
@@ -442,15 +1258,34 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(null, "Blend deletado com sucesso!");
                 //limpa_campos();
                 buscar_blend_atual();
+                block_campos();
+                buscar_blend();
             }
             else{
                 JOptionPane.showMessageDialog(null, "Falha ao deletar Blend!");
             }
                                  
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, e);
+                JOptionPane.showMessageDialog(null, "Falha ao deletar Blend!");
+                System.out.println(e);
             }
-        }
+    }
+    
+    
+    private void remover_blend_nuvem(){
+        nuvem = ModuloConexaoNuvem.conector();
+        
+        String sql = "delete from tb_blend where id_blend=?";
+        
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.setString(1,txtIdBlend.getText());
+            pstNuvem.executeUpdate();
+            
+            } catch (Exception e) {
+                System.out.println("Falha ao deletar blend na nuvem");
+                System.out.println(e);
+            }
     }
     
     
@@ -480,7 +1315,38 @@ public class TelaPrincipal extends javax.swing.JFrame {
             
         }
         catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e);
+            JOptionPane.showMessageDialog(null, "Falha ao setar blend atual");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void set_blend_atual_nuvem(){
+        String sql = "update tb_blend_atual set id_blend_atual=?, nome=?, qtd_silo1=?, qtd_silo2=?, qtd_silo3=?, qtd_silo4=? where id_blend_atual";
+        
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            
+            IdBlend = txtIdBlend.getText();
+            NomeBlend = txtNomeBlend.getText();
+            QtdSilo1 = txtQtdSilo1.getText();
+            QtdSilo2 = txtQtdSilo2.getText();
+            QtdSilo3 = txtQtdSilo3.getText();
+            QtdSilo4 = txtQtdSilo4.getText();
+            
+            pstNuvem.setString(1,IdBlend);
+            pstNuvem.setString(2,NomeBlend);
+            pstNuvem.setFloat(3,Float.parseFloat(QtdSilo1));
+            pstNuvem.setFloat(4,Float.parseFloat(QtdSilo2));
+            pstNuvem.setFloat(5,Float.parseFloat(QtdSilo3));
+            pstNuvem.setFloat(6,Float.parseFloat(QtdSilo4));
+            
+            pstNuvem.executeUpdate();
+            
+        }
+        catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao setar blend atual na nuvem");
+            System.out.println(e);
         }
     }
     
@@ -515,9 +1381,51 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 pst.executeUpdate();
                 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e);
+            JOptionPane.showMessageDialog(null, "Falha ao salvar registro de Blend!");
+            System.out.println(e);
         }
     }
+    
+    
+    private void salvar_registro_bend_nuvem(){
+        
+        String sql="insert into tb_blend_registros(nome, fk_silo1, qtd_silo1, fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4, operacao) values (?,1,?,2,?,3,?,4,?, ?)";
+        
+        try {
+                pstNuvem = nuvem.prepareStatement(sql);
+            
+                NomeBlend = txtNomeBlend.getText();
+                QtdSilo1 = txtQtdSilo1.getText();
+                QtdSilo2 = txtQtdSilo2.getText();
+                QtdSilo3 = txtQtdSilo3.getText();
+                QtdSilo4 = txtQtdSilo4.getText();
+                String Moer = "moer e empacotar";
+                String Grao = "empacotar inteiro";
+
+                pstNuvem.setString(1,NomeBlend);
+                pstNuvem.setFloat(2,Float.parseFloat(QtdSilo1));
+                pstNuvem.setFloat(3,Float.parseFloat(QtdSilo2));
+                pstNuvem.setFloat(4,Float.parseFloat(QtdSilo3));
+                pstNuvem.setFloat(5,Float.parseFloat(QtdSilo4));
+            
+                if(cbBlendOperacao.getSelectedIndex() == 1){
+                    pstNuvem.setString(6,Moer);
+                }
+                else if(cbBlendOperacao.getSelectedIndex() == 2){
+                    pstNuvem.setString(6,Grao);
+                }
+                
+                pstNuvem.executeUpdate();
+                
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao salvar registro de Blend na Nuvem!");
+            System.out.println(e);
+        }
+    }
+    
+    
+    
+    
     
     private void consultar_estoque_silos(){
         String sql = "select qtd_atual from tb_silos";
@@ -534,7 +1442,32 @@ public class TelaPrincipal extends javax.swing.JFrame {
             //System.out.println(array_silos[1]);
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e);
+            JOptionPane.showMessageDialog(null, "Falha ao consultar estoque dos silos");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void consultar_estoque_silos_nuvem() {
+        //Fix
+        nuvem = ModuloConexaoNuvem.conector();
+        
+        String sql = "select qtd_atual from tb_silos";
+        array_silos_nuvem = new float[5];       
+        int i = 0;
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            rs = pstNuvem.executeQuery();
+            
+            while (rs.next()) {                
+                array_silos_nuvem[i] = (rs.getFloat(1));
+                i++;
+            }
+            //System.out.println(array_silos[1]);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao consultar estoque dos silos da nuvem");
+            System.out.println(e);
         }
     }
     
@@ -554,6 +1487,30 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 //System.out.println(value);
                 pst.executeUpdate();
             } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque dos silos");
+                System.out.println(e);         
+            }
+        }
+    }
+    
+    
+    private void atualizar_estoque_silos_nuvem(float[] qtd_silos){
+        
+        consultar_estoque_silos_nuvem();
+        String sql = "update tb_silos set qtd_atual=? where id_silo=?";
+        float value = 0;
+        for (int i = 0; i <= 3; i++) {
+            try {
+                value = array_silos_nuvem[i];
+                pstNuvem = nuvem.prepareStatement(sql);
+                
+                pstNuvem.setFloat(1, array_silos_nuvem[i] - qtd_silos[i]);
+                pstNuvem.setInt(2, i + 1);
+                
+                //System.out.println(value);
+                pstNuvem.executeUpdate();
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque dos silos (nuvem)");
                 System.out.println(e);         
             }
         }
@@ -571,10 +1528,31 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 Qtd_estoque = rs.getFloat(1);
             }
             else{
-                JOptionPane.showMessageDialog(null, "Nenhum café no estoque");
+                JOptionPane.showMessageDialog(null, "Nenhum grao cadastrado!");
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e);
+            JOptionPane.showMessageDialog(null, "Falha ao consultar estoque de grãos");
+            System.out.println(e);  
+        }
+    }
+    
+    
+    private void consultar_estoque_grao_nuvem(){
+          String sql = "select quantidade from tb_cafe_grao";
+          
+          try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            rs = pstNuvem.executeQuery();
+            
+            if(rs.next()){
+                Qtd_estoque = rs.getFloat(1);
+            }
+            else{
+                return;
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao consultar estoque de grãos (nuvem)");
+            System.out.println(e);  
         }
     }
     
@@ -587,20 +1565,41 @@ public class TelaPrincipal extends javax.swing.JFrame {
             rs = pst.executeQuery();
             
             if(rs.next()){
-                Qtd_estoque = rs.getFloat(1);
+                Qtd_estoque_moido = rs.getFloat(1);
             }
             else{
-                JOptionPane.showMessageDialog(null, "Nenhum café no estoque");
+                JOptionPane.showMessageDialog(null, "Nenhum café cadastrado no estoque!");
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e);
+            JOptionPane.showMessageDialog(null, "Falha ao consultar estoque de café moído");
+            System.out.println(e); 
         }
     }
     
     
+    private void consultar_estoque_moido_nuvem(){
+        String sql = "select quantidade from tb_cafe_moido";
+          
+          try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            rs = pstNuvem.executeQuery();
+            
+            if(rs.next()){
+                Qtd_estoque_moido = rs.getFloat(1);
+            }
+            else{
+                return;
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao consultar estoque de café moído (nuvem)");
+            System.out.println(e); 
+        }
+    }
+    
+
     private void atualizar_estoque_grao(float QtdTotal){
         consultar_estoque_grao();
-        String sql = "update tb_cafe_grao set quantidade=? where id_cafe_grao=1";
+        String sql = "update tb_cafe_grao set quantidade=? where id_cafe_grao";
         try {
                 pst = conexao.prepareStatement(sql);
                 
@@ -611,60 +1610,158 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 pst.executeUpdate();
                 
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, e);
+                JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de grãos");
+                System.out.println(e); 
+            }
+    }
+    
+    
+    private void atualizar_estoque_grao_nuvem(float QtdTotal){
+        consultar_estoque_grao_nuvem();
+        String sql = "update tb_cafe_grao set quantidade=? where id_cafe_grao";
+        try {
+                pstNuvem = nuvem.prepareStatement(sql);
+                
+                Qtd_estoque_att = Qtd_estoque + QtdTotal;
+                
+                //System.out.println(Qtd_estoque_att);
+                pstNuvem.setFloat(1, Qtd_estoque_att);
+                pstNuvem.executeUpdate();
+                
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de grãos");
+                System.out.println(e); 
             }
     }
     
     
     private void atualizar_estoque_moido(float QtdTotal){
         consultar_estoque_moido();
-        String sql = "update tb_cafe_moido set quantidade=? where id_cafe_moido=1";
+        String sql = "update tb_cafe_moido set quantidade=? where id_cafe_moido";
         
         try {
                 pst = conexao.prepareStatement(sql);
                 
-                Qtd_estoque_att = Qtd_estoque + QtdTotal;
+                Qtd_estoque_att = Qtd_estoque_moido + QtdTotal;
                 
                 //System.out.println(Qtd_estoque_att);
                 pst.setFloat(1, Qtd_estoque_att);
                 pst.executeUpdate();
                 
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, e);
+               JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de café moído");
+                System.out.println(e); 
+            }
+    }
+    
+    
+    private void atualizar_estoque_moido_nuvem(float QtdTotal){
+        consultar_estoque_moido_nuvem();
+        String sql = "update tb_cafe_moido set quantidade=? where id_cafe_moido";
+        
+        try {
+                pstNuvem = nuvem.prepareStatement(sql);
+                
+                Qtd_estoque_att = Qtd_estoque_moido + QtdTotal;
+                
+                //System.out.println(Qtd_estoque_att);
+                pstNuvem.setFloat(1, Qtd_estoque_att);
+                pstNuvem.executeUpdate();
+                
+            } catch (Exception e) {
+               JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de café moído (nuvem)");
+                System.out.println(e); 
             }
     }
    
     
     private boolean checa_silos(float []qtd_silos){
-        consultar_estoque_silos();
-        int sem_estoque[] = new int[4];
-        limpa_mensagens();
-        for(int i = 0; i <= 3; i++){
-            if(array_silos[i]<qtd_silos[i]){
-                sem_estoque[i] = i+1;
-                System.out.println("Silo "+ sem_estoque[i]+ " com estoque insuficiente");
-                try {
-                    caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSilo "+String.valueOf(sem_estoque[i])+" com estoque insuficiente", cor_mensagem_erro);
-                } catch (BadLocationException ex) {
-                    Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+        try {
+            consultar_estoque_silos();
+            int sem_estoque[] = new int[4];
+            limpa_mensagens();
+            for(int i = 0; i <= 3; i++){
+                if(array_silos[i]<qtd_silos[i]){
+                    sem_estoque[i] = i+1;
+                    System.out.println("Silo "+ sem_estoque[i]+ " com estoque insuficiente");
+                    try {
+                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSilo "+String.valueOf(sem_estoque[i])+" com estoque insuficiente", cor_mensagem_erro);
+                    } catch (BadLocationException ex) {
+                        Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
-        }
-        
-        for(int i=0; i<=3; i++){
-            if(sem_estoque[i]!=0){
-                JOptionPane.showMessageDialog(null, "Quantidades de café no silo insifuciente!");
-                return false;
+
+            for(int i=0; i<=3; i++){
+                if(sem_estoque[i]!=0){
+                    JOptionPane.showMessageDialog(null, "Quantidades de café no silo insifuciente!");
+                    return false;
+                }
             }
-        }
+
+            return true;
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Falha ao checar capacidade dos silos!");
+                System.out.println(e);
+            }
         
-        return true;
+        return false;
     }
     
     
+    private boolean checa_silos_nuvem(float []qtd_silos){
+        try {
+            consultar_estoque_silos_nuvem();
+            int sem_estoque[] = new int[4];
+            for(int i = 0; i <= 3; i++){
+                if(array_silos_nuvem[i]<qtd_silos[i]){
+                    sem_estoque[i] = i+1;
+                }
+            }
+
+            for(int i=0; i<=3; i++){
+                if(sem_estoque[i]!=0){
+                    return false;
+                }
+            }
+
+            return true;
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Falha ao checar capacidade dos silos (nuvem)!");
+                System.out.println(e);
+            }
+        
+        return false;
+    }
+    
+    
+    
+    
+    
+    private void terminou_blend(){
+        lblBlendHeader.setText("BLEND SELECIONADO");
+        lblBlendHeader.setForeground(new Color(240,240,240));
+    }
+       
     private void enviar_para_clp(){
         // Envia dados do blend para o PLC
-        try {
+        if(clp_conectado == false){
+            block_campos();
+            falha_conexao();
+            try {
+                caixa_mensagens.insertString(caixa_mensagens.getLength(), "Tentando se reconectar com clp" , cor_tentando_conectar);
+                JOptionPane.showMessageDialog(null, "Conexao com CLP perdia, reconectando...");
+                conecta_com_clp();
+            } catch (Exception e) {
+                System.out.println("Não foi possível se conectar com CLP!");
+                JOptionPane.showMessageDialog(null, "Não foi possível se conectar com CLP!");
+            }
+        }
+        else if(blendador_ligado == 0){
+            JOptionPane.showMessageDialog(null, "Blendador desligado, ligue-o novamente para enviar dados!");
+        }
+        else{
+            try {
             // 1 - Pega valores de quantidade de cada silo
             VALOR_SILO_1 = txtQtdSilo1.getText();
             VALOR_SILO_2 = txtQtdSilo2.getText();
@@ -676,50 +1773,94 @@ public class TelaPrincipal extends javax.swing.JFrame {
             // Gera um array com as quantidades individuais de cada silo
             float []qtd_silos = {Float.parseFloat(VALOR_SILO_1), Float.parseFloat(VALOR_SILO_2), Float.parseFloat(VALOR_SILO_3), Float.parseFloat(VALOR_SILO_4)};
             
-            //3 - Checa estoque de silos e verifica se é suficiente
-            
-            if(checa_silos(qtd_silos) == false){
-                return;
+            if(temos_internet == true){
+                //3 - Checa estoque de silos e verifica se é suficiente
+                if(checa_silos(qtd_silos) == false && checa_silos_nuvem(qtd_silos) == false){
+                    return;
+                }
+                else if(checa_silos(qtd_silos) == true && checa_silos_nuvem(qtd_silos) == true){
+                    
+                    // 4 - Retira quantidades do estoque
+                    atualizar_estoque_silos(qtd_silos);
+                    atualizar_estoque_silos_nuvem(qtd_silos);
+
+                    // 5 - Seta blend atual (local e/ou nuvem)
+                    set_blend_atual();
+                    set_blend_atual_nuvem();
+
+                    //6 - Salva dados do blend em registro
+                    salvar_registro_blend();
+                    salvar_registro_bend_nuvem();
+
+                    //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
+                    if(cbBlendOperacao.getSelectedIndex() == 1){
+                        atualizar_estoque_moido(QtdTotal);
+                        atualizar_estoque_moido_nuvem(QtdTotal);
+                    }
+                    else if(cbBlendOperacao.getSelectedIndex() == 2){
+                        atualizar_estoque_grao(QtdTotal);
+                        atualizar_estoque_grao_nuvem(QtdTotal);
+                    }
+
+                    //4 - Envia dados do blend para PLC
+                    m.writeSingleRegister(escravo, 1, Math.round(Float.parseFloat(VALOR_SILO_1)*10));
+                    m.writeSingleRegister(escravo, 2, Math.round(Float.parseFloat(VALOR_SILO_2)*10));
+                    m.writeSingleRegister(escravo, 3, Math.round(Float.parseFloat(VALOR_SILO_3)*10));
+                    m.writeSingleRegister(escravo, 4, Math.round(Float.parseFloat(VALOR_SILO_4)*10));
+
+                    caixa_mensagens.insertString(caixa_mensagens.getLength(), "Dados enviados com sucesso!" , cor_novo_processo);
+                    JOptionPane.showMessageDialog(null, "Dados enviados com sucesso!");
+                }
             }
-            else if(checa_silos(qtd_silos) == true){
-                // 4 - Retira quantidades do estoque
-                atualizar_estoque_silos(qtd_silos);
+            
 
-                // 5 - Seta blend atual
-                set_blend_atual();
-
-                //6 - Salva dados do blend em registro
-                salvar_registro_blend();
-
-                //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
-                if(cbBlendOperacao.getSelectedIndex() == 1){
-                    atualizar_estoque_moido(QtdTotal);
+            //Operação no modo OFFLINE
+            
+            else if(temos_internet == false){
+                set_sincronizar_1();
+                precisa_sincrinizar = true;
+                
+                //3 - Checa estoque de silos e verifica se é suficiente
+                if(checa_silos(qtd_silos) == false){
+                    return;
                 }
-                else if(cbBlendOperacao.getSelectedIndex() == 2){
-                    atualizar_estoque_grao(QtdTotal);
-                }
+                else if(checa_silos(qtd_silos) == true){
+                    // 4 - Retira quantidades do estoque
+                    atualizar_estoque_silos(qtd_silos);
 
-                //4 - Envia dados do blend para PLC
-                m.writeSingleRegister(1, 1, Math.round(Float.parseFloat(VALOR_SILO_1)*10));
-                m.writeSingleRegister(1, 2, Math.round(Float.parseFloat(VALOR_SILO_2)*10));
-                m.writeSingleRegister(1, 3, Math.round(Float.parseFloat(VALOR_SILO_3)*10));
-                m.writeSingleRegister(1, 4, Math.round(Float.parseFloat(VALOR_SILO_4)*10));
-                
-                
-                
-                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nDados enviados com sucesso!" , cor_novo_processo);
-                JOptionPane.showMessageDialog(null, "Dados enviados com sucesso!");
+                    // 5 - Seta blend atual (local e/ou nuvem)
+                    set_blend_atual();
+
+                    //6 - Salva dados do blend em registro
+                    salvar_registro_blend();
+
+                    //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
+                    if(cbBlendOperacao.getSelectedIndex() == 1){
+                        atualizar_estoque_moido(QtdTotal);
+                    }
+                    else if(cbBlendOperacao.getSelectedIndex() == 2){
+                        atualizar_estoque_grao(QtdTotal);
+                    }
+
+                    //4 - Envia dados do blend para PLC
+                    m.writeSingleRegister(escravo, 1, Math.round(Float.parseFloat(VALOR_SILO_1)*10));
+                    m.writeSingleRegister(escravo, 2, Math.round(Float.parseFloat(VALOR_SILO_2)*10));
+                    m.writeSingleRegister(escravo, 3, Math.round(Float.parseFloat(VALOR_SILO_3)*10));
+                    m.writeSingleRegister(escravo, 4, Math.round(Float.parseFloat(VALOR_SILO_4)*10));
+
+                    caixa_mensagens.insertString(caixa_mensagens.getLength(), "Dados enviados com sucesso!" , cor_novo_processo);
+                    JOptionPane.showMessageDialog(null, "Dados enviados com sucesso!");
+                }
             }
             
           
-        } catch (ModbusProtocolException ex) {
-            Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ModbusNumberException ex) {
-            Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ModbusIOException ex) {
-            Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (BadLocationException ex) {
-            Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException | BadLocationException ex) {
+                JOptionPane.showMessageDialog(null, "Falha ao enviar dados para CLP!");
+                System.out.println(ex);
+            } catch(Exception e){
+                JOptionPane.showMessageDialog(null, "Não foi possivel enviar os dados para o PLC!");
+                System.out.println(e);
+            }
         }
     }
 
@@ -732,7 +1873,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             return false;
         }
     }
-
+     
      
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -745,17 +1886,20 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlend = new javax.swing.JButton();
         btnSilos = new javax.swing.JButton();
         btnModBus = new javax.swing.JButton();
-        jPanel12 = new javax.swing.JPanel();
-        jPanel13 = new javax.swing.JPanel();
-        jPanel40 = new javax.swing.JPanel();
-        jPanel41 = new javax.swing.JPanel();
         jPanel6 = new javax.swing.JPanel();
         jPanel8 = new javax.swing.JPanel();
         jPanel9 = new javax.swing.JPanel();
         jPanel10 = new javax.swing.JPanel();
+        lblBlendWifi = new javax.swing.JLabel();
+        btnBlendPower = new javax.swing.JButton();
+        lblBlendLigado = new javax.swing.JLabel();
+        jPanel43 = new javax.swing.JPanel();
+        jPanel44 = new javax.swing.JPanel();
+        jPanel45 = new javax.swing.JPanel();
+        jPanel46 = new javax.swing.JPanel();
         lblNomeBlend = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
+        lblBlendHeader = new javax.swing.JLabel();
         jPanel3 = new javax.swing.JPanel();
         btnBlendSalvar = new javax.swing.JButton();
         btnBlendAdd = new javax.swing.JButton();
@@ -765,6 +1909,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendAdd1 = new javax.swing.JButton();
         jScrollPane3 = new javax.swing.JScrollPane();
         txtStatus = new javax.swing.JTextPane();
+        lblWifiDesc = new javax.swing.JLabel();
         jPanel11 = new javax.swing.JPanel();
         jPanel15 = new javax.swing.JPanel();
         jPanel18 = new javax.swing.JPanel();
@@ -777,14 +1922,16 @@ public class TelaPrincipal extends javax.swing.JFrame {
         txtQtdSilo3 = new javax.swing.JTextField();
         jPanel14 = new javax.swing.JPanel();
         txtNomeBlend = new javax.swing.JTextField();
-        jLabel9 = new javax.swing.JLabel();
         txtIdBlend = new javax.swing.JTextField();
+        jLabel10 = new javax.swing.JLabel();
+        jButton1 = new javax.swing.JButton();
         jPanel4 = new javax.swing.JPanel();
         txtBlendPesq = new javax.swing.JTextField();
-        jLabel10 = new javax.swing.JLabel();
+        lblBlendPesq = new javax.swing.JLabel();
         jPanel5 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         tbBlend = new javax.swing.JTable();
+        jLabel9 = new javax.swing.JLabel();
         jPanel16 = new javax.swing.JPanel();
         jPanel17 = new javax.swing.JPanel();
         jLabel8 = new javax.swing.JLabel();
@@ -822,6 +1969,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Blend Jacutinga");
+        setResizable(false);
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowActivated(java.awt.event.WindowEvent evt) {
                 formWindowActivated(evt);
@@ -832,6 +1980,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel1.setBackground(new java.awt.Color(25, 42, 86));
         jPanel1.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
         jPanel1.setForeground(new java.awt.Color(255, 255, 255));
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         btnBlend.setBackground(new java.awt.Color(25, 42, 86));
         btnBlend.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
@@ -844,6 +1993,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendActionPerformed(evt);
             }
         });
+        jPanel1.add(btnBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(172, 3, -1, 74));
 
         btnSilos.setBackground(new java.awt.Color(25, 42, 86));
         btnSilos.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
@@ -859,6 +2009,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnSilosActionPerformed(evt);
             }
         });
+        jPanel1.add(btnSilos, new org.netbeans.lib.awtextra.AbsoluteConstraints(337, 3, 67, 74));
 
         btnModBus.setBackground(new java.awt.Color(25, 42, 86));
         btnModBus.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
@@ -871,92 +2022,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnModBusActionPerformed(evt);
             }
         });
-
-        jPanel12.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel12.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        jPanel13.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel13.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        javax.swing.GroupLayout jPanel13Layout = new javax.swing.GroupLayout(jPanel13);
-        jPanel13.setLayout(jPanel13Layout);
-        jPanel13Layout.setHorizontalGroup(
-            jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 12, Short.MAX_VALUE)
-        );
-        jPanel13Layout.setVerticalGroup(
-            jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-
-        jPanel40.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel40.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        jPanel41.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel41.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        javax.swing.GroupLayout jPanel41Layout = new javax.swing.GroupLayout(jPanel41);
-        jPanel41.setLayout(jPanel41Layout);
-        jPanel41Layout.setHorizontalGroup(
-            jPanel41Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 12, Short.MAX_VALUE)
-        );
-        jPanel41Layout.setVerticalGroup(
-            jPanel41Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-
-        javax.swing.GroupLayout jPanel40Layout = new javax.swing.GroupLayout(jPanel40);
-        jPanel40.setLayout(jPanel40Layout);
-        jPanel40Layout.setHorizontalGroup(
-            jPanel40Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-            .addGroup(jPanel40Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel40Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel41, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-        );
-        jPanel40Layout.setVerticalGroup(
-            jPanel40Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 74, Short.MAX_VALUE)
-            .addGroup(jPanel40Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel40Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel41, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
-                    .addContainerGap()))
-        );
-
-        javax.swing.GroupLayout jPanel12Layout = new javax.swing.GroupLayout(jPanel12);
-        jPanel12.setLayout(jPanel12Layout);
-        jPanel12Layout.setHorizontalGroup(
-            jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-            .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel12Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel13, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-            .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel12Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(jPanel40, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
-        );
-        jPanel12Layout.setVerticalGroup(
-            jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-            .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel12Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel13, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
-                    .addContainerGap()))
-            .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel12Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(jPanel40, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
-        );
+        jPanel1.add(btnModBus, new org.netbeans.lib.awtextra.AbsoluteConstraints(472, 3, -1, 74));
 
         jPanel6.setBackground(new java.awt.Color(255, 255, 255));
         jPanel6.setPreferredSize(new java.awt.Dimension(2, 100));
@@ -1031,7 +2097,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGap(0, 74, Short.MAX_VALUE)
             .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(jPanel6Layout.createSequentialGroup()
                     .addContainerGap()
@@ -1044,33 +2110,118 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     .addGap(0, 0, Short.MAX_VALUE)))
         );
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(btnSilos, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(jPanel12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(22, 22, 22)
-                .addComponent(btnBlend)
-                .addGap(18, 18, 18)
-                .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(22, 22, 22)
-                .addComponent(btnModBus)
-                .addContainerGap(1259, Short.MAX_VALUE))
+        jPanel1.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(437, 3, -1, 74));
+
+        lblBlendWifi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/no-wifi.png"))); // NOI18N
+        jPanel1.add(lblBlendWifi, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 3, -1, 74));
+
+        btnBlendPower.setBackground(new java.awt.Color(68, 141, 41));
+        btnBlendPower.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        btnBlendPower.setForeground(new java.awt.Color(255, 255, 255));
+        btnBlendPower.setText("ON");
+        btnBlendPower.setBorderPainted(false);
+        btnBlendPower.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendPower.setFocusPainted(false);
+        btnBlendPower.setPreferredSize(new java.awt.Dimension(97, 73));
+        btnBlendPower.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBlendPowerActionPerformed(evt);
+            }
+        });
+        jPanel1.add(btnBlendPower, new org.netbeans.lib.awtextra.AbsoluteConstraints(7, 3, 120, -1));
+
+        lblBlendLigado.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
+        lblBlendLigado.setForeground(new java.awt.Color(240, 240, 240));
+        lblBlendLigado.setText("ON/OFF");
+        jPanel1.add(lblBlendLigado, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 20, -1, 40));
+
+        jPanel43.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel43.setPreferredSize(new java.awt.Dimension(2, 100));
+
+        jPanel44.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel44.setPreferredSize(new java.awt.Dimension(2, 100));
+
+        javax.swing.GroupLayout jPanel44Layout = new javax.swing.GroupLayout(jPanel44);
+        jPanel44.setLayout(jPanel44Layout);
+        jPanel44Layout.setHorizontalGroup(
+            jPanel44Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 12, Short.MAX_VALUE)
         );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(btnSilos, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(btnBlend, javax.swing.GroupLayout.DEFAULT_SIZE, 74, Short.MAX_VALUE)
-            .addComponent(btnModBus, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, 74, Short.MAX_VALUE)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(jPanel12, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, Short.MAX_VALUE))
+        jPanel44Layout.setVerticalGroup(
+            jPanel44Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
         );
+
+        jPanel45.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel45.setPreferredSize(new java.awt.Dimension(2, 100));
+
+        jPanel46.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel46.setPreferredSize(new java.awt.Dimension(2, 100));
+
+        javax.swing.GroupLayout jPanel46Layout = new javax.swing.GroupLayout(jPanel46);
+        jPanel46.setLayout(jPanel46Layout);
+        jPanel46Layout.setHorizontalGroup(
+            jPanel46Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 12, Short.MAX_VALUE)
+        );
+        jPanel46Layout.setVerticalGroup(
+            jPanel46Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+
+        javax.swing.GroupLayout jPanel45Layout = new javax.swing.GroupLayout(jPanel45);
+        jPanel45.setLayout(jPanel45Layout);
+        jPanel45Layout.setHorizontalGroup(
+            jPanel45Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+            .addGroup(jPanel45Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel45Layout.createSequentialGroup()
+                    .addContainerGap()
+                    .addComponent(jPanel46, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+        );
+        jPanel45Layout.setVerticalGroup(
+            jPanel45Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 74, Short.MAX_VALUE)
+            .addGroup(jPanel45Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel45Layout.createSequentialGroup()
+                    .addContainerGap()
+                    .addComponent(jPanel46, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
+                    .addContainerGap()))
+        );
+
+        javax.swing.GroupLayout jPanel43Layout = new javax.swing.GroupLayout(jPanel43);
+        jPanel43.setLayout(jPanel43Layout);
+        jPanel43Layout.setHorizontalGroup(
+            jPanel43Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+            .addGroup(jPanel43Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel43Layout.createSequentialGroup()
+                    .addContainerGap()
+                    .addComponent(jPanel44, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+            .addGroup(jPanel43Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel43Layout.createSequentialGroup()
+                    .addGap(0, 0, Short.MAX_VALUE)
+                    .addComponent(jPanel45, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGap(0, 0, Short.MAX_VALUE)))
+        );
+        jPanel43Layout.setVerticalGroup(
+            jPanel43Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+            .addGroup(jPanel43Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel43Layout.createSequentialGroup()
+                    .addContainerGap()
+                    .addComponent(jPanel44, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
+                    .addContainerGap()))
+            .addGroup(jPanel43Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel43Layout.createSequentialGroup()
+                    .addGap(0, 0, Short.MAX_VALUE)
+                    .addComponent(jPanel45, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGap(0, 0, Short.MAX_VALUE)))
+        );
+
+        jPanel1.add(jPanel43, new org.netbeans.lib.awtextra.AbsoluteConstraints(302, 3, -1, 70));
 
         getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1620, 80));
 
@@ -1080,10 +2231,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel2.setBackground(new java.awt.Color(25, 42, 86));
         jPanel2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
-        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel1.setText("BLEND SELECIONADO");
-        jPanel2.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 10, -1, -1));
+        lblBlendHeader.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
+        lblBlendHeader.setForeground(new java.awt.Color(255, 255, 255));
+        lblBlendHeader.setText("BLEND SELECIONADO");
+        jPanel2.add(lblBlendHeader, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 10, -1, -1));
 
         getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 90, 990, 50));
 
@@ -1098,7 +2249,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendSalvarActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendSalvar, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 20, 80, 80));
+        jPanel3.add(btnBlendSalvar, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 20, 90, 90));
         btnBlendSalvar.getAccessibleContext().setAccessibleName("Salvar");
         btnBlendSalvar.getAccessibleContext().setAccessibleDescription("Salvar");
 
@@ -1111,7 +2262,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendAddActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendAdd, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 20, 80, 80));
+        jPanel3.add(btnBlendAdd, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 20, 90, 90));
         btnBlendAdd.getAccessibleContext().setAccessibleName("Novo Blend");
         btnBlendAdd.getAccessibleContext().setAccessibleDescription("Novo Blend");
 
@@ -1123,7 +2274,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendEditarActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendEditar, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 130, 80, 80));
+        jPanel3.add(btnBlendEditar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 130, 90, 90));
         btnBlendEditar.getAccessibleContext().setAccessibleName("Editar Blend");
         btnBlendEditar.getAccessibleContext().setAccessibleDescription("Editar Blend");
 
@@ -1135,7 +2286,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendCancelarActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendCancelar, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 130, 80, 80));
+        jPanel3.add(btnBlendCancelar, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 130, 90, 90));
         btnBlendCancelar.getAccessibleContext().setAccessibleName("Cancelar");
         btnBlendCancelar.getAccessibleContext().setAccessibleDescription("Cancelar");
 
@@ -1147,22 +2298,27 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendDeletarActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendDeletar, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 240, 80, 80));
+        jPanel3.add(btnBlendDeletar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 240, 90, 90));
         btnBlendDeletar.getAccessibleContext().setAccessibleName("Deletar Blend");
         btnBlendDeletar.getAccessibleContext().setAccessibleDescription("Deletar Blend");
 
         btnBlendAdd1.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendAdd1.setText("TESTE");
+        btnBlendAdd1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/info.png"))); // NOI18N
         btnBlendAdd1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendAdd1ActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendAdd1, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 240, 80, 80));
+        jPanel3.add(btnBlendAdd1, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 240, 90, 90));
 
         jScrollPane3.setViewportView(txtStatus);
 
         jPanel3.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 390, 200, 120));
+
+        lblWifiDesc.setFont(new java.awt.Font("Segoe UI", 0, 16)); // NOI18N
+        lblWifiDesc.setForeground(new java.awt.Color(255, 51, 51));
+        lblWifiDesc.setText("* Operando OFFLINE");
+        jPanel3.add(lblWifiDesc, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 350, 180, -1));
 
         getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 90, 240, 540));
 
@@ -1232,14 +2388,22 @@ public class TelaPrincipal extends javax.swing.JFrame {
         txtNomeBlend.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jPanel14.add(txtNomeBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 10, 256, -1));
 
-        jLabel9.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jLabel9.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel9.setText("NOME DO BLEND");
-        jPanel14.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
-
         txtIdBlend.setEditable(false);
         txtIdBlend.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jPanel14.add(txtIdBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 10, 40, -1));
+
+        jLabel10.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel10.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel10.setText("NOME DO BLEND");
+        jPanel14.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
+
+        jButton1.setText("TESTES");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        jPanel14.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(620, 10, -1, -1));
 
         getContentPane().add(jPanel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 150, 990, 50));
 
@@ -1253,15 +2417,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel4.add(txtBlendPesq, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 10, 256, 32));
 
-        jLabel10.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel10.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/proc.png"))); // NOI18N
-        jLabel10.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        jLabel10.addMouseListener(new java.awt.event.MouseAdapter() {
+        lblBlendPesq.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        lblBlendPesq.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/proc.png"))); // NOI18N
+        lblBlendPesq.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        lblBlendPesq.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jLabel10MouseClicked(evt);
+                lblBlendPesqMouseClicked(evt);
             }
         });
-        jPanel4.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, 30, 30));
+        jPanel4.add(lblBlendPesq, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, 30, 30));
 
         getContentPane().add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 400, 640, 50));
 
@@ -1292,7 +2456,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jScrollPane1.setViewportView(tbBlend);
 
-        jPanel5.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 621, 110));
+        jPanel5.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 50, 621, 110));
+
+        jLabel9.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel9.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel9.setText("RECEITAS CADASTRADAS");
+        jPanel5.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
 
         getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 460, 640, 170));
 
@@ -1445,7 +2614,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblData.setText("Data - Observação");
         footerBlend.add(lblData, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 0, 920, 50));
 
-        getContentPane().add(footerBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 650, 1400, 50));
+        getContentPane().add(footerBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 650, 1400, 60));
 
         jPanel42.setBackground(new java.awt.Color(25, 42, 86));
         jPanel42.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -1458,6 +2627,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendEnviar.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         btnBlendEnviar.setForeground(new java.awt.Color(255, 255, 255));
         btnBlendEnviar.setText("Enviar para CLP");
+        btnBlendEnviar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnBlendEnviar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendEnviarActionPerformed(evt);
@@ -1484,33 +2654,24 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     private void btnBlendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendActionPerformed
         //Chama tela de blend
-        TelaBlend blend = new TelaBlend();
-        blend.setVisible(true);
+        return;
     }//GEN-LAST:event_btnBlendActionPerformed
 
     private void formWindowActivated(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowActivated
         //Bloqueia campos
-        block_campos();
-       
-        // Consulta banco para pegar variaveis do ModBus
-        buscar_modbus();
-        
-        //Data
-        Date data = new Date();
-        DateFormat formatador = DateFormat.getDateInstance(DateFormat.SHORT);
-        lblData.setText(formatador.format(data)+" - Crie seu blend selecionando as quantidades de café vindas de cada silo");
+        //block_campos();
     }//GEN-LAST:event_formWindowActivated
 
     private void btnSilosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSilosActionPerformed
-        // Chama tela de Silos
-        TelaSilos silos = new TelaSilos();
-        silos.setVisible(true);
+        // Chama tela senha Silos
+        TelaSenhaSilos senhaSilos = new TelaSenhaSilos();
+        senhaSilos.setVisible(true);
     }//GEN-LAST:event_btnSilosActionPerformed
 
     private void btnModBusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnModBusActionPerformed
         // Chama tela do ModBus
-        TelaModbus modbus = new TelaModbus();
-        modbus.setVisible(true);
+        TelaSenhaModbus senhaModbus = new TelaSenhaModbus();
+        senhaModbus.setVisible(true);
     }//GEN-LAST:event_btnModBusActionPerformed
 
     private void txtBlendPesqKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtBlendPesqKeyReleased
@@ -1522,7 +2683,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
         // Chama função para preencher os campos de texto e muda o metodo
         Metodo = "pesquisar";
         set_campos_blend();
-        btnBlendDeletar.setEnabled(true);
+        if(temos_internet == true){
+            btnBlendDeletar.setEnabled(true);
+        }
+        else if(temos_internet == false){
+            btnBlendDeletar.setEnabled(false);
+        }
     }//GEN-LAST:event_tbBlendMouseClicked
 
     private void tbBlendKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tbBlendKeyReleased
@@ -1562,6 +2728,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             if(Metodo == "pesquisar" && btnBlendAdd.isEnabled() == false){
                 //permite que edite se usuario clicar primeiro no botao de editar e depois pesuisar
                 editar_blend();
+                editar_blend_nuvem();
             }
             else{
                 return;
@@ -1570,28 +2737,64 @@ public class TelaPrincipal extends javax.swing.JFrame {
         
         else{
             if(Metodo == "adicionar"){
-                add_blend();
+                if(temos_internet == true){
+                    add_blend();
+                    add_blend_nuvem();
+                    //Arruma campos
+                    buscar_blend_atual();
+                    buscar_blend();
+                    block_campos();
+                }
+                else if(temos_internet == false){
+                    add_blend();
+                    buscar_blend_atual();
+                    buscar_blend();
+                    block_campos();
+                    precisa_sincrinizar = true;
+                    set_sincronizar_1();
+                }
             }
             else if(Metodo == "editar"){
                 if(txtIdBlend.getText()==null){
                     JOptionPane.showMessageDialog(null, "Selecione um blend para ser editado!");
                 }
                 else if(Metodo == "editar"){
-                   editar_blend();
+                    if(temos_internet == true){
+                        editar_blend();
+                        editar_blend_nuvem();
+                        //Arruma campos
+                        buscar_blend();
+                        block_campos();
+                    }
+                    else if(temos_internet == false){
+                        editar_blend();
+                        buscar_blend();
+                        block_campos();
+                        precisa_sincrinizar = true;
+                    }
                 }
             }
             else if(Metodo == null){
                 return;
             }
             else{
-                JOptionPane.showMessageDialog(null, "Erro inesperado!");
+                JOptionPane.showMessageDialog(null, "Erro inesperado ao salvar!");
             }
         }
     }//GEN-LAST:event_btnBlendSalvarActionPerformed
 
     private void btnBlendDeletarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendDeletarActionPerformed
         // Chama função para deletar blend
-        remover_blend();
+        if(temos_internet == true){
+            int confirma = JOptionPane.showConfirmDialog(null,"Tem certeza de que quer deletar o Blend?","Atenção",JOptionPane.YES_NO_OPTION);
+            if(confirma == JOptionPane.YES_OPTION ){
+               remover_blend_nuvem();
+               remover_blend(); 
+            }
+        }
+        else if(temos_internet == false){
+            return;
+        }
     }//GEN-LAST:event_btnBlendDeletarActionPerformed
 
     private void btnBlendEnviarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendEnviarActionPerformed
@@ -1599,18 +2802,18 @@ public class TelaPrincipal extends javax.swing.JFrame {
         if(cbBlendOperacao.getSelectedIndex() == 0){
             JOptionPane.showMessageDialog(null, "Selecione uma operação!");
         }
+        else if(blend == false){
+            JOptionPane.showMessageDialog(null, "Selecione uma receita cadastrada!");
+        }
         else {
+            //exibe_msg_enviando();
             enviar_para_clp();
         }
     }//GEN-LAST:event_btnBlendEnviarActionPerformed
 
     private void btnBlendAdd1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendAdd1ActionPerformed
-        // Teste de funções
-        try {
-            
-        } catch (Exception e) {
-            System.out.println(e);
-        }
+        TelaAjuda ajuda = new TelaAjuda();
+        ajuda.setVisible(true);
     }//GEN-LAST:event_btnBlendAdd1ActionPerformed
 
     private void btnBlendCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendCancelarActionPerformed
@@ -1624,15 +2827,53 @@ public class TelaPrincipal extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btnBlendCancelarActionPerformed
 
-    private void jLabel10MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel10MouseClicked
+    private void lblBlendPesqMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_lblBlendPesqMouseClicked
         // Busca blends registrados
         buscar_blend();
-    }//GEN-LAST:event_jLabel10MouseClicked
+    }//GEN-LAST:event_lblBlendPesqMouseClicked
 
     private void btnBlendAtualActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendAtualActionPerformed
         // Busca ultimo blend enviado ao CLP
         buscar_blend_atual();
     }//GEN-LAST:event_btnBlendAtualActionPerformed
+
+    private void btnBlendPowerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendPowerActionPerformed
+        // Desliga/Liga Blendador
+       
+        
+            switch (blendador_ligado) {
+            case 0:
+                blendador_ligado = 1;
+            {
+                try {
+                    m.writeSingleCoil(escravo, 0, true);
+                    btnBlendPower.setText("OFF");
+                    btnBlendPower.setBackground(new Color(255,51,51));
+                } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
+                    Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+                break;
+            case 1:
+                int confirma = JOptionPane.showConfirmDialog(null,"Tem certeza de que quer desligar o Blendador?","Atenção",JOptionPane.YES_NO_OPTION);
+                if(confirma == JOptionPane.YES_OPTION){
+                    blendador_ligado = 0;
+                    try {
+                        m.writeSingleCoil(escravo, 0, false);
+                        btnBlendPower.setText("ON");
+                        btnBlendPower.setBackground(new Color(68,141,41));
+                    } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
+                        Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    break;
+                }
+            }
+    }//GEN-LAST:event_btnBlendPowerActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        //Teste de Funções
+        sincronizar_status_blendador();
+    }//GEN-LAST:event_jButton1ActionPerformed
 
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -1640,6 +2881,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 new TelaPrincipal().setVisible(true);
             }
         });
+        
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -1651,13 +2893,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JButton btnBlendDeletar;
     private javax.swing.JButton btnBlendEditar;
     private javax.swing.JButton btnBlendEnviar;
+    private javax.swing.JButton btnBlendPower;
     private javax.swing.JButton btnBlendSalvar;
     private javax.swing.JButton btnModBus;
     private javax.swing.JButton btnSilos;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JComboBox<String> cbBlendOperacao;
     private javax.swing.JPanel footerBlend;
-    private javax.swing.JLabel jLabel1;
+    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel14;
@@ -1669,8 +2912,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel10;
     private javax.swing.JPanel jPanel11;
-    private javax.swing.JPanel jPanel12;
-    private javax.swing.JPanel jPanel13;
     private javax.swing.JPanel jPanel14;
     private javax.swing.JPanel jPanel15;
     private javax.swing.JPanel jPanel16;
@@ -1700,17 +2941,24 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel38;
     private javax.swing.JPanel jPanel39;
     private javax.swing.JPanel jPanel4;
-    private javax.swing.JPanel jPanel40;
-    private javax.swing.JPanel jPanel41;
     private javax.swing.JPanel jPanel42;
+    private javax.swing.JPanel jPanel43;
+    private javax.swing.JPanel jPanel44;
+    private javax.swing.JPanel jPanel45;
+    private javax.swing.JPanel jPanel46;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JLabel lblBlendHeader;
+    private javax.swing.JLabel lblBlendLigado;
+    private javax.swing.JLabel lblBlendPesq;
+    private javax.swing.JLabel lblBlendWifi;
     private javax.swing.JLabel lblData;
     private javax.swing.JLabel lblNomeBlend;
+    private javax.swing.JLabel lblWifiDesc;
     private javax.swing.JTable tbBlend;
     private javax.swing.JTextField txtBlendPesq;
     private javax.swing.JTextField txtIdBlend;
