@@ -13,7 +13,7 @@ public class TelaSenhaSilos extends javax.swing.JFrame {
     
     
     public void logar(){
-        String senha = "nextlevel";
+        String senha = "1111";
         
         if(Arrays.equals( senha.toCharArray(), txtSilosSenhaa.getPassword())){
             TelaSilos silos = new TelaSilos();

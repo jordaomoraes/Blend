@@ -3,12 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package br.com.blend.telas;
+package br.com.blend.dal;
 
 /**
  *
  * @author Automacao_02
  */
-class QtdTotal {
+interface Border {
     
 }
