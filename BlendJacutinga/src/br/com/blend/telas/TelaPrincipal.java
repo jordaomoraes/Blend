@@ -628,9 +628,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 lblBlendHeader.setForeground(new Color(255,255,255));
                 set_blendando = false;
                 contador_tempo = 0;
-                if(Metodo != "adicionar" || Metodo != "editar"){
-                    btnBlendEnviar.setEnabled(true);
-                }
             }
         } catch (Exception e) {
             System.out.println("Falha ao checar se está blendando");
@@ -2602,7 +2599,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendPowerActionPerformed(evt);
             }
         });
-        jPanel1.add(btnBlendPower, new org.netbeans.lib.awtextra.AbsoluteConstraints(650, 0, 110, -1));
+        jPanel1.add(btnBlendPower, new org.netbeans.lib.awtextra.AbsoluteConstraints(650, 3, 110, -1));
 
         jPanel6.setBackground(new java.awt.Color(255, 255, 255));
         jPanel6.setPreferredSize(new java.awt.Dimension(2, 100));

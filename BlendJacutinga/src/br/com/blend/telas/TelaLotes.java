@@ -1,6 +1,7 @@
 package br.com.blend.telas;
 
 import br.com.blend.dal.ModuloConexao;
+import br.com.blend.dal.ModuloConexaoNuvem;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,8 +10,11 @@ import javax.swing.JOptionPane;
 
 public class TelaLotes extends javax.swing.JFrame {
     Connection conexao = null;
+    Connection nuvem = null;
     PreparedStatement pst = null;
     ResultSet rs = null;
+    PreparedStatement pstNuvem = null;
+    ResultSet rsNuvem = null;
     
     //Variaveis de lote
     
@@ -37,7 +41,7 @@ public class TelaLotes extends javax.swing.JFrame {
             
             
             
-            if((nome_lote.isEmpty() || num_lote.isEmpty())){
+           if((nome_lote.isEmpty() || num_lote.isEmpty())){
                 JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
             }
             else if(check_float(num_lote) == false){
@@ -46,7 +50,7 @@ public class TelaLotes extends javax.swing.JFrame {
             else if(tipo_cafe == "TIPO DO CAFÉ..."){
                 JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
             }
-            else{
+            else{ 
                 pst = conexao.prepareStatement(sql);
                 pst.setString(1, nome_lote);
                 pst.setInt(2, Integer.parseInt(num_lote));
@@ -59,6 +63,48 @@ public class TelaLotes extends javax.swing.JFrame {
                 }
                 else{
                         JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(e + "Falha ao cadastrar lote");
+        }
+    }
+    
+    private void novo_lote_nuvem(){
+        String sql = "insert into tb_lotes(nome_lote, num_lote, tipo_cafe, obs) values(?, ?, ?, ?)";
+        
+        try {
+            nuvem = ModuloConexaoNuvem.conector();
+            
+            nome_lote = txtNomeLote.getText();
+            num_lote = txtNumLote.getText();
+            tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
+            obs = txtObservacao.getText();
+            
+            
+            
+           if((nome_lote.isEmpty() || num_lote.isEmpty())){
+                JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
+            }
+            else if(check_float(num_lote) == false){
+                JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
+            }
+            else if(tipo_cafe == "TIPO DO CAFÉ..."){
+                JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
+            }
+            else{ 
+                pstNuvem = nuvem.prepareStatement(sql);
+                pstNuvem.setString(1, nome_lote);
+                pstNuvem.setInt(2, Integer.parseInt(num_lote));
+                pstNuvem.setString(3,tipo_cafe);
+                pstNuvem.setString(4, obs);
+                
+                int lote_adicionado = pstNuvem.executeUpdate();
+                if(lote_adicionado > 0){
+                    System.out.println("Lote cadastrado na nuvem");
+                }
+                else{
+                        JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote (nuvem)");
                 }
             }
         } catch (Exception e) {
@@ -130,6 +176,7 @@ public class TelaLotes extends javax.swing.JFrame {
     private void btnLoteNovoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoteNovoActionPerformed
         // Cria novo lote
         novo_lote();
+        novo_lote_nuvem();
     }//GEN-LAST:event_btnLoteNovoActionPerformed
     
     
