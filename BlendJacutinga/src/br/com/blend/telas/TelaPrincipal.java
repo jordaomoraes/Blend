@@ -82,6 +82,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     //Variaveis para sincronizar
     String ultimo_id_nuvem;
     String ultimo_id_registro_nuvem;
+    String ultimo_id_blend_local;
     boolean precisa_sincrinizar = false, sincronizar_ao_ligar = false;
     int sincronizado = 0;
     String id_atual, nome_atual, qtds1_atual, qtds2_atual, qtds3_atual, qtds4_atual, operation;
@@ -155,6 +156,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
         
         //Busca blend atual
         buscar_blend_atual();
+        
+        //Busca lotes cadastrados e os coloca na Combo box
+        set_lotes();
         
         //Block Campos
         block_campos();
@@ -267,16 +271,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     reconectado_internet = true;
                     lblBlendWifi.setVisible(false);
                     lblWifiDesc.setVisible(false);
-                  
-                    if(clp_conectado == false){
-                        btnBlendEditar.setEnabled(false);
-                    }
-                    else{
-                       if(Metodo == "adicionar" || Metodo == "new_meta")
-                       {
-                        btnBlendEditar.setEnabled(false); 
-                       }
-                    }
                 }
                 
                 else if(!testa_url("http://192.169.80.2")){
@@ -284,8 +278,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     operando_offline = true;
                     lblBlendWifi.setVisible(true);
                     lblWifiDesc.setVisible(true);
-                    btnBlendEditar.setEnabled(false);
-                    btnBlendDeletar.setEnabled(false);
                 }
                 
                 //Cancela as operações de editar e deletar caso internet caia no meio do processo
@@ -410,7 +402,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     reconectado_internet = false;
                     //sincronizar_ao_ligar = false;
                     try {
-                        sincronizar_status_blendador();
                         check_sincronizar();
                     } catch (Exception e) {
                         JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados!");
@@ -763,10 +754,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
         
         lblBlendHeader.setText("BLEND SELECIONADO");
         lblBlendHeader.setForeground(new Color(255,255,255));
+        cbBlendLote.setEnabled(false);
         
-        btnBlendAdd.setEnabled(false);
-        btnBlendEditar.setEnabled(false);
-        btnBlendDeletar.setEnabled(false);
         btnBlendSalvar.setEnabled(false);
         btnBlendCancelar.setEnabled(false);
         
@@ -800,6 +789,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendSalvar.setEnabled(true);
         btnBlendCancelar.setEnabled(true);
         cbBlendOperacao.setEnabled(true);
+        cbBlendLote.setEnabled(true);
         btnBlendEnviar.setEnabled(true);
         btnBlendAtual.setEnabled(true);
         tbBlend.setEnabled(true);
@@ -902,17 +892,18 @@ public class TelaPrincipal extends javax.swing.JFrame {
             set_sincronizar_0();
             nuvem = ModuloConexaoNuvem.conector();
             caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSincronizando dados..." , cor_tentando_conectar);
-            ultimo_adicionado_nuvem();
+            ultimo_blend_local();
             consultar_estoque_silos();
             consultar_estoque_grao();
             consultar_estoque_moido();
-            //ultimo_registro_nuvem();
-            sincronizar_cadastros();
+            ultimo_registro_nuvem();
+            sincronizar_blend_local();
             sincronizar_estoque_silos();
             sincronizar_estoque_grao();
             sincronizar_estoque_moido();
             sincronizar_blend_atual();
-            //sincronizar_registros();
+            sincronizar_registros();
+            sincronizar_status_blendador();
             caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nDados sincronizados! " , cor_sincronizar);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados!");
@@ -970,83 +961,81 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
-    private void sincronizar_status_blendador(){
-        nuvem = ModuloConexaoNuvem.conector();
+    private void ultimo_blend_local(){
+        String sql = "select max(id_blend) as id from tb_blend";
+        
         try {
-            boolean []array_coils_nuvem;
-            array_coils_nuvem = m.readCoils(escravo, 0, 1);
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
             
-            if(array_coils_nuvem[0] == true){
-                //System.out.println(array_coils_nuvem[0]);
-                set_blendador_nuvem_1();
+            if(rs.next()){
+                ultimo_id_blend_local = rs.getString(1);
             }
-            else{
-                //System.out.println(array_coils_nuvem[0]);
-                set_blendador_nuvem_0();
-            }
-        } catch (ModbusIOException | ModbusNumberException | ModbusProtocolException e) {
-            System.out.println("Falha ao sincronizar status do blendador (nuvem)");
+        } catch (Exception e) {
+            System.out.println("Falha ao obter ultimo id de blend local");
             System.out.println(e);
         }
     }
     
     
-    private void sincronizar_cadastros(){
-    //nuvem = ModuloConexaoNuvem.conector();
+    private void sincronizar_blend_local(){
+        String sqlNuvem = "select * from tb_blend where id_blend > ?";
+        String sql = "insert into tb_blend (nome, fk_silo1, qtd_silo1, fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4) values (?, 1, ?, 2, ?, 3, ?, 4, ?)";
         
-        String sql = "select * from tb_blend where id_blend > ?";
-        String sql_insert_nuvem = "insert into tb_blend(nome, fk_silo1, qtd_silo1, fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4) values (?, 1, ?, 2, ?, 3, ?, 4, ?)";
         try {
-            //Pega dados salvos apenas localmente
+            //Pega dados salvos apenas na nuvem
+            pstNuvem = nuvem.prepareStatement(sqlNuvem);
+            pstNuvem.setString(1, ultimo_id_blend_local);
+            rsNuvem = pstNuvem.executeQuery();
+            
+            //Insere dados obtidos na nuvem e os insere no local
             pst = conexao.prepareStatement(sql);
-            pst.setString(1, ultimo_id_nuvem);
-            rs = pst.executeQuery();
             
-            //Insere dados obtidos na local e os insere na nuvem
-            pstNuvem = nuvem.prepareStatement(sql_insert_nuvem);
-            
-            while(rs.next()){
+            while(rsNuvem.next()){
                 try {
-                    pstNuvem.setString(1, rs.getString(2));
-                    pstNuvem.setString(2, rs.getString(4));
-                    pstNuvem.setString(3, rs.getString(6));
-                    pstNuvem.setString(4, rs.getString(8));
-                    pstNuvem.setString(5, rs.getString(10));
+                    pst.setString(1, rsNuvem.getString(2));
+                    pst.setString(2, rsNuvem.getString(4));
+                    pst.setString(3, rsNuvem.getString(6));
+                    pst.setString(4, rsNuvem.getString(8));
+                    pst.setString(5, rsNuvem.getString(10));
 
-                    pstNuvem.executeUpdate();
-                    
+                    pst.executeUpdate();
                 } catch (Exception e) {
-                    System.out.println("Falha ao sincronizar cadastros");
+                    System.out.println("Falha ao sincronizar blends (local)!");
                     System.out.println(e);
                 }
             }
-            
-            
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados!");
-            System.out.println(ex);
-        }
-    }
-    
-    
-    private void ultimo_adicionado_nuvem(){
-        nuvem = ModuloConexaoNuvem.conector();
-         //1 - Obter ultimo registro da tabela offline
-        String sql = "select max(id_blend) as id from tb_blend;";
-        try {
-            pstNuvem = nuvem.prepareStatement(sql);
-            rsNuvem = pstNuvem.executeQuery();
-
-            if(rsNuvem.next()){
-                ultimo_id_nuvem = rsNuvem.getString(1);
-                //System.out.println(ultimo_id_nuvem);
-            }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Falha ao obter ultimo blend adicionado (nuvem)!");
+            System.out.println("Falha ao sincronizar dados (blends) da nuvem para o local");
             System.out.println(e);
         }
     }
     
+    
+    private void sincronizar_status_blendador(){
+        if(temos_internet == true){
+            nuvem = ModuloConexaoNuvem.conector();
+            try {
+            boolean []array_coils_nuvem;
+            array_coils_nuvem = m.readCoils(escravo, 0, 1);
+            
+            if(array_coils_nuvem[0] == true && temos_internet == true){
+                //System.out.println(array_coils_nuvem[0]);
+                set_blendador_nuvem_1();
+            }
+            else if(temos_internet == true){
+                //System.out.println(array_coils_nuvem[0]);
+                set_blendador_nuvem_0();
+            }
+            }catch (ModbusIOException | ModbusNumberException | ModbusProtocolException e) {
+                System.out.println("Falha ao sincronizar status do blendador (nuvem)");
+                System.out.println(e);
+            }
+        }
+        else{
+            precisa_sincrinizar = true;
+        }
+    }
     
     private void sincronizar_estoque_silos(){
         nuvem = ModuloConexaoNuvem.conector();
@@ -1137,7 +1126,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         nuvem = ModuloConexaoNuvem.conector();
         
         String sql = "select * from tb_blend_registros where id_registro > ?";
-        String sql_insert_nuvem = "insert into tb_blend_registros(nome, fk_silo1, qtd_silo1, fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4, operacao, data) values (?, 1, ?, 2, ?, 3, ?, 4, ?, ?, ?)";
+        String sql_insert_nuvem = "insert into tb_blend_registros(nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, data, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, 1, ?, 2, ?, 3, ?, 4, ?, ?, ?, ?, ?, ?, ?,? )";
         try {
             //Pega dados salvos apenas localmente
             pst = conexao.prepareStatement(sql);
@@ -1156,10 +1145,16 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     pstNuvem.setString(5, rs.getString(10));
                     pstNuvem.setString(6, rs.getString(11));
                     pstNuvem.setString(7, rs.getString(12));
+                    pstNuvem.setString(8, rs.getString(13));
+                    pstNuvem.setString(9, rs.getString(14));
+                    pstNuvem.setString(10, rs.getString(15));
+                    pstNuvem.setString(11, rs.getString(16));
+                    pstNuvem.setString(12, rs.getString(17));
 
                     pstNuvem.executeUpdate();
                     
                 } catch (Exception e) {
+                    System.out.println("Falha ao sincronizar Registros (nuvem)!");
                     System.out.println(e);
                 }
             }
@@ -1173,7 +1168,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void ultimo_registro_nuvem(){
         nuvem = ModuloConexaoNuvem.conector();
          //1 - Obter ultimo registro da tabela offline
-        String sql = "select max(id_registro) as id from tb_blend_registros;";
+        String sql = "select max(id_registro) as id from tb_blend_registros";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             rsNuvem = pstNuvem.executeQuery();
@@ -1274,12 +1269,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
         
         try {
             if(temos_internet == true){
+                tbBlendTitulo.setText("RECEITAS CADASTRADAS");
+                nuvem = ModuloConexaoNuvem.conector();
                 pstNuvem = nuvem.prepareStatement(sql);
                 rsNuvem = pstNuvem.executeQuery();
                 
                 tbBlend.setModel(DbUtils.resultSetToTableModel(rsNuvem));
             }
             else{
+                tbBlendTitulo.setText("RECEITAS CADASTRADAS (LOCALMENTE)");
                 pst = conexao.prepareStatement(sql);
                 rs = pst.executeQuery();
                 tbBlend.setModel(DbUtils.resultSetToTableModel(rs));
@@ -1297,16 +1295,28 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private void pesquisar_blend(){
-        
         String sql = "select * from tb_blend where nome like ?";
         
         try {
-            pst = conexao.prepareStatement(sql);
+            if(temos_internet == true){
+                nuvem = ModuloConexaoNuvem.conector();
+                pstNuvem = nuvem.prepareStatement(sql);
+                
+                pstNuvem.setString(1, txtBlendPesq.getText()+'%');
+                rsNuvem = pstNuvem.executeQuery();
+                
+                tbBlend.setModel(DbUtils.resultSetToTableModel(rsNuvem));
+            }
+            else{
+                pst = conexao.prepareStatement(sql);
             
-            pst.setString(1,txtBlendPesq.getText()+'%');
-            rs = pst.executeQuery();
+                pst.setString(1,txtBlendPesq.getText()+'%');
+                rs = pst.executeQuery();
+
+                tbBlend.setModel(DbUtils.resultSetToTableModel(rs));
+            }
             
-            tbBlend.setModel(DbUtils.resultSetToTableModel(rs));
+           
             remove_colunas();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao pesquisar blend");
@@ -1316,14 +1326,21 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     
     private void set_campos_blend(){
-        int setar = tbBlend.getSelectedRow();
-        //lblNomeBlend.setText(tbBlend.getModel().getValueAt(setar,1).toString());
-        txtIdBlend.setText(tbBlend.getModel().getValueAt(setar,0).toString());
-        txtNomeBlend.setText(tbBlend.getModel().getValueAt(setar,1).toString());
-        txtQtdSilo1.setText(tbBlend.getModel().getValueAt(setar,3).toString());
-        txtQtdSilo2.setText(tbBlend.getModel().getValueAt(setar,5).toString());
-        txtQtdSilo3.setText(tbBlend.getModel().getValueAt(setar,7).toString());
-        txtQtdSilo4.setText(tbBlend.getModel().getValueAt(setar,9).toString());
+        try {
+            int setar = tbBlend.getSelectedRow();
+            
+            //lblNomeBlend.setText(tbBlend.getModel().getValueAt(setar,1).toString());
+            txtIdBlend.setText(tbBlend.getModel().getValueAt(setar,0).toString());
+            txtNomeBlend.setText(tbBlend.getModel().getValueAt(setar,1).toString());
+            txtQtdSilo1.setText(tbBlend.getModel().getValueAt(setar,3).toString());
+            txtQtdSilo2.setText(tbBlend.getModel().getValueAt(setar,5).toString());
+            txtQtdSilo3.setText(tbBlend.getModel().getValueAt(setar,7).toString());
+            txtQtdSilo4.setText(tbBlend.getModel().getValueAt(setar,9).toString()); 
+            
+        } catch (Exception e) {
+            System.out.println("Falha ao setar campos da tabela" + e);
+        }
+        
     }
     
     
@@ -1346,11 +1363,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     private void block_campos(){
         Metodo = null;
-        btnBlendAdd.setEnabled(true);
-        btnBlendAdd.setBackground(new Color(255,255,255));
-        btnBlendEditar.setBackground(new Color(255,255,255));
-        btnBlendEditar.setEnabled(true);
-        btnBlendDeletar.setEnabled(false);
         btnBlendAtual.setEnabled(true);
         cbBlendOperacao.setEnabled(true);
         btnBlendEnviar.setEnabled(true);
@@ -1366,243 +1378,18 @@ public class TelaPrincipal extends javax.swing.JFrame {
         txtBlendMetaMoido.setEditable(false);
         txtBlendMetaGrao.setEditable(false);
     }
+          
+       
     
+       
     
-    private void unlock_campos(){
-        txtNomeBlend.setEditable(true);
-        txtQtdSilo1.setEditable(true);
-        txtQtdSilo2.setEditable(true);
-        txtQtdSilo3.setEditable(true);
-        txtQtdSilo4.setEditable(true);
-    }
+       
     
-    private void limpa_campos(){
-        txtIdBlend.setText(null);
-        txtNomeBlend.setText(null);
-        txtQtdSilo1.setText(null);
-        txtQtdSilo2.setText(null);
-        txtQtdSilo3.setText(null);
-        txtQtdSilo4.setText(null);
-    }
+       
     
+      
     
-    private void add_blend(){
-        String sql = "insert into tb_blend(nome,fk_silo1, qtd_silo1,fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4) values (?,1,?,2,?,3,?,4,?)";
-
-        try {
-            
-            pst = conexao.prepareStatement(sql);
-            
-            NomeBlend = txtNomeBlend.getText();
-            QtdSilo1 = txtQtdSilo1.getText();
-            QtdSilo2 = txtQtdSilo2.getText();
-            QtdSilo3 = txtQtdSilo3.getText();
-            QtdSilo4 = txtQtdSilo4.getText();
-            
-            pst.setString(1,NomeBlend);
-            pst.setString(2,QtdSilo1);
-            pst.setString(3,QtdSilo2);
-            pst.setString(4,QtdSilo3);
-            pst.setString(5,QtdSilo4);
-            
-            if((NomeBlend.isEmpty() || QtdSilo2.isEmpty() || QtdSilo3.isEmpty() || QtdSilo4.isEmpty())){
-                JOptionPane.showMessageDialog(null, "Preencha todos os campos!");
-                buscar_blend_atual();
-                block_campos();
-            }
-            else if((check_float(QtdSilo1) == false || check_float(QtdSilo2) == false || check_float(QtdSilo3) == false || check_float(QtdSilo4) == false)){
-                JOptionPane.showMessageDialog(null, "Insira um valor válido para a Quantidade!");
-                buscar_blend_atual();
-                block_campos();
-            }
-            else{
-                    int adicionado = pst.executeUpdate();
-                    
-                    if(adicionado > 0){
-                        JOptionPane.showMessageDialog(null, "Blend cadastrado com sucesso!");
-                        blend = true;
-                        System.out.println("Cadastrado LOCALMENTE");
-                    }
-                else{
-                    JOptionPane.showMessageDialog(null, "Falha ao cadastrar Blend!");
-                    buscar_blend_atual();
-                    block_campos();
-                }
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Falha ao cadastrar Blend!");
-            System.out.println(e);
-            block_campos();
-        }
-    }
-    
-    
-    private void add_blend_nuvem(){
-        
-        nuvem = ModuloConexaoNuvem.conector();
-        
-        String sql = "insert into tb_blend(nome,fk_silo1, qtd_silo1,fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4) values (?,1,?,2,?,3,?,4,?)";
-        
-        try {
-            pstNuvem = nuvem.prepareStatement(sql);
-            
-            NomeBlend = txtNomeBlend.getText();
-            QtdSilo1 = txtQtdSilo1.getText();
-            QtdSilo2 = txtQtdSilo2.getText();
-            QtdSilo3 = txtQtdSilo3.getText();
-            QtdSilo4 = txtQtdSilo4.getText();
-            
-            pstNuvem.setString(1,NomeBlend);
-            pstNuvem.setString(2,QtdSilo1);
-            pstNuvem.setString(3,QtdSilo2);
-            pstNuvem.setString(4,QtdSilo3);
-            pstNuvem.setString(5,QtdSilo4);
-            
-            int adicionadoNuvem = pstNuvem.executeUpdate();
-                    
-            if(adicionadoNuvem > 0){
-                System.out.println("Cadastrado NUVEM");
-            }
-            else{
-                JOptionPane.showMessageDialog(null, "Falha ao cadastrar Blend na nuvem!");
-                buscar_blend_atual();
-                block_campos();
-            }
-                        
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Falha ao cadastrar Blend na nuvem!");
-            block_campos();
-        }
-    }
-    
-    
-    private void editar_blend(){
-       String sql = "update tb_blend set nome=?, qtd_silo1=?, qtd_silo2=?, qtd_silo3=?, qtd_silo4=? where id_blend=?";
-        
-        try {
-            
-            pst = conexao.prepareStatement(sql);
-            
-            NomeBlend = txtNomeBlend.getText();
-            QtdSilo1 = txtQtdSilo1.getText();
-            QtdSilo2 = txtQtdSilo2.getText();
-            QtdSilo3 = txtQtdSilo3.getText();
-            QtdSilo4 = txtQtdSilo4.getText();
-            
-            pst.setString(1,NomeBlend);
-            pst.setString(2,QtdSilo1);
-            pst.setString(3,QtdSilo2);
-            pst.setString(4,QtdSilo3);
-            pst.setString(5,QtdSilo4);
-            pst.setString(6, txtIdBlend.getText());
-
-            
-            if((NomeBlend.isEmpty() || QtdSilo2.isEmpty() || QtdSilo3.isEmpty() || QtdSilo4.isEmpty())){
-                JOptionPane.showMessageDialog(null, "Preencha todos os campos!");
-                //limpa_campos();
-                buscar_blend_atual();
-                block_campos();
-                
-            }
-            else if((check_float(QtdSilo1) == false || check_float(QtdSilo2) == false || check_float(QtdSilo3) == false || check_float(QtdSilo4) == false)){
-                JOptionPane.showMessageDialog(null, "Insira um valor válido para a Quantidade!");
-                buscar_blend_atual();
-                block_campos();
-            }
-            else{
-                int adicionado = pst.executeUpdate();
-                if(adicionado > 0 ){
-                    JOptionPane.showMessageDialog(null, "Blend editado com sucesso!");
-                }
-                else{
-                    JOptionPane.showMessageDialog(null, "Falha ao editar blend!");
-                    buscar_blend_atual();
-                    block_campos();
-                }
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Falha ao editar blend!");
-            System.out.println(e);
-        }
-    }
-    
-    
-    private void editar_blend_nuvem(){
-        nuvem = ModuloConexaoNuvem.conector();
-        
-        String sql = "update tb_blend set nome=?, qtd_silo1=?, qtd_silo2=?, qtd_silo3=?, qtd_silo4=? where id_blend=?";
-        
-        try {
-            pstNuvem = nuvem.prepareStatement(sql);
-            
-            NomeBlend = txtNomeBlend.getText();
-            QtdSilo1 = txtQtdSilo1.getText();
-            QtdSilo2 = txtQtdSilo2.getText();
-            QtdSilo3 = txtQtdSilo3.getText();
-            QtdSilo4 = txtQtdSilo4.getText();
-            
-            pstNuvem.setString(1,NomeBlend);
-            pstNuvem.setString(2,QtdSilo1);
-            pstNuvem.setString(3,QtdSilo2);
-            pstNuvem.setString(4,QtdSilo3);
-            pstNuvem.setString(5,QtdSilo4);
-            pstNuvem.setString(6, txtIdBlend.getText());
-            
-            int editado = pstNuvem.executeUpdate();
-            
-            if(editado > 0 ){
-                System.out.println("Editado no online");
-            }
-
-        } catch (Exception e) {
-            System.out.println("Falha ao editar blend na nuvem");
-            System.out.println(e);
-        }
-    }
-    
-    
-    private void remover_blend(){
-        String sql = "delete from tb_blend where id_blend=?";
-
-        try {
-            pst = conexao.prepareStatement(sql);
-            pst.setString(1,txtIdBlend.getText());
-            int apagado = pst.executeUpdate();
-                
-            if(apagado>0){
-                JOptionPane.showMessageDialog(null, "Blend deletado com sucesso!");
-                //limpa_campos();
-                buscar_blend_atual();
-                block_campos();
-                buscar_blend();
-            }
-            else{
-                JOptionPane.showMessageDialog(null, "Falha ao deletar Blend!");
-            }
-                                 
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Falha ao deletar Blend!");
-                System.out.println(e);
-            }
-    }
-    
-    
-    private void remover_blend_nuvem(){
-        nuvem = ModuloConexaoNuvem.conector();
-        
-        String sql = "delete from tb_blend where id_blend=?";
-        
-        try {
-            pstNuvem = nuvem.prepareStatement(sql);
-            pstNuvem.setString(1,txtIdBlend.getText());
-            pstNuvem.executeUpdate();
-            
-            } catch (Exception e) {
-                System.out.println("Falha ao deletar blend na nuvem");
-                System.out.println(e);
-            }
-    }
-    
+      
     
     private void set_blend_atual(){
         //Atualiza/sobrescreve dados da tabela blend atual, para manter o sistema sincronizado com os dados enviados ao PLC
@@ -1673,6 +1460,89 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
+    //Metodos relacionados aos lotes
+    private void ultimo_lote_usado(){
+        //Inicia combobox com ultimo lote utilizado
+        String sql = "select id_lote from tb_lotes where num_lote = (select num_lote_atual from tb_lote_atual)";
+        
+        try {
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
+            
+            if(rs.next()){
+               cbBlendLote.setSelectedIndex(rs.getInt(1));
+               
+               String selected = cbBlendLote.getSelectedItem().toString();
+                System.out.println(selected);
+            }
+            else{
+                JOptionPane.showMessageDialog(null, "Nenhum lote disponível!");
+            }
+        } catch (Exception e) {
+            System.out.println("Falha ao setar lote utilizado em cbBlendLotes");
+            System.out.println(e);
+        }
+        
+    }
+    
+    private void set_lotes(){
+        //Popula combobox com lotes criados
+        String sql = "select nome_lote from tb_lotes";
+        
+        try {
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
+            
+            while(rs.next()){
+                String nome_lote = rs.getString(1);
+                cbBlendLote.addItem(nome_lote);
+            }
+            ultimo_lote_usado();
+            
+        } catch (Exception e) {
+            System.out.println("Falha ao popular combobox com lotes salvos");
+            System.out.println(e);
+        }
+    }
+    
+    private void atualizar_qtd_torrado_lote(float QtdTotal){
+        //Atualiza td_torrado em lote selecionado pelo usuário(após enviar blend apenas)
+        //Permitindo que usuário reutilize lotes
+        String sql = "update tb_lotes set qtd_torrado = (select qtd_torrado + ?) where nome_lote = ?";
+        
+        try {
+            String selected = cbBlendLote.getSelectedItem().toString();
+            
+            pst = conexao.prepareStatement(sql);
+            pst.setFloat(1, QtdTotal);
+            pst.setString(2, selected);
+            pst.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao atualizar qtd_torrado em lotes");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void set_lote_atual(){
+        String selected = cbBlendLote.getSelectedItem().toString();
+        
+        //Atualiza lote baseando-se no nome do lote selecionado na combobox
+        String sql = "update tb_lote_atual set num_lote_atual = (select num_lote from tb_lotes where nome_lote = ?), nome_lote_atual = ? where id_lote_atual";
+        
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.setString(1, selected);
+            pst.setString(2, selected);
+            pst.executeUpdate();
+            
+        } catch (Exception e) {
+            System.out.println("Falha ao atualizar Lote Atual");
+            System.out.println(e);
+        }
+    }
+    
+    
     //Metodos relacionados aos registros
     private void consultar_lote_atual(){
         String sql = "select num_lote_atual from tb_lote_atual";
@@ -1691,7 +1561,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private void salvar_registro_blend(float QtdTotal, float ValorTotalCru, float ValorTotalTorrado){
-         consultar_lote_atual();
+        consultar_lote_atual();
         
         String sql="insert into tb_blend_registros( nome_blend, nome_Cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, 1 , ?, 2, ?, 3, ?, 4, ?, ?, "+QtdTotal+", "+ValorTotalCru+", "+ValorTotalTorrado+", ?, ?)";
         
@@ -1735,11 +1605,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
-    private void salvar_registro_bend_nuvem(){
+    private void salvar_registro_bend_nuvem(float QtdTotal, float ValorTotalCru, float ValorTotalTorrado){
+        consultar_lote_atual();
         
-        String sql="insert into tb_blend_registros(nome, fk_silo1, qtd_silo1, fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4, operacao) values (?,1,?,2,?,3,?,4,?, ?)";
+        String sql="insert into tb_blend_registros( nome_blend, nome_Cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, 1 , ?, 2, ?, 3, ?, 4, ?, ?, "+QtdTotal+", "+ValorTotalCru+", "+ValorTotalTorrado+", ?, ?)";
+        
+        ValorTotal = 0;
         
         try {
+                nuvem = ModuloConexaoNuvem.conector();
                 pstNuvem = nuvem.prepareStatement(sql);
             
                 NomeBlend = txtNomeBlend.getText();
@@ -1749,7 +1623,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 QtdSilo4 = txtQtdSilo4.getText();
                 String Moer = "moer e empacotar";
                 String Grao = "empacotar inteiro";
-
+                    
                 pstNuvem.setString(1,NomeBlend);
                 pstNuvem.setFloat(2,Float.parseFloat(QtdSilo1));
                 pstNuvem.setFloat(3,Float.parseFloat(QtdSilo2));
@@ -1763,6 +1637,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     pstNuvem.setString(6,Grao);
                 }
                 
+                ValorTotal = ValorTotalCru + ValorTotalTorrado;
+                
+                pstNuvem.setFloat(7, ValorTotal);
+                pstNuvem.setInt(8, lote);
+                
                 pstNuvem.executeUpdate();
                 
         } catch (Exception e) {
@@ -1770,9 +1649,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    
+       
     
     
     private void consultar_estoque_silos(){
@@ -2211,13 +2088,19 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     atualizar_estoque_silos(qtd_silos);
                     atualizar_estoque_silos_nuvem(qtd_silos);
 
-                    // 5 - Seta blend atual (local e/ou nuvem)
+                    // 5.1 - Seta blend atual (local e/ou nuvem)
                     set_blend_atual();
                     set_blend_atual_nuvem();
-
+                    
+                    // 5.2 - Atualiza qtd_torrado em lotes (soma quantidades)
+                    atualizar_qtd_torrado_lote(QtdTotal);
+                    
+                    // 5.3 - Atualiza lote atual por aquele selecionado pelo usuario
+                    set_lote_atual();
+                    
                     //6 - Salva dados do blend em registro
                     salvar_registro_blend(QtdTotal, ValorCru, ValorTorrado);
-                    //salvar_registro_bend_nuvem();
+                    salvar_registro_bend_nuvem(QtdTotal, ValorCru, ValorTorrado);
 
                     //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
                     if(cbBlendOperacao.getSelectedIndex() == 1){
@@ -2327,7 +2210,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     
-     public static boolean check_float(String text) {
+    public static boolean check_float(String text) {
         try {
             Float.parseFloat(text);
             return true;
@@ -2370,10 +2253,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblBlendHeader = new javax.swing.JLabel();
         jPanel3 = new javax.swing.JPanel();
         btnBlendSalvar = new javax.swing.JButton();
-        btnBlendAdd = new javax.swing.JButton();
-        btnBlendEditar = new javax.swing.JButton();
         btnBlendCancelar = new javax.swing.JButton();
-        btnBlendDeletar = new javax.swing.JButton();
         btnBlendAdd1 = new javax.swing.JButton();
         jScrollPane3 = new javax.swing.JScrollPane();
         txtStatus = new javax.swing.JTextPane();
@@ -2395,6 +2275,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
         txtNomeBlend = new javax.swing.JTextField();
         txtIdBlend = new javax.swing.JTextField();
         jLabel10 = new javax.swing.JLabel();
+        jLabel11 = new javax.swing.JLabel();
+        cbBlendLote = new javax.swing.JComboBox<>();
         jPanel4 = new javax.swing.JPanel();
         txtBlendPesq = new javax.swing.JTextField();
         lblBlendPesq = new javax.swing.JLabel();
@@ -2402,7 +2284,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel5 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         tbBlend = new javax.swing.JTable();
-        jLabel9 = new javax.swing.JLabel();
+        tbBlendTitulo = new javax.swing.JLabel();
         jPanel16 = new javax.swing.JPanel();
         jPanel17 = new javax.swing.JPanel();
         jLabel8 = new javax.swing.JLabel();
@@ -2810,13 +2692,18 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         jPanel1.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 3, -1, 74));
 
-        btnLotes.setText("Lotes");
+        btnLotes.setBackground(new java.awt.Color(25, 42, 86));
+        btnLotes.setForeground(new java.awt.Color(255, 255, 255));
+        btnLotes.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/coffee-bean (1).png"))); // NOI18N
+        btnLotes.setBorderPainted(false);
+        btnLotes.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnLotes.setFocusPainted(false);
         btnLotes.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnLotesActionPerformed(evt);
             }
         });
-        jPanel1.add(btnLotes, new org.netbeans.lib.awtextra.AbsoluteConstraints(450, 10, 80, 60));
+        jPanel1.add(btnLotes, new org.netbeans.lib.awtextra.AbsoluteConstraints(450, 0, 80, 80));
 
         getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1620, 80));
 
@@ -2846,37 +2733,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendSalvarActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendSalvar, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 20, 90, 90));
+        jPanel3.add(btnBlendSalvar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 240, 90, 90));
         btnBlendSalvar.getAccessibleContext().setAccessibleName("Salvar");
         btnBlendSalvar.getAccessibleContext().setAccessibleDescription("Salvar");
-
-        btnBlendAdd.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendAdd.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/add_48px.png"))); // NOI18N
-        btnBlendAdd.setToolTipText("Criar Novo Blend");
-        btnBlendAdd.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendAdd.setFocusPainted(false);
-        btnBlendAdd.setPreferredSize(new java.awt.Dimension(62, 62));
-        btnBlendAdd.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendAddActionPerformed(evt);
-            }
-        });
-        jPanel3.add(btnBlendAdd, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 20, 90, 90));
-        btnBlendAdd.getAccessibleContext().setAccessibleName("Novo Blend");
-        btnBlendAdd.getAccessibleContext().setAccessibleDescription("Novo Blend");
-
-        btnBlendEditar.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendEditar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/edit_48px.png"))); // NOI18N
-        btnBlendEditar.setToolTipText("Editar Blend");
-        btnBlendEditar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendEditar.setFocusPainted(false);
-        btnBlendEditar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendEditarActionPerformed(evt);
-            }
-        });
-        jPanel3.add(btnBlendEditar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 130, 90, 90));
-        btnBlendEditar.getAccessibleContext().setAccessibleName("Editar Blend");
 
         btnBlendCancelar.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendCancelar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/cancel_48px.png"))); // NOI18N
@@ -2890,19 +2749,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel3.add(btnBlendCancelar, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 130, 90, 90));
         btnBlendCancelar.getAccessibleContext().setAccessibleName("Cancelar");
-
-        btnBlendDeletar.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendDeletar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/delete_bin_48px.png"))); // NOI18N
-        btnBlendDeletar.setToolTipText("Deletar Blend");
-        btnBlendDeletar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendDeletar.setFocusPainted(false);
-        btnBlendDeletar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendDeletarActionPerformed(evt);
-            }
-        });
-        jPanel3.add(btnBlendDeletar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 240, 90, 90));
-        btnBlendDeletar.getAccessibleContext().setAccessibleName("Deletar Blend");
 
         btnBlendAdd1.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendAdd1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/info.png"))); // NOI18N
@@ -3030,16 +2876,26 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel14.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         txtNomeBlend.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jPanel14.add(txtNomeBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 10, 256, -1));
+        jPanel14.add(txtNomeBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 10, 256, -1));
 
         txtIdBlend.setEditable(false);
         txtIdBlend.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jPanel14.add(txtIdBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 10, 40, -1));
+        jPanel14.add(txtIdBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(460, 10, 40, -1));
 
         jLabel10.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel10.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel10.setText("NOME DO BLEND");
-        jPanel14.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
+        jLabel10.setText("LOTE");
+        jPanel14.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(600, 10, -1, 30));
+
+        jLabel11.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel11.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel11.setText("NOME DO BLEND");
+        jPanel14.add(jLabel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, 30));
+
+        cbBlendLote.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        cbBlendLote.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SELECIONE UM LOTE..." }));
+        cbBlendLote.setToolTipText("Selecionar Lote");
+        jPanel14.add(cbBlendLote, new org.netbeans.lib.awtextra.AbsoluteConstraints(670, 10, 210, 30));
 
         getContentPane().add(jPanel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 210, 990, 50));
 
@@ -3106,10 +2962,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         jPanel5.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 50, 621, 110));
 
-        jLabel9.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jLabel9.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel9.setText("RECEITAS CADASTRADAS");
-        jPanel5.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
+        tbBlendTitulo.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        tbBlendTitulo.setForeground(new java.awt.Color(255, 255, 255));
+        tbBlendTitulo.setText("RECEITAS CADASTRADAS");
+        jPanel5.add(tbBlendTitulo, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
 
         getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 550, 640, 180));
 
@@ -3419,100 +3275,19 @@ public class TelaPrincipal extends javax.swing.JFrame {
         // Chama função para preencher os campos de texto e muda o metodo
         Metodo = "pesquisar";
         set_campos_blend();
-        if(temos_internet == true){
-            btnBlendDeletar.setEnabled(true);
-        }
-        else if(temos_internet == false){
-            btnBlendDeletar.setEnabled(false);
-        }
     }//GEN-LAST:event_tbBlendMouseClicked
 
     private void tbBlendKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tbBlendKeyReleased
         
     }//GEN-LAST:event_tbBlendKeyReleased
 
-    private void btnBlendAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendAddActionPerformed
-        //Muda metodo para adicionar e desbloqueia campos
-        Metodo="adicionar";
-        
-        btnBlendAdd.setBackground(new Color(198,198,198));
-        btnBlendEditar.setEnabled(false);
-        btnBlendDeletar.setEnabled(false);
-        btnBlendNewMeta.setEnabled(false);
-        btnBlendAtual.setEnabled(false);
-        cbBlendOperacao.setEnabled(false);
-        btnBlendEnviar.setEnabled(false);
-        limpa_campos();
-        unlock_campos();
-    }//GEN-LAST:event_btnBlendAddActionPerformed
-
-    private void btnBlendEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendEditarActionPerformed
-        //Muda metodo para editar e desbloqueia campos
-        Metodo="editar";
-
-        btnBlendEditar.setBackground(new Color(198,198,198));
-        btnBlendAdd.setEnabled(false);
-        btnBlendDeletar.setEnabled(false);
-        btnBlendNewMeta.setEnabled(false);
-        btnBlendAtual.setEnabled(false);
-        cbBlendOperacao.setEnabled(false);
-        btnBlendEnviar.setEnabled(false);
-        unlock_campos();
-    }//GEN-LAST:event_btnBlendEditarActionPerformed
-
     private void btnBlendSalvarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendSalvarActionPerformed
         // Checa o metodo e chama a função correspondente
         if(Metodo == "pesquisar"){
-            if(Metodo == "pesquisar" && btnBlendAdd.isEnabled() == false){
-                //Permite que edite se usuario clicar primeiro no botao de editar e depois pesuisar
-                editar_blend();
-                editar_blend_nuvem();
-            }
-            else{
-                return;
-            }
+            
         }
-        
         else{
-            if(Metodo == "adicionar"){
-                if(temos_internet == true){
-                    add_blend();
-                    add_blend_nuvem();
-                    //Arruma campos
-                    buscar_blend_atual();
-                    buscar_blend();
-                    block_campos();
-                }
-                else if(temos_internet == false){
-                    add_blend();
-                    buscar_blend_atual();
-                    buscar_blend();
-                    block_campos();
-                    precisa_sincrinizar = true;
-                    set_sincronizar_1();
-                }
-            }
-            else if(Metodo == "editar"){
-                if(txtIdBlend.getText()==null){
-                    JOptionPane.showMessageDialog(null, "Selecione um blend para ser editado!");
-                }
-                else if(Metodo == "editar"){
-                    if(temos_internet == true){
-                        editar_blend();
-                        editar_blend_nuvem();
-                        //Arruma campos
-                        buscar_blend();
-                        block_campos();
-                    }
-                    else if(temos_internet == false){
-                        editar_blend();
-                        buscar_blend();
-                        block_campos();
-                        precisa_sincrinizar = true;
-                    }
-                }
-            }
-            else if(Metodo == "new_meta"){
+            if(Metodo == "new_meta"){
                 set_meta();
             }
             else if(Metodo == null){
@@ -3523,20 +3298,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_btnBlendSalvarActionPerformed
-
-    private void btnBlendDeletarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendDeletarActionPerformed
-        // Chama função para deletar blend
-        if(temos_internet == true){
-            int confirma = JOptionPane.showConfirmDialog(null,"Tem certeza de que quer deletar o Blend?","Atenção",JOptionPane.YES_NO_OPTION);
-            if(confirma == JOptionPane.YES_OPTION ){
-               remover_blend_nuvem();
-               remover_blend(); 
-            }
-        }
-        else if(temos_internet == false){
-            return;
-        }
-    }//GEN-LAST:event_btnBlendDeletarActionPerformed
 
     private void btnBlendEnviarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendEnviarActionPerformed
       //Checa se operação está selecionada e envia dados
@@ -3777,9 +3538,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         // Edita metas
         Metodo = "new_meta";
         btnBlendNewMeta.setBackground(new Color(198,198,198));
-        btnBlendAdd.setEnabled(false);
-        btnBlendEditar.setEnabled(false);
-        btnBlendDeletar.setEnabled(false);
         btnBlendEnviar.setEnabled(false);
         txtBlendMetaMoido.setEditable(true);
         txtBlendMetaGrao.setEditable(true);
@@ -3801,12 +3559,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnBlendAdd;
     private javax.swing.JButton btnBlendAdd1;
     private javax.swing.JButton btnBlendAtual;
     private javax.swing.JButton btnBlendCancelar;
-    private javax.swing.JButton btnBlendDeletar;
-    private javax.swing.JButton btnBlendEditar;
     private javax.swing.JButton btnBlendEnviar;
     private javax.swing.JButton btnBlendNewMeta;
     private javax.swing.JButton btnBlendPower;
@@ -3821,10 +3576,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JButton btnSilo4Abrir;
     private javax.swing.JButton btnSilos;
     private javax.swing.ButtonGroup buttonGroup1;
+    private javax.swing.JComboBox<String> cbBlendLote;
     private javax.swing.JComboBox<String> cbBlendOperacao;
     private javax.swing.JPanel footerBlend;
     private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel10;
+    private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel14;
     private javax.swing.JLabel jLabel2;
@@ -3832,7 +3589,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
-    private javax.swing.JLabel jLabel9;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPanel jPanel1;
@@ -3899,6 +3655,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JLabel lblSilosOpen4;
     private javax.swing.JLabel lblWifiDesc;
     private javax.swing.JTable tbBlend;
+    private javax.swing.JLabel tbBlendTitulo;
     private javax.swing.JTextField txtBlendMetaGrao;
     private javax.swing.JTextField txtBlendMetaMoido;
     private javax.swing.JTextField txtBlendPesq;
