@@ -2,9 +2,15 @@ package br.com.blend.telas;
 
 import br.com.blend.dal.ModuloConexao;
 import br.com.blend.dal.ModuloConexaoNuvem;
+import static br.com.blend.telas.TelaPrincipal.conexaoURL;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Timer;
+import java.util.TimerTask;
 import javax.swing.JOptionPane;
 
 
@@ -16,8 +22,18 @@ public class TelaLotes extends javax.swing.JFrame {
     PreparedStatement pstNuvem = null;
     ResultSet rsNuvem = null;
     
-    //Variaveis de lote
+    //Variaveis de timer(loop)
+    final private Timer timer = new Timer();
+    private TimerTask timer_internet;
+    int tempo_internet = (1000);
     
+    
+    //Variáveis de internet
+    static URL conexaoURL;
+    static URLConnection conn;
+    boolean temos_internet = false;
+    
+    //Variaveis de lote
     String num_lote;
     String nome_lote;
     String tipo_cafe;
@@ -27,8 +43,59 @@ public class TelaLotes extends javax.swing.JFrame {
     public TelaLotes() {
         initComponents();
         conexao = ModuloConexao.conector();
+        
+        //Loops de checagem
+        checa_conexao_internet();
+        
     }
     
+    
+    //Metodo para checar se há internet
+    public boolean testa_url(String endereco) {
+        try {
+            conexaoURL = new URL(endereco);
+            conn = conexaoURL.openConnection();
+            conn.setConnectTimeout(1000);
+            conn.connect();
+            temos_internet = true;
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    //Loop para testar conexao com internet
+    private void checa_conexao_internet(){
+        if (timer_internet != null) {
+            return;
+        }
+        timer_internet = new TimerTask() {
+            @Override
+            public void run() {
+                //Checa conexao com INTERNET
+                if(testa_url("http://192.169.80.2")){
+                    temos_internet = true;
+                }
+                
+                else if(!testa_url("http://192.169.80.2")){
+                    temos_internet = false;
+                }
+            }};
+        timer.scheduleAtFixedRate(timer_internet, 1, tempo_internet);
+    }
+    
+    //Salva no banco que há novo lote disponível, para depois notificar o usuário e sincronizar
+    private void set_novo_lote_1(){
+        String sql = "update tb_lote_atual set novo_lote = 1";
+        
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao setar novo lote para 1");
+            System.out.println(e);
+        }
+    }
     
     private void novo_lote(){
         String sql = "insert into tb_lotes(nome_lote, num_lote, tipo_cafe, obs) values(?, ?, ?, ?)";
@@ -39,8 +106,6 @@ public class TelaLotes extends javax.swing.JFrame {
             tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
             obs = txtObservacao.getText();
             
-            
-            
            if((nome_lote.isEmpty() || num_lote.isEmpty())){
                 JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
             }
@@ -50,7 +115,7 @@ public class TelaLotes extends javax.swing.JFrame {
             else if(tipo_cafe == "TIPO DO CAFÉ..."){
                 JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
             }
-            else{ 
+            else{
                 pst = conexao.prepareStatement(sql);
                 pst.setString(1, nome_lote);
                 pst.setInt(2, Integer.parseInt(num_lote));
@@ -58,6 +123,7 @@ public class TelaLotes extends javax.swing.JFrame {
                 pst.setString(4, obs);
                 
                 int lote_adicionado = pst.executeUpdate();
+                set_novo_lote_1();
                 if(lote_adicionado > 0){
                     JOptionPane.showMessageDialog(null, "Lote cadastrado com sucesso");
                 }
@@ -65,10 +131,12 @@ public class TelaLotes extends javax.swing.JFrame {
                         JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote");
                 }
             }
+           
         } catch (Exception e) {
             System.out.println(e + "Falha ao cadastrar lote");
         }
     }
+    
     
     private void novo_lote_nuvem(){
         String sql = "insert into tb_lotes(nome_lote, num_lote, tipo_cafe, obs) values(?, ?, ?, ?)";
@@ -80,7 +148,6 @@ public class TelaLotes extends javax.swing.JFrame {
             num_lote = txtNumLote.getText();
             tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
             obs = txtObservacao.getText();
-            
             
             
            if((nome_lote.isEmpty() || num_lote.isEmpty())){
@@ -104,13 +171,27 @@ public class TelaLotes extends javax.swing.JFrame {
                     System.out.println("Lote cadastrado na nuvem");
                 }
                 else{
-                        JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote (nuvem)");
+                    JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote (nuvem)");
                 }
             }
         } catch (Exception e) {
             System.out.println(e + "Falha ao cadastrar lote");
         }
     }
+    
+    //Metodo para avisar que precisa sincronizar
+    private void set_sincronizar_1(){
+        String sql = "update tb_modbus set SINCRONIZADO = 1 where id_modbus";
+        
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao alterar variavel sincronizado para 1");
+            System.out.println(e);
+        }
+    }
+    
     
     public static boolean check_float(String text) {
         try {
@@ -120,6 +201,8 @@ public class TelaLotes extends javax.swing.JFrame {
             return false;
         }
     }
+    
+    
     
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -175,8 +258,14 @@ public class TelaLotes extends javax.swing.JFrame {
 
     private void btnLoteNovoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoteNovoActionPerformed
         // Cria novo lote
-        novo_lote();
-        novo_lote_nuvem();
+        if(temos_internet == true){
+            novo_lote();
+            novo_lote_nuvem();
+        }
+        else if(temos_internet == false){
+            novo_lote();
+            set_sincronizar_1();
+        }
     }//GEN-LAST:event_btnLoteNovoActionPerformed
     
     
