@@ -2059,6 +2059,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         try {
             //Reseta combobox antes de preenche-la
             cbBlendLote.removeAllItems();
+            cbBlendLote.addItem("SELECIONE UM LOTE...");
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
             
@@ -2223,7 +2224,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     private void consultar_estoque_silos(){
         String sql = "select qtd_atual from tb_silos";
-        array_silos = new float[5];       
+        array_silos = new float[4];       
         int i = 0;
         try {
             pst = conexao.prepareStatement(sql);
@@ -2231,9 +2232,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
             
             while (rs.next()) {                
                 array_silos[i] = (rs.getFloat(1));
+                System.out.println(array_silos[i]);
                 i++;
             }
-            //System.out.println(array_silos[1]);
+            
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao consultar estoque dos silos");
             System.out.println(e);
@@ -2246,17 +2248,19 @@ public class TelaPrincipal extends javax.swing.JFrame {
         nuvem = ModuloConexaoNuvem.conector();
         
         String sql = "select qtd_atual from tb_silos";
+        //5 pois tem 1 cadastro a mais sem relação com o blend
         array_silos_nuvem = new float[5];       
         int i = 0;
         try {
             pstNuvem = nuvem.prepareStatement(sql);
-            rs = pstNuvem.executeQuery();
+            rsNuvem = pstNuvem.executeQuery();
             
-            while (rs.next()) {                
-                array_silos_nuvem[i] = (rs.getFloat(1));
+            while (rsNuvem.next()) {                
+                array_silos_nuvem[i] = (rsNuvem.getFloat(1));
+                System.out.println(array_silos_nuvem[i]);
                 i++;
             }
-            //System.out.println(array_silos[1]);
+            
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao consultar estoque dos silos da nuvem");
@@ -2271,7 +2275,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         float value = 0;
         for (int i = 0; i <= 3; i++) {
             try {
-                value = array_silos[i];
+                //value = array_silos[i];
                 pst = conexao.prepareStatement(sql);
                 
                 pst.setFloat(1, array_silos[i] - qtd_silos[i]);
@@ -2335,10 +2339,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
           
           try {
             pstNuvem = nuvem.prepareStatement(sql);
-            rs = pstNuvem.executeQuery();
+            rsNuvem = pstNuvem.executeQuery();
             
-            if(rs.next()){
-                Qtd_estoque = rs.getFloat(1);
+            if(rsNuvem.next()){
+                Qtd_estoque = rsNuvem.getFloat(1);
             }
             else{
                 return;
@@ -2375,10 +2379,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
           
           try {
             pstNuvem = nuvem.prepareStatement(sql);
-            rs = pstNuvem.executeQuery();
+            rsNuvem = pstNuvem.executeQuery();
             
-            if(rs.next()){
-                Qtd_estoque_moido = rs.getFloat(1);
+            if(rsNuvem.next()){
+                Qtd_estoque_moido = rsNuvem.getFloat(1);
             }
             else{
                 return;
@@ -2628,7 +2632,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         else if(blendador_ligado == 0){
             JOptionPane.showMessageDialog(null, "Inicie um ciclo para enviar dados!");
         }
-        else if(cbBlendLote.getSelectedIndex() < 0){
+        else if(cbBlendLote.getSelectedIndex() == 0){
             JOptionPane.showMessageDialog(null, "Selecione um lote!");
         }
         else{
@@ -2642,7 +2646,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             // 2.1 - Gera uma quantidade total de café
             QtdTotal = Float.parseFloat(cafe_silo1) + Float.parseFloat(cafe_silo2) + Float.parseFloat(cafe_silo3) + Float.parseFloat(cafe_silo4);
             // Gera um array com as quantidades individuais de cada silo
-            float []qtd_silos = {Float.parseFloat(cafe_silo1), Float.parseFloat(cafe_silo2), Float.parseFloat(cafe_silo3), Float.parseFloat(cafe_silo4)};           
+            float []qtd_silos = new float[]{Float.parseFloat(cafe_silo1), Float.parseFloat(cafe_silo2), Float.parseFloat(cafe_silo3), Float.parseFloat(cafe_silo4)};           
             
             //2.2 - Gera preços totais do cafe usado no blend
             //passa array de quantidades para metodo de gerar preço
@@ -2697,6 +2701,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     caixa_mensagens.insertString(caixa_mensagens.getLength(), "Dados enviados com sucesso!" , cor_novo_processo);
                     //System.out.println(ValorCru+"e"+ValorTorrado);
                     JOptionPane.showMessageDialog(null, "Dados enviados com sucesso!");
+                    System.out.println("Dados enviados com sucesso!");
                 }
             }
             
@@ -2836,6 +2841,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendNewMeta = new javax.swing.JButton();
         btnBlendManual = new javax.swing.JButton();
         btnBlendLimpar = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
         jPanel11 = new javax.swing.JPanel();
         jPanel15 = new javax.swing.JPanel();
         jPanel18 = new javax.swing.JPanel();
@@ -3405,6 +3411,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
             }
         });
         jPanel3.add(btnBlendLimpar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 130, 90, 90));
+
+        jButton2.setText("TESTE");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+        jPanel3.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 250, -1, -1));
 
         getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 90, 240, 640));
 
@@ -4320,6 +4334,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btnBlendLimparActionPerformed
 
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        // TESTES FUNDO DO POÇO
+        consultar_estoque_silos_nuvem();
+    }//GEN-LAST:event_jButton2ActionPerformed
+
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -4354,6 +4373,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> cbBlendOperacao;
     private javax.swing.JPanel footerBlend;
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
