@@ -51,6 +51,7 @@ import net.proteanit.sql.DbUtils;
 
 public class TelaPrincipal extends javax.swing.JFrame {
     
+    //Variáveis de conexao para operações com banco
     Connection conexao = null;
     Connection nuvem = null;
     PreparedStatement pst = null;
@@ -63,6 +64,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     int POWER = 0;
     boolean blendando = false, terminou_blendar = false, novo_blend;
     int blendador_ligado = 0;
+    
     boolean inseriu_msg_blnd1 = false, inseriu_msg_blnd2 = true;
     boolean inseriu_blendando1 = false, inseriu_blendando2 = false;
     boolean inseriu_msg_msx1 = false, inseriu_msg_msx2 = true;
@@ -94,7 +96,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     int sincronizado = 0;
     String id_atual, nome_atual, qtds1_atual, qtds2_atual, qtds3_atual, qtds4_atual, operation;
     
-    //sincrnonizar estoque silos
+    //sincrnonizar estoque silos (apagar, não utilizado)
     float []array_silos_sinc;
     
     
@@ -108,17 +110,24 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     //Variaveis Lote
     int lote_disponivel = 0;
+    //Array list pois mais lotes serão criados, sem tamanho fixo
+    ArrayList<Float> qtd_torrado = new ArrayList<Float>();
     
     //Variaveis Estoque | Silos | Processos manuais
     float Qtd_estoque_s1 = 0, Qtd_estoque_s2 = 0, Qtd_estoque_s3 = 0, Qtd_estoque_s4 = 0;
     float Qtd_estoque = 0, Qtd_estoque_moido = 0, Qtd_estoque_att = 0;
-    float []array_silos, array_silos_nuvem;
+    float []array_silos = null, array_silos_nuvem = null;
     String cafe_silo1, cafe_silo2, cafe_silo3, cafe_silo4;
     boolean silo_1_abriu, silo_1_fechou, silo_2_abriu, silo_2_fechou, silo_3_abriu, silo_3_fechou, silo_4_abriu, silo_4_fechou;
+    //Principal
+    float []qtd_silos = null;
     boolean gerou_blend_manual = false;
     int silo1, silo2, silo3, silo4;
     float []preco_kg_cru, preco_kg_torrado;
     float preco_total_cru = 0, preco_total_torrado = 0;
+    //Caso de erro ao atualizar estoque
+    boolean falha_estq_silo = false;
+    
     
     //Variáveis para balança
     int [] peso, pesof;
@@ -132,7 +141,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     String nome_blend, nome_cafe1, nome_cafe2, nome_cafe3, nome_cafe4, operacao;
     float qtd_cafe1 = 0, qtd_cafe2 = 0, qtd_cafe3 = 0, qtd_cafe4 = 0, qtd_total = 0, valor_cafe_cru = 0, valor_cafe_torrado = 0, valor_total = 0, lote_registro = 0;
     
-    //Variaveis status (Caixa mensagens)
+    //Variaveis de status (Caixa mensagens)
     StyledDocument caixa_mensagens;
     SimpleAttributeSet cor_mensagem_erro = new SimpleAttributeSet();
     SimpleAttributeSet cor_tentando_conectar = new SimpleAttributeSet();
@@ -157,7 +166,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     ModbusMaster m = ModbusMasterFactory.createModbusMasterTCP(tcpParameters);
     ModbusSlave slave = ModbusSlaveFactory.createModbusSlaveTCP(tcpParameters);
     
-    //Variaveis timer
+    //Variaveis de timer task
     final private Timer timer = new Timer();
     private TimerTask timer_clp, timer_internet, timer_blendador, timer_sincronizar, timer_blendando, timer_operacao, timer_lote, timer_mexedor, timer_elevador, timer_modo_blendador, timer_nuvem;
     int tempo_clp = (1000), tempo_internet = (1000), tempo_blendador = (1000), tempo_sincronizar = (1000), tempo_blendando = (1000), tempo_operacao = (500), tempo_lote = (2000), tempo_mexedor = (1000), tempo_elevador = (1000), tempo_modo_blendador=(1000), tempo_nuvem = (5000);
@@ -178,7 +187,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         //Busca lotes cadastrados e os coloca na Combo box
         set_lotes();
         
-        //Block Campos
+        //Bloqueia Campos
         block_campos();
 
         // Consulta banco para pegar variaveis do ModBus
@@ -192,7 +201,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         //Checa se dados estão sincronizados
         check_sincronizar();
         
-        //Checa se existe algum blend
+        //Checa se existe algum blend (PARA CASO NAO TENHA BLEND CADASTRADO)
         check_blend();
         
         //Loops de checagem
@@ -301,6 +310,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
+    //Metodo principal de checagem de internets
     private void checa_conexao_internet(){
         if (timer_internet != null) {
             return;
@@ -324,7 +334,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     lblWifiDesc.setVisible(true);
                 }
                 
-                //Cancela as operações de editar e deletar caso internet caia no meio do processo
+                //Cancela as operações de editar e deletar caso internet caia no meio do processo (deprecated)
                 if(temos_internet == false && Metodo == "editar"){
                     Metodo = null;
                     block_campos();
@@ -334,7 +344,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         timer.scheduleAtFixedRate(timer_internet, 1, tempo_internet);
     }
     
-    //Checa se conexao com banco ainda está aberta
+    //Checa se conexao com banco ainda está aberta (em progresso)
     private void checa_conexao_nuvem(){
         try {
             if(consulta_nuvem()){
@@ -454,7 +464,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
-    //Checa modo blendador
+    //Checa modo blendador (MANUAL | AUTOMATICO)
     private void checa_modo_blendador(){
         if (timer_modo_blendador != null) {
             return;
@@ -505,7 +515,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         };timer.scheduleAtFixedRate(timer_modo_blendador, 1, tempo_modo_blendador);
     }
     
-    //Checa status mexedor
+    //Checa status mexedor (ON | OFF)
     private void checa_status_mexedor(){
         if (timer_mexedor != null) {
             return;
@@ -554,7 +564,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
-    //Checa status elevador
+    //Checa status elevador (ON | OFF)
     private void checa_status_elevador(){
         if (timer_elevador != null) {
             return;
@@ -803,7 +813,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     //MUITO IMPORTANTE, recebe dados para gerar relatório após blend manual
     private void gerar_registro_manual(float qtd_cafe1, float qtd_cafe2, float qtd_cafe3, float qtd_cafe4, float qtd_cafe_total){
-        String sql = "insert into tb_blend_registros (nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "insert into tb_blend_registros (nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, (select cafe_atual from tb_silos where id_silo = 1), ?, (select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, ?, ?, ?, ?, ?)";
         
         float []array_qtd_cafe = {qtd_cafe1, qtd_cafe2, qtd_cafe3, qtd_cafe4};
         float valor_total = 0;
@@ -814,6 +824,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
             qtd_cafe_total = 0;
             qtd_cafe_total = qtd_cafe1 + qtd_cafe2 + qtd_cafe3 + qtd_cafe4;
             
+            
+            //Atualizar qtd_torrado do lote utilizado
+            atualizar_qtd_torrado_lote(qtd_cafe_total);
+            
             //Chamando função que gera preço do cru, passando parametros diferentes
             gerar_preco_cru(array_qtd_cafe);
             gerar_preco_torrado(array_qtd_cafe);
@@ -823,20 +837,16 @@ public class TelaPrincipal extends javax.swing.JFrame {
             pst = conexao.prepareStatement(sql);
             
             pst.setString(1, "Blend Manual");
-            pst.setString(2, "1");
-            pst.setFloat(3, qtd_cafe1);
-            pst.setString(4, "2");
-            pst.setFloat(5, qtd_cafe2);
-            pst.setString(6, "3");
-            pst.setFloat(7, qtd_cafe3);
-            pst.setString(8, "4");
-            pst.setFloat(9, qtd_cafe4);
-            pst.setString(10, "Operation");
-            pst.setFloat(11, qtd_cafe_total);
-            pst.setFloat(12, ValorCru);
-            pst.setFloat(13, ValorTorrado);
-            pst.setFloat(14, valor_total);
-            pst.setFloat(15, lote);
+            pst.setFloat(2, qtd_cafe1);
+            pst.setFloat(3, qtd_cafe2);
+            pst.setFloat(4, qtd_cafe3);
+            pst.setFloat(5, qtd_cafe4);
+            pst.setString(6, "Manual");
+            pst.setFloat(7, qtd_cafe_total);
+            pst.setFloat(8, ValorCru);
+            pst.setFloat(9, ValorTorrado);
+            pst.setFloat(10, valor_total);
+            pst.setFloat(11, lote);
             
             pst.executeUpdate();
             
@@ -850,7 +860,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     private void gerar_registro_manual_nuvem(float qtd_cafe1, float qtd_cafe2, float qtd_cafe3, float qtd_cafe4, float qtd_cafe_total){
-        String sql = "insert into tb_blend_registros (nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "insert into tb_blend_registros (nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, (select cafe_atual from tb_silos where id_silo = 1), ?, (select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, ?, ?, ?, ?, ?)";
         
         float []array_qtd_cafe = {qtd_cafe1, qtd_cafe2, qtd_cafe3, qtd_cafe4};
         float valor_total = 0;
@@ -863,6 +873,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
             qtd_cafe_total = 0;
             qtd_cafe_total = qtd_cafe1 + qtd_cafe2 + qtd_cafe3 + qtd_cafe4;
             
+            //Atualizando qtd_torrado de lotes(nuvem)
+            atualizar_qtd_torrado_lote_nuvem(qtd_cafe_total);
+            
+            
             //Chamando função que gera preço do cru, passando parametros diferentes
             gerar_preco_cru(array_qtd_cafe);
             gerar_preco_torrado(array_qtd_cafe);
@@ -872,20 +886,16 @@ public class TelaPrincipal extends javax.swing.JFrame {
             pstNuvem = nuvem.prepareStatement(sql);
             
             pstNuvem.setString(1, "Blend Manual");
-            pstNuvem.setString(2, "1");
-            pstNuvem.setFloat(3, qtd_cafe1);
-            pstNuvem.setString(4, "2");
-            pstNuvem.setFloat(5, qtd_cafe2);
-            pstNuvem.setString(6, "3");
-            pstNuvem.setFloat(7, qtd_cafe3);
-            pstNuvem.setString(8, "4");
-            pstNuvem.setFloat(9, qtd_cafe4);
-            pstNuvem.setString(10, "Manual");
-            pstNuvem.setFloat(11, qtd_cafe_total);
-            pstNuvem.setFloat(12, ValorCru);
-            pstNuvem.setFloat(13, ValorTorrado);
-            pstNuvem.setFloat(14, valor_total);
-            pstNuvem.setFloat(15, lote);
+            pstNuvem.setFloat(2, qtd_cafe1);
+            pstNuvem.setFloat(3, qtd_cafe2);
+            pstNuvem.setFloat(4, qtd_cafe3);
+            pstNuvem.setFloat(5, qtd_cafe4);
+            pstNuvem.setString(6, "Manual");
+            pstNuvem.setFloat(7, qtd_cafe_total);
+            pstNuvem.setFloat(8, ValorCru);
+            pstNuvem.setFloat(9, ValorTorrado);
+            pstNuvem.setFloat(10, valor_total);
+            pstNuvem.setFloat(11, lote);
             
             pstNuvem.executeUpdate();
             
@@ -902,13 +912,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void reset_variaveis_registro(){
         //Quantidades
         qtd_cafe1 = 0; qtd_cafe2 = 0; qtd_cafe3 = 0; qtd_cafe4 = 0;
-        
         //Variaveis de controle
         gerou_blend_manual = false;
     }
     
     
-    
+    //Checa se novo lote foi criado
     private boolean lote_disponivel(){
         String sql = "select novo_lote from tb_lote_atual";
         
@@ -952,6 +961,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
+    //Executado após o cadastro/sincronização, para notificar que nao há novos lotes
     private void set_novo_lote_0(){
         String sql = "update tb_lote_atual set novo_lote = 0";
         
@@ -991,7 +1001,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private void atualiza_silo_manual_nuvem(float peso, int id_silo){
-        //Atualiza estoque de silo após criar blend manual
+        //Atualiza estoque de silo após criar blend manual (nuvem)
         consultar_estoque_silos();
         String sql_nuvem = "update tb_silos set qtd_atual=? where id_silo=?";
         try {
@@ -1376,6 +1386,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             consultar_estoque_silos();
             consultar_estoque_grao();
             consultar_estoque_moido();
+            consultar_qtd_torrado_lotes();
             ultimo_registro_nuvem();
             sincronizar_blend_local();
             sincronizar_estoque_silos();
@@ -1384,6 +1395,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             sincronizar_blend_atual();
             sincronizar_registros();
             sincronizar_lotes();
+            sincronizar_qtd_torrado_lotes();
             sincronizar_status_blendador();
             caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nDados sincronizados! " , cor_sincronizar);
         } catch (Exception e) {
@@ -1550,6 +1562,48 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
+    private void consultar_qtd_torrado_lotes(){
+        String sql = "select qtd_torrado from tb_lotes";
+        try {
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
+            
+            qtd_torrado.clear();
+            while(rs.next()){
+                qtd_torrado.add(rs.getFloat(1));
+            }
+            
+            //System.out.println(qtd_torrado);
+        } catch (Exception e) {
+            System.out.println("Falha ao consultar qtd_torrado em lotes");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void sincronizar_qtd_torrado_lotes(){
+        String sql = "update tb_lotes set qtd_torrado = ? where id_lote=?";
+        //Criando array baseado em tamanho da lista (convertendo lista para array)
+        Float []array_qtd_torrado = qtd_torrado.toArray(new Float[0]);
+        int tamanho = array_qtd_torrado.length;
+        
+        //Tamanho -1 pois após conversão, a lista gera 1 indice a mais
+        for(int i=0; i<= (tamanho -1); i++){
+            try {
+                nuvem = ModuloConexaoNuvem.conector();
+                pstNuvem = nuvem.prepareStatement(sql);
+                
+                pstNuvem.setFloat(1, array_qtd_torrado[i]);
+                pstNuvem.setInt(2, i+1);
+
+                pstNuvem.executeUpdate();
+            } catch (Exception e) {
+                System.out.println("Falha ao sincronizar qtd_torrado em lotes (nuvem)"+e);
+            }
+        }
+    }
+    
+    
     private void sincronizar_status_blendador(){
         if(temos_internet == true){
             nuvem = ModuloConexaoNuvem.conector();
@@ -1664,7 +1718,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         nuvem = ModuloConexaoNuvem.conector();
         
         String sql = "select * from tb_blend_registros where id_registro > ?";
-        String sql_insert_nuvem = "insert into tb_blend_registros(nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, data, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, 1, ?, 2, ?, 3, ?, 4, ?, ?, ?, ?, ?, ?, ?,? )";
+        String sql_insert_nuvem = "insert into tb_blend_registros(nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, data, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, (select cafe_atual from tb_silos where id_silo = 1), ?, (select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, ?, ?, ?, ?, ?,? )";
         try {
             //Pega dados salvos apenas localmente
             pst = conexao.prepareStatement(sql);
@@ -2094,6 +2148,44 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
+    //Faz a mesma coisa que o método de cima, porém para a núvem
+    private void atualizar_qtd_torrado_lote_nuvem(float QtdTotal){
+        String sql = "update tb_lotes set qtd_torrado = (select qtd_torrado + ?) where nome_lote = ?";
+        
+        try {
+            String selected = cbBlendLote.getSelectedItem().toString();
+            
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.setFloat(1, QtdTotal);
+            pstNuvem.setString(2, selected);
+            pstNuvem.executeUpdate();
+            System.out.println("ATUALIZADO TORRADO NUVEM");
+        } catch (Exception e) {
+            System.out.println("Falha ao atualizar qtd_torrado em lotes (nuvem)");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void set_lote_atual_nuvem(){
+        String selected = cbBlendLote.getSelectedItem().toString();
+        
+        //Atualiza lote baseando-se no nome do lote selecionado na combobox
+        String sql = "update tb_lote_atual set num_lote_atual = (select num_lote from tb_lotes where nome_lote = ?), nome_lote_atual = ? where id_lote_atual";
+        
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.setString(1, selected);
+            pstNuvem.setString(2, selected);
+            pstNuvem.executeUpdate();
+            
+        } catch (Exception e) {
+            System.out.println("Falha ao atualizar Lote Atual");
+            System.out.println(e);
+        }
+    }
+    
+    
     private void set_lote_atual(){
         String selected = cbBlendLote.getSelectedItem().toString();
         
@@ -2133,7 +2225,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void salvar_registro_blend(float QtdTotal, float ValorTotalCru, float ValorTotalTorrado){
         consultar_lote_atual();
         
-        String sql="insert into tb_blend_registros( nome_blend, nome_Cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, 1 , ?, 2, ?, 3, ?, 4, ?, ?, "+QtdTotal+", "+ValorTotalCru+", "+ValorTotalTorrado+", ?, ?)";
+        String sql="insert into tb_blend_registros( nome_blend, nome_Cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, (select cafe_atual from tb_silos where id_silo = 1) , ?, (select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, "+QtdTotal+", "+ValorTotalCru+", "+ValorTotalTorrado+", ?, ?)";
         
         ValorTotal = 0;
         
@@ -2232,9 +2324,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
             
             while (rs.next()) {                
                 array_silos[i] = (rs.getFloat(1));
-                System.out.println(array_silos[i]);
+                //System.out.println(array_silos[i]);
                 i++;
             }
+            System.out.println("Estoque dos silos consultado!");
+            
             
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao consultar estoque dos silos");
@@ -2257,11 +2351,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
             
             while (rsNuvem.next()) {                
                 array_silos_nuvem[i] = (rsNuvem.getFloat(1));
-                System.out.println(array_silos_nuvem[i]);
+                //System.out.println(array_silos_nuvem[i]);
                 i++;
             }
             
-
+            System.out.println("Estoque dos silos consultado!(nuvem)");
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao consultar estoque dos silos da nuvem");
             System.out.println(e);
@@ -2270,7 +2364,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private void atualizar_estoque_silos(float[] qtd_silos){
-        consultar_estoque_silos();
+        //consultar_estoque_silos();
         String sql = "update tb_silos set qtd_atual=? where id_silo=?";
         float value = 0;
         for (int i = 0; i <= 3; i++) {
@@ -2278,13 +2372,25 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 //value = array_silos[i];
                 pst = conexao.prepareStatement(sql);
                 
-                pst.setFloat(1, array_silos[i] - qtd_silos[i]);
-                pst.setInt(2, i + 1);
+                try {
+                    pst.setFloat(1, array_silos[i] - qtd_silos[i]);
+                    System.out.println("Primeiro parametro: ");
+                    System.out.println(array_silos[i] - qtd_silos[i]);
+                    pst.setInt(2, i + 1);
+                    System.out.println("Segundo parametro:");
+                    System.out.println(i+1); 
+                    pst.executeUpdate();
+                } catch (Exception e) {
+                    falha_estq_silo = true;
+                    System.out.println("ERRO RUIM"+e);
+                }
                 
-                //System.out.println(value);
-                pst.executeUpdate();
+                
+                System.out.println("Estoque dos silos atualizado");
+                //java.sql.SQLException: Parameter index out of range (2 > number of parameters, which is 0).
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque dos silos");
+                falha_estq_silo = true;
                 System.out.println(e);         
             }
         }
@@ -2302,12 +2408,17 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 pstNuvem = nuvem.prepareStatement(sql);
                 
                 pstNuvem.setFloat(1, array_silos_nuvem[i] - qtd_silos[i]);
+                System.out.println("Primeiro parametro (nuvem): ");
+                System.out.println(array_silos_nuvem[i] - qtd_silos[i]);
                 pstNuvem.setInt(2, i + 1);
+                System.out.println("Segundo parametro (nuvem): ");
+                System.out.println(i+1);
                 
-                //System.out.println(value);
+                System.out.println("Estoque dos silos atualizado (nuvem)");
                 pstNuvem.executeUpdate();
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque dos silos (nuvem)");
+                falha_estq_silo = true;
                 System.out.println(e);         
             }
         }
@@ -2585,7 +2696,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 soma_preco_cru += preco_total_cru[i];
             }
             ValorCru = soma_preco_cru;
-            //System.out.println("Preço total do café crú usado no blend: "+soma_preco_cru);
+            System.out.println("2 - Preço total do café crú usado no blend: "+soma_preco_cru);
             
         } catch (Exception e) {
             System.out.println("Erro ao gerar preco total do cru no blend "+ e);
@@ -2607,7 +2718,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 soma_preco_torrado += preco_total_torrado[i];
             }
             ValorTorrado = soma_preco_torrado;
-            //System.out.println("Preço total do café torrado usado no blend: "+soma_preco_torrado);
+            System.out.println("1 - Preço total do café torrado usado no blend: "+soma_preco_torrado);
             
         } catch (Exception e) {
             System.out.println("Erro ao gerar preco total do torrado no blend "+ e);
@@ -2646,7 +2757,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
             // 2.1 - Gera uma quantidade total de café
             QtdTotal = Float.parseFloat(cafe_silo1) + Float.parseFloat(cafe_silo2) + Float.parseFloat(cafe_silo3) + Float.parseFloat(cafe_silo4);
             // Gera um array com as quantidades individuais de cada silo
-            float []qtd_silos = new float[]{Float.parseFloat(cafe_silo1), Float.parseFloat(cafe_silo2), Float.parseFloat(cafe_silo3), Float.parseFloat(cafe_silo4)};           
+            qtd_silos = null;
+            qtd_silos = new float[]{Float.parseFloat(cafe_silo1), Float.parseFloat(cafe_silo2), Float.parseFloat(cafe_silo3), Float.parseFloat(cafe_silo4)};           
             
             //2.2 - Gera preços totais do cafe usado no blend
             //passa array de quantidades para metodo de gerar preço
@@ -2663,45 +2775,55 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     // 4 - Retira quantidades do estoque
                     atualizar_estoque_silos(qtd_silos);
                     atualizar_estoque_silos_nuvem(qtd_silos);
+                    
+                    
+                    //Fix temporário para erro desconhecido (falha att estq silos)
+                    if(falha_estq_silo == false){
+                        // 5.1 - Seta blend atual (local e/ou nuvem)
+                        set_blend_atual();
+                        set_blend_atual_nuvem();
 
-                    // 5.1 - Seta blend atual (local e/ou nuvem)
-                    set_blend_atual();
-                    set_blend_atual_nuvem();
-                    
-                    // 5.2 - Atualiza qtd_torrado em lotes (soma quantidades)
-                    atualizar_qtd_torrado_lote(QtdTotal);
-                    
-                    // 5.3 - Atualiza lote atual por aquele selecionado pelo usuario
-                    set_lote_atual();
-                    
-                    //6 - Salva dados do blend em registro
-                    salvar_registro_blend(QtdTotal, ValorCru, ValorTorrado);
-                    salvar_registro_bend_nuvem(QtdTotal, ValorCru, ValorTorrado);
+                        // 5.2 - Atualiza qtd_torrado em lotes (soma quantidades)
+                        atualizar_qtd_torrado_lote(QtdTotal);
+                        atualizar_qtd_torrado_lote_nuvem(QtdTotal);
 
-                    //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
-                    if(cbBlendOperacao.getSelectedIndex() == 1){
-                        atualizar_estoque_moido(QtdTotal);
-                        atualizar_estoque_moido_nuvem(QtdTotal);
-                        m.writeSingleRegister(escravo, 47, 0);
+                        // 5.3 - Atualiza lote atual por aquele selecionado pelo usuario
+                        set_lote_atual();
+                        set_lote_atual_nuvem();
+
+                        //6 - Salva dados do blend em registro
+                        salvar_registro_blend(QtdTotal, ValorCru, ValorTorrado);
+                        salvar_registro_bend_nuvem(QtdTotal, ValorCru, ValorTorrado);
+
+                        //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
+                        if(cbBlendOperacao.getSelectedIndex() == 1){
+                            atualizar_estoque_moido(QtdTotal);
+                            atualizar_estoque_moido_nuvem(QtdTotal);
+                            m.writeSingleRegister(escravo, 47, 0);
+                        }
+                        else if(cbBlendOperacao.getSelectedIndex() == 2){
+                            atualizar_estoque_grao(QtdTotal);
+                            atualizar_estoque_grao_nuvem(QtdTotal);
+                            m.writeSingleRegister(escravo, 47, 1);
+                        }
+
+
+                        //4 - Envia dados do blend para PLC
+                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_1), Math.round(Float.parseFloat(cafe_silo1)*10));
+                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_2), Math.round(Float.parseFloat(cafe_silo2)*10));
+                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_3), Math.round(Float.parseFloat(cafe_silo3)*10));
+                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_4), Math.round(Float.parseFloat(cafe_silo4)*10));
+
+                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "Dados enviados com sucesso!" , cor_novo_processo);
+                        //System.out.println(ValorCru+"e"+ValorTorrado);
+                        JOptionPane.showMessageDialog(null, "Dados enviados com sucesso!");
+                        System.out.println("Dados enviados com sucesso!");
                     }
-                    else if(cbBlendOperacao.getSelectedIndex() == 2){
-                        atualizar_estoque_grao(QtdTotal);
-                        atualizar_estoque_grao_nuvem(QtdTotal);
-                        m.writeSingleRegister(escravo, 47, 1);
+                    else{
+                        JOptionPane.showMessageDialog(null, "Falha ao enviar dados! Tente novamente!");
+                        falha_estq_silo = false;
                     }
                     
-                    
-
-                    //4 - Envia dados do blend para PLC
-                    m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_1), Math.round(Float.parseFloat(cafe_silo1)*10));
-                    m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_2), Math.round(Float.parseFloat(cafe_silo2)*10));
-                    m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_3), Math.round(Float.parseFloat(cafe_silo3)*10));
-                    m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_4), Math.round(Float.parseFloat(cafe_silo4)*10));
-
-                    caixa_mensagens.insertString(caixa_mensagens.getLength(), "Dados enviados com sucesso!" , cor_novo_processo);
-                    //System.out.println(ValorCru+"e"+ValorTorrado);
-                    JOptionPane.showMessageDialog(null, "Dados enviados com sucesso!");
-                    System.out.println("Dados enviados com sucesso!");
                 }
             }
             
@@ -2719,32 +2841,45 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 else if(checa_silos(qtd_silos) == true){
                     // 4 - Retira quantidades do estoque
                     atualizar_estoque_silos(qtd_silos);
+                    
+                    if(falha_estq_silo == false){
+                        // 5.1 - Seta blend atual (local e/ou nuvem)
+                        set_blend_atual();
 
-                    // 5 - Seta blend atual (local e/ou nuvem)
-                    set_blend_atual();
+                        //5.2 - Atualiza qtd de torrado em lote
+                        atualizar_qtd_torrado_lote(QtdTotal);
 
-                    //6 - Salva dados do blend em registro
-                    salvar_registro_blend(QtdTotal ,ValorCru, ValorTorrado);
+                        //5.3 - Atualiza lote atual por aquele selecionado pelo usuario
+                        set_lote_atual();
 
-                    //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
-                    if(cbBlendOperacao.getSelectedIndex() == 1){
-                        atualizar_estoque_moido(QtdTotal);
-                        m.writeSingleRegister(escravo, 47, 0);
+
+                        //6 - Salva dados do blend em registro
+                        salvar_registro_blend(QtdTotal ,ValorCru, ValorTorrado);
+
+                        //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
+                        if(cbBlendOperacao.getSelectedIndex() == 1){
+                            atualizar_estoque_moido(QtdTotal);
+                            m.writeSingleRegister(escravo, 47, 0);
+                        }
+                        else if(cbBlendOperacao.getSelectedIndex() == 2){
+                            atualizar_estoque_grao(QtdTotal);
+                            m.writeSingleRegister(escravo, 47, 1);
+                        }
+
+                        //4 - Envia dados do blend para PLC
+                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_1), Math.round(Float.parseFloat(cafe_silo1)*10));
+                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_2), Math.round(Float.parseFloat(cafe_silo2)*10));
+                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_3), Math.round(Float.parseFloat(cafe_silo3)*10));
+                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_4), Math.round(Float.parseFloat(cafe_silo4)*10));
+
+                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "Dados enviados com sucesso!" , cor_novo_processo);
+                        JOptionPane.showMessageDialog(null, "Dados enviados com sucesso!");
                     }
-                    else if(cbBlendOperacao.getSelectedIndex() == 2){
-                        atualizar_estoque_grao(QtdTotal);
-                        m.writeSingleRegister(escravo, 47, 1);
+                    else{
+                        JOptionPane.showMessageDialog(null, "Falha ao enviar dados! Tente novamente");
                     }
-
-                    //4 - Envia dados do blend para PLC
-                    m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_1), Math.round(Float.parseFloat(cafe_silo1)*10));
-                    m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_2), Math.round(Float.parseFloat(cafe_silo2)*10));
-                    m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_3), Math.round(Float.parseFloat(cafe_silo3)*10));
-                    m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_4), Math.round(Float.parseFloat(cafe_silo4)*10));
-
-                    caixa_mensagens.insertString(caixa_mensagens.getLength(), "Dados enviados com sucesso!" , cor_novo_processo);
-                    JOptionPane.showMessageDialog(null, "Dados enviados com sucesso!");
                 }
+                    
             }
             
           
@@ -2820,14 +2955,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel47 = new javax.swing.JPanel();
         jPanel48 = new javax.swing.JPanel();
         jPanel49 = new javax.swing.JPanel();
-        btnBlendPower = new javax.swing.JButton();
         jPanel6 = new javax.swing.JPanel();
         jPanel8 = new javax.swing.JPanel();
         jPanel9 = new javax.swing.JPanel();
         jPanel10 = new javax.swing.JPanel();
         btnLotes = new javax.swing.JButton();
-        btnBlendElevador = new javax.swing.JButton();
-        btnBlendMexedor = new javax.swing.JButton();
         lblNomeBlend = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         lblBlendHeader = new javax.swing.JLabel();
@@ -2841,7 +2973,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendNewMeta = new javax.swing.JButton();
         btnBlendManual = new javax.swing.JButton();
         btnBlendLimpar = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
         jPanel11 = new javax.swing.JPanel();
         jPanel15 = new javax.swing.JPanel();
         jPanel18 = new javax.swing.JPanel();
@@ -2901,8 +3032,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
         footerBlend = new javax.swing.JPanel();
         lblData = new javax.swing.JLabel();
         jPanel42 = new javax.swing.JPanel();
-        cbBlendOperacao = new javax.swing.JComboBox<>();
         btnBlendEnviar = new javax.swing.JButton();
+        cbBlendOperacao = new javax.swing.JComboBox<>();
         btnBlendAtual = new javax.swing.JButton();
         jPanel7 = new javax.swing.JPanel();
         txtBlendMetaGrao = new javax.swing.JTextField();
@@ -2913,6 +3044,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel40 = new javax.swing.JPanel();
         lblBlendPeso = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
+        jPanel50 = new javax.swing.JPanel();
+        jPanel51 = new javax.swing.JPanel();
+        btnBlendMexedor = new javax.swing.JButton();
+        jPanel52 = new javax.swing.JPanel();
+        jPanel53 = new javax.swing.JPanel();
+        btnBlendElevador = new javax.swing.JButton();
+        jPanel12 = new javax.swing.JPanel();
+        btnBlendPower = new javax.swing.JButton();
 
         jMenuItem1.setText("jMenuItem1");
 
@@ -3161,21 +3300,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         jPanel1.add(jPanel46, new org.netbeans.lib.awtextra.AbsoluteConstraints(110, 3, -1, 74));
 
-        btnBlendPower.setBackground(new java.awt.Color(68, 141, 41));
-        btnBlendPower.setFont(new java.awt.Font("Segoe UI", 1, 20)); // NOI18N
-        btnBlendPower.setForeground(new java.awt.Color(255, 255, 255));
-        btnBlendPower.setText("INICIAR");
-        btnBlendPower.setBorderPainted(false);
-        btnBlendPower.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendPower.setFocusPainted(false);
-        btnBlendPower.setPreferredSize(new java.awt.Dimension(97, 73));
-        btnBlendPower.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendPowerActionPerformed(evt);
-            }
-        });
-        jPanel1.add(btnBlendPower, new org.netbeans.lib.awtextra.AbsoluteConstraints(590, 0, 110, -1));
-
         jPanel6.setBackground(new java.awt.Color(255, 255, 255));
         jPanel6.setPreferredSize(new java.awt.Dimension(2, 100));
 
@@ -3276,34 +3400,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
             }
         });
         jPanel1.add(btnLotes, new org.netbeans.lib.awtextra.AbsoluteConstraints(450, 0, 80, 80));
-
-        btnBlendElevador.setBackground(new java.awt.Color(68, 141, 41));
-        btnBlendElevador.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnBlendElevador.setForeground(new java.awt.Color(255, 255, 255));
-        btnBlendElevador.setText("ELEVADOR");
-        btnBlendElevador.setBorderPainted(false);
-        btnBlendElevador.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendElevador.setFocusPainted(false);
-        btnBlendElevador.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendElevadorActionPerformed(evt);
-            }
-        });
-        jPanel1.add(btnBlendElevador, new org.netbeans.lib.awtextra.AbsoluteConstraints(870, 0, -1, 70));
-
-        btnBlendMexedor.setBackground(new java.awt.Color(68, 141, 41));
-        btnBlendMexedor.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnBlendMexedor.setForeground(new java.awt.Color(255, 255, 255));
-        btnBlendMexedor.setText("MEXEDOR");
-        btnBlendMexedor.setBorderPainted(false);
-        btnBlendMexedor.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendMexedor.setFocusPainted(false);
-        btnBlendMexedor.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendMexedorActionPerformed(evt);
-            }
-        });
-        jPanel1.add(btnBlendMexedor, new org.netbeans.lib.awtextra.AbsoluteConstraints(720, 0, -1, 70));
 
         getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1620, 80));
 
@@ -3411,14 +3507,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
             }
         });
         jPanel3.add(btnBlendLimpar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 130, 90, 90));
-
-        jButton2.setText("TESTE");
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
-            }
-        });
-        jPanel3.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 250, -1, -1));
 
         getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 90, 240, 640));
 
@@ -3557,7 +3645,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel4.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 10, 100, -1));
 
-        getContentPane().add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 490, 640, 50));
+        getContentPane().add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 620, 640, 50));
 
         jPanel5.setBackground(new java.awt.Color(72, 126, 176));
         jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3595,7 +3683,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         tbBlendTitulo.setText("RECEITAS CADASTRADAS");
         jPanel5.add(tbBlendTitulo, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
 
-        getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 550, 640, 180));
+        getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 680, 640, 180));
 
         jPanel16.setBackground(new java.awt.Color(72, 126, 176));
         jPanel16.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 1", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3802,11 +3890,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel42.setBackground(new java.awt.Color(25, 42, 86));
         jPanel42.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        cbBlendOperacao.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        cbBlendOperacao.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SELECIONE UMA OPERAÇÃO...", "TRADICIONAL MOÍDO", "GRÃO" }));
-        cbBlendOperacao.setToolTipText("Selecionar operação");
-        jPanel42.add(cbBlendOperacao, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 80, 230, 40));
-
         btnBlendEnviar.setBackground(new java.awt.Color(255, 51, 51));
         btnBlendEnviar.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         btnBlendEnviar.setForeground(new java.awt.Color(255, 255, 255));
@@ -3819,7 +3902,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendEnviarActionPerformed(evt);
             }
         });
-        jPanel42.add(btnBlendEnviar, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 140, 230, 70));
+        jPanel42.add(btnBlendEnviar, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 20, 230, 70));
+
+        cbBlendOperacao.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        cbBlendOperacao.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SELECIONE UMA OPERAÇÃO...", "TRADICIONAL MOÍDO", "GRÃO" }));
+        cbBlendOperacao.setToolTipText("Selecionar operação");
+        jPanel42.add(cbBlendOperacao, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 100, 230, 40));
 
         btnBlendAtual.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendAtual.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
@@ -3831,9 +3919,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendAtualActionPerformed(evt);
             }
         });
-        jPanel42.add(btnBlendAtual, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 20, 230, 40));
+        jPanel42.add(btnBlendAtual, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 150, 230, 40));
 
-        getContentPane().add(jPanel42, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 490, 340, 240));
+        getContentPane().add(jPanel42, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 620, 340, 240));
 
         jPanel7.setBackground(new java.awt.Color(25, 42, 86));
         jPanel7.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3871,6 +3959,75 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel40.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 0, -1, 50));
 
         getContentPane().add(jPanel40, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 90, 270, 50));
+
+        jPanel50.setBackground(new java.awt.Color(72, 126, 176));
+        jPanel50.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "MEXEDOR", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
+        jPanel50.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jPanel51.setBackground(new java.awt.Color(72, 126, 176));
+        jPanel51.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel50.add(jPanel51, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 490, 240, 120));
+
+        btnBlendMexedor.setBackground(new java.awt.Color(68, 141, 41));
+        btnBlendMexedor.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        btnBlendMexedor.setForeground(new java.awt.Color(255, 255, 255));
+        btnBlendMexedor.setText("MEXEDOR");
+        btnBlendMexedor.setBorderPainted(false);
+        btnBlendMexedor.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendMexedor.setFocusPainted(false);
+        btnBlendMexedor.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBlendMexedorActionPerformed(evt);
+            }
+        });
+        jPanel50.add(btnBlendMexedor, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 60, 140, 42));
+
+        getContentPane().add(jPanel50, new org.netbeans.lib.awtextra.AbsoluteConstraints(360, 490, 330, 120));
+
+        jPanel52.setBackground(new java.awt.Color(72, 126, 176));
+        jPanel52.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "ELEVADOR", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
+        jPanel52.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jPanel53.setBackground(new java.awt.Color(72, 126, 176));
+        jPanel53.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel52.add(jPanel53, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 490, 240, 120));
+
+        btnBlendElevador.setBackground(new java.awt.Color(68, 141, 41));
+        btnBlendElevador.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        btnBlendElevador.setForeground(new java.awt.Color(255, 255, 255));
+        btnBlendElevador.setText("ELEVADOR");
+        btnBlendElevador.setBorderPainted(false);
+        btnBlendElevador.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendElevador.setFocusPainted(false);
+        btnBlendElevador.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBlendElevadorActionPerformed(evt);
+            }
+        });
+        jPanel52.add(btnBlendElevador, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 60, -1, 40));
+
+        getContentPane().add(jPanel52, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 490, 320, 120));
+
+        jPanel12.setBackground(new java.awt.Color(72, 126, 176));
+        jPanel12.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "INICIAR CICLO", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
+        jPanel12.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        btnBlendPower.setBackground(new java.awt.Color(68, 141, 41));
+        btnBlendPower.setFont(new java.awt.Font("Segoe UI", 1, 20)); // NOI18N
+        btnBlendPower.setForeground(new java.awt.Color(255, 255, 255));
+        btnBlendPower.setText("INICIAR");
+        btnBlendPower.setBorderPainted(false);
+        btnBlendPower.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendPower.setFocusPainted(false);
+        btnBlendPower.setPreferredSize(new java.awt.Dimension(97, 73));
+        btnBlendPower.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBlendPowerActionPerformed(evt);
+            }
+        });
+        jPanel12.add(btnBlendPower, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 60, 140, 42));
+
+        getContentPane().add(jPanel12, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 490, 320, 120));
 
         setSize(new java.awt.Dimension(1410, 967));
         setLocationRelativeTo(null);
@@ -4332,12 +4489,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 System.out.println("Falha ao insirir msg 4253");
             }
         }
+        consultar_qtd_torrado_lotes();
     }//GEN-LAST:event_btnBlendLimparActionPerformed
-
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // TESTES FUNDO DO POÇO
-        consultar_estoque_silos_nuvem();
-    }//GEN-LAST:event_jButton2ActionPerformed
 
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -4373,7 +4526,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> cbBlendOperacao;
     private javax.swing.JPanel footerBlend;
     private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
@@ -4388,6 +4540,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel10;
     private javax.swing.JPanel jPanel11;
+    private javax.swing.JPanel jPanel12;
     private javax.swing.JPanel jPanel13;
     private javax.swing.JPanel jPanel14;
     private javax.swing.JPanel jPanel15;
@@ -4429,6 +4582,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel48;
     private javax.swing.JPanel jPanel49;
     private javax.swing.JPanel jPanel5;
+    private javax.swing.JPanel jPanel50;
+    private javax.swing.JPanel jPanel51;
+    private javax.swing.JPanel jPanel52;
+    private javax.swing.JPanel jPanel53;
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
     private javax.swing.JPanel jPanel8;
