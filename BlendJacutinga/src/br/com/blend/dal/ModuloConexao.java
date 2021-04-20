@@ -33,25 +33,4 @@ public class ModuloConexao {
             return null;
         }
     }
-    
-    
-    public void checa_conexao_banco() {
-        if (timer_cronometro != null) {
-            return;
-        }
-        timer_cronometro = new TimerTask() {
-            @Override
-            public void run() {
-                //Checa conexao (tenta ler valor)
-                //System.out.println("vou checar connection");
-                try {
-                    
-                } catch (Exception e) {
-                    System.out.println("FUDEO");
-                }
-            }
-        };
-        timer.scheduleAtFixedRate(timer_cronometro, 1, tempo_cronometro);
-    }
-    
 }

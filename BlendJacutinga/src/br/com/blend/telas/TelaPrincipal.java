@@ -13,6 +13,7 @@ import com.intelligt.modbus.jlibmodbus.slave.ModbusSlave;
 import com.intelligt.modbus.jlibmodbus.slave.ModbusSlaveFactory;
 import com.intelligt.modbus.jlibmodbus.tcp.TcpParameters;
 import java.awt.*;
+import java.awt.Toolkit;
 import java.io.PrintStream;
 
 import java.net.InetAddress;
@@ -2270,7 +2271,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void salvar_registro_bend_nuvem(float QtdTotal, float ValorTotalCru, float ValorTotalTorrado){
         consultar_lote_atual();
         
-        String sql="insert into tb_blend_registros( nome_blend, nome_Cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, 1 , ?, 2, ?, 3, ?, 4, ?, ?, "+QtdTotal+", "+ValorTotalCru+", "+ValorTotalTorrado+", ?, ?)";
+        String sql="insert into tb_blend_registros( nome_blend, nome_Cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, (select cafe_atual from tb_silos where id_silo = 1) , ?, (select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, "+QtdTotal+", "+ValorTotalCru+", "+ValorTotalTorrado+", ?, ?)";
         
         ValorTotal = 0;
         
@@ -2946,7 +2947,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnModBus = new javax.swing.JButton();
         lblBlendWifi = new javax.swing.JLabel();
         lblWifiDesc = new javax.swing.JLabel();
-        btnEmergencia = new javax.swing.JButton();
         jPanel41 = new javax.swing.JPanel();
         jPanel43 = new javax.swing.JPanel();
         jPanel44 = new javax.swing.JPanel();
@@ -2973,6 +2973,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendNewMeta = new javax.swing.JButton();
         btnBlendManual = new javax.swing.JButton();
         btnBlendLimpar = new javax.swing.JButton();
+        btnEmergencia = new javax.swing.JButton();
         jPanel11 = new javax.swing.JPanel();
         jPanel15 = new javax.swing.JPanel();
         jPanel18 = new javax.swing.JPanel();
@@ -3058,7 +3059,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jMenu1.setText("jMenu1");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Blend Jacutinga");
+        setTitle("Actual Soluções - Produção de Blend");
+        setIconImage(Toolkit.getDefaultToolkit().getImage(TelaPrincipal.class.getResource("/br/com/blend/icones/coffee-bean (1).png"))
+        );
         setResizable(false);
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowActivated(java.awt.event.WindowEvent evt) {
@@ -3109,20 +3112,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblWifiDesc.setForeground(new java.awt.Color(255, 51, 51));
         lblWifiDesc.setText("* Operando OFFLINE");
         jPanel1.add(lblWifiDesc, new org.netbeans.lib.awtextra.AbsoluteConstraints(1190, 30, 180, -1));
-
-        btnEmergencia.setBackground(new java.awt.Color(25, 42, 86));
-        btnEmergencia.setFont(new java.awt.Font("Segoe UI", 1, 19)); // NOI18N
-        btnEmergencia.setForeground(new java.awt.Color(250, 250, 250));
-        btnEmergencia.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/warning (2).png"))); // NOI18N
-        btnEmergencia.setBorderPainted(false);
-        btnEmergencia.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnEmergencia.setFocusPainted(false);
-        btnEmergencia.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnEmergenciaActionPerformed(evt);
-            }
-        });
-        jPanel1.add(btnEmergencia, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 100, 80));
 
         jPanel41.setBackground(new java.awt.Color(255, 255, 255));
         jPanel41.setPreferredSize(new java.awt.Dimension(2, 100));
@@ -3429,7 +3418,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendSalvarActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendSalvar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 20, 90, 90));
+        jPanel3.add(btnBlendSalvar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, 90, 90));
         btnBlendSalvar.getAccessibleContext().setAccessibleName("Salvar");
         btnBlendSalvar.getAccessibleContext().setAccessibleDescription("Salvar");
 
@@ -3443,7 +3432,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendCancelarActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendCancelar, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 20, 90, 90));
+        jPanel3.add(btnBlendCancelar, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 10, 90, 90));
         btnBlendCancelar.getAccessibleContext().setAccessibleName("Cancelar");
 
         btnBlendAdd1.setBackground(new java.awt.Color(255, 255, 255));
@@ -3456,11 +3445,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendAdd1ActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendAdd1, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 130, 90, 90));
+        jPanel3.add(btnBlendAdd1, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 120, 90, 90));
 
         jScrollPane3.setViewportView(txtStatus);
 
-        jPanel3.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 480, 200, 150));
+        jPanel3.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 510, 200, 150));
 
         btnBlendTarar.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendTarar.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
@@ -3473,7 +3462,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendTararActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendTarar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 410, 200, 50));
+        jPanel3.add(btnBlendTarar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 430, 200, 50));
 
         btnBlendNewMeta.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendNewMeta.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
@@ -3486,29 +3475,47 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendNewMetaActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendNewMeta, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 350, 200, 50));
+        jPanel3.add(btnBlendNewMeta, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 370, 200, 50));
 
         btnBlendManual.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendManual.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         btnBlendManual.setText("MODO MANUAL");
         btnBlendManual.setBorderPainted(false);
+        btnBlendManual.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnBlendManual.setFocusPainted(false);
         btnBlendManual.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendManualActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendManual, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 290, 200, 50));
+        jPanel3.add(btnBlendManual, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 310, 200, 50));
 
-        btnBlendLimpar.setText("LIMPAR");
+        btnBlendLimpar.setBackground(new java.awt.Color(255, 255, 255));
+        btnBlendLimpar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/erase_48px.png"))); // NOI18N
+        btnBlendLimpar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendLimpar.setFocusPainted(false);
         btnBlendLimpar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendLimparActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendLimpar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 130, 90, 90));
+        jPanel3.add(btnBlendLimpar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 120, 90, 90));
 
-        getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 90, 240, 640));
+        btnEmergencia.setBackground(new java.awt.Color(255, 51, 51));
+        btnEmergencia.setFont(new java.awt.Font("Segoe UI", 1, 19)); // NOI18N
+        btnEmergencia.setForeground(new java.awt.Color(250, 250, 250));
+        btnEmergencia.setText("EMERGENCIA");
+        btnEmergencia.setBorderPainted(false);
+        btnEmergencia.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnEmergencia.setFocusPainted(false);
+        btnEmergencia.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnEmergenciaActionPerformed(evt);
+            }
+        });
+        jPanel3.add(btnEmergencia, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 240, 200, 60));
+
+        getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 90, 240, 680));
 
         jPanel11.setBackground(new java.awt.Color(72, 126, 176));
         jPanel11.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 3", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3645,7 +3652,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel4.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 10, 100, -1));
 
-        getContentPane().add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 620, 640, 50));
+        getContentPane().add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 610, 640, 50));
 
         jPanel5.setBackground(new java.awt.Color(72, 126, 176));
         jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3683,7 +3690,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         tbBlendTitulo.setText("RECEITAS CADASTRADAS");
         jPanel5.add(tbBlendTitulo, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
 
-        getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 680, 640, 180));
+        getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 670, 640, 180));
 
         jPanel16.setBackground(new java.awt.Color(72, 126, 176));
         jPanel16.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 1", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3921,7 +3928,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel42.add(btnBlendAtual, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 150, 230, 40));
 
-        getContentPane().add(jPanel42, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 620, 340, 240));
+        getContentPane().add(jPanel42, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 610, 340, 240));
 
         jPanel7.setBackground(new java.awt.Color(25, 42, 86));
         jPanel7.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3980,9 +3987,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendMexedorActionPerformed(evt);
             }
         });
-        jPanel50.add(btnBlendMexedor, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 60, 140, 42));
+        jPanel50.add(btnBlendMexedor, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 40, 140, 42));
 
-        getContentPane().add(jPanel50, new org.netbeans.lib.awtextra.AbsoluteConstraints(360, 490, 330, 120));
+        getContentPane().add(jPanel50, new org.netbeans.lib.awtextra.AbsoluteConstraints(360, 490, 330, 110));
 
         jPanel52.setBackground(new java.awt.Color(72, 126, 176));
         jPanel52.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "ELEVADOR", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -4004,9 +4011,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendElevadorActionPerformed(evt);
             }
         });
-        jPanel52.add(btnBlendElevador, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 60, -1, 40));
+        jPanel52.add(btnBlendElevador, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 40, 140, 40));
 
-        getContentPane().add(jPanel52, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 490, 320, 120));
+        getContentPane().add(jPanel52, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 490, 320, 110));
 
         jPanel12.setBackground(new java.awt.Color(72, 126, 176));
         jPanel12.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "INICIAR CICLO", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -4025,9 +4032,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendPowerActionPerformed(evt);
             }
         });
-        jPanel12.add(btnBlendPower, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 60, 140, 42));
+        jPanel12.add(btnBlendPower, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 40, 140, 42));
 
-        getContentPane().add(jPanel12, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 490, 320, 120));
+        getContentPane().add(jPanel12, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 490, 320, 110));
 
         setSize(new java.awt.Dimension(1410, 967));
         setLocationRelativeTo(null);
