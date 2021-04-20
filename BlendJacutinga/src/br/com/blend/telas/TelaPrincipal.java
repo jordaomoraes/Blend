@@ -3076,9 +3076,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         btnSilos.setBackground(new java.awt.Color(25, 42, 86));
-        btnSilos.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        btnSilos.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
         btnSilos.setForeground(new java.awt.Color(255, 255, 255));
-        btnSilos.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/silo (1).png"))); // NOI18N
+        btnSilos.setText("Silos");
         btnSilos.setBorderPainted(false);
         btnSilos.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnSilos.setFocusPainted(false);
@@ -3089,12 +3089,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnSilosActionPerformed(evt);
             }
         });
-        jPanel1.add(btnSilos, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 3, 67, 74));
+        jPanel1.add(btnSilos, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, 90, 50));
 
         btnModBus.setBackground(new java.awt.Color(25, 42, 86));
-        btnModBus.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        btnModBus.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
         btnModBus.setForeground(new java.awt.Color(255, 255, 255));
-        btnModBus.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/cpu (1).png"))); // NOI18N
+        btnModBus.setText("Configurações de CLP");
         btnModBus.setBorderPainted(false);
         btnModBus.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnModBus.setFocusPainted(false);
@@ -3103,15 +3103,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnModBusActionPerformed(evt);
             }
         });
-        jPanel1.add(btnModBus, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 3, -1, 74));
+        jPanel1.add(btnModBus, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 10, 270, 50));
 
         lblBlendWifi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/no-wifi.png"))); // NOI18N
-        jPanel1.add(lblBlendWifi, new org.netbeans.lib.awtextra.AbsoluteConstraints(1084, 0, 80, 80));
+        jPanel1.add(lblBlendWifi, new org.netbeans.lib.awtextra.AbsoluteConstraints(1090, 0, 70, 70));
 
         lblWifiDesc.setFont(new java.awt.Font("Segoe UI", 0, 16)); // NOI18N
         lblWifiDesc.setForeground(new java.awt.Color(255, 51, 51));
         lblWifiDesc.setText("* Operando OFFLINE");
-        jPanel1.add(lblWifiDesc, new org.netbeans.lib.awtextra.AbsoluteConstraints(1190, 30, 180, -1));
+        jPanel1.add(lblWifiDesc, new org.netbeans.lib.awtextra.AbsoluteConstraints(1180, 20, 180, 30));
 
         jPanel41.setBackground(new java.awt.Color(255, 255, 255));
         jPanel41.setPreferredSize(new java.awt.Dimension(2, 100));
@@ -3199,7 +3199,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     .addGap(0, 0, Short.MAX_VALUE)))
         );
 
-        jPanel1.add(jPanel41, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 3, -1, 74));
+        jPanel1.add(jPanel41, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 0, -1, 74));
 
         jPanel46.setBackground(new java.awt.Color(255, 255, 255));
         jPanel46.setPreferredSize(new java.awt.Dimension(2, 100));
@@ -3287,7 +3287,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     .addGap(0, 0, Short.MAX_VALUE)))
         );
 
-        jPanel1.add(jPanel46, new org.netbeans.lib.awtextra.AbsoluteConstraints(110, 3, -1, 74));
+        jPanel1.add(jPanel46, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 0, -1, 74));
 
         jPanel6.setBackground(new java.awt.Color(255, 255, 255));
         jPanel6.setPreferredSize(new java.awt.Dimension(2, 100));
@@ -3375,11 +3375,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     .addGap(0, 0, Short.MAX_VALUE)))
         );
 
-        jPanel1.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 3, -1, 74));
+        jPanel1.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(440, 0, -1, 74));
 
         btnLotes.setBackground(new java.awt.Color(25, 42, 86));
+        btnLotes.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         btnLotes.setForeground(new java.awt.Color(255, 255, 255));
-        btnLotes.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/coffee-bean (1).png"))); // NOI18N
+        btnLotes.setText("Lotes");
         btnLotes.setBorderPainted(false);
         btnLotes.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnLotes.setFocusPainted(false);
@@ -3388,9 +3389,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnLotesActionPerformed(evt);
             }
         });
-        jPanel1.add(btnLotes, new org.netbeans.lib.awtextra.AbsoluteConstraints(450, 0, 80, 80));
+        jPanel1.add(btnLotes, new org.netbeans.lib.awtextra.AbsoluteConstraints(460, 10, 80, 50));
 
-        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1620, 80));
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1620, 70));
 
         lblNomeBlend.setFont(new java.awt.Font("Segoe UI", 0, 20)); // NOI18N
         getContentPane().add(lblNomeBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(458, 119, -1, -1));
