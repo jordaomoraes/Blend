@@ -63,7 +63,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     //Variáveis de CONTROLE GERAL
     int POWER = 0;
-    boolean blendando = false, terminou_blendar = false, novo_blend;
+    boolean blendando = false, terminou_blendar = false, novo_blend = false;
     int blendador_ligado = 0;
     
     boolean inseriu_msg_blnd1 = false, inseriu_msg_blnd2 = true;
@@ -169,8 +169,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     //Variaveis de timer task
     final private Timer timer = new Timer();
-    private TimerTask timer_clp, timer_internet, timer_blendador, timer_sincronizar, timer_blendando, timer_operacao, timer_lote, timer_mexedor, timer_elevador, timer_modo_blendador, timer_nuvem;
-    int tempo_clp = (1000), tempo_internet = (1000), tempo_blendador = (1000), tempo_sincronizar = (1000), tempo_blendando = (1000), tempo_operacao = (500), tempo_lote = (2000), tempo_mexedor = (1000), tempo_elevador = (1000), tempo_modo_blendador=(1000), tempo_nuvem = (5000);
+    private TimerTask timer_clp, timer_internet, timer_blendador, timer_sincronizar, timer_blendando, timer_operacao, timer_lote, timer_mexedor, timer_elevador, timer_modo_blendador, timer_nuvem, timer_blend;
+    int tempo_clp = (1000), tempo_internet = (1000), tempo_blendador = (1000), tempo_sincronizar = (1000), tempo_blendando = (1000), tempo_operacao = (500), tempo_lote = (2000), tempo_mexedor = (1000), tempo_elevador = (1000), tempo_modo_blendador=(1000), tempo_nuvem = (5000), tempo_blend = (1000);
     int contador_tempo=0, contador_operacao_silos =0;
 
     public TelaPrincipal() {
@@ -217,6 +217,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         checa_sincronizar();
         checa_balanca();
         checa_lotes();
+        checa_blends_nuvem();
     }
     
     //Checa se tem net e conecta com banco na nuvem
@@ -363,6 +364,72 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
+    
+    
+    //Checa se há novos blends
+    private void checa_blends_nuvem(){
+        if (timer_blend != null) {
+            return;
+        }
+        timer_blend = new TimerTask() {
+            @Override
+            public void run() {
+                //Checa variavel para ver se tem blend
+                System.out.println("Procurando por blends");
+                if(temos_internet == true){
+                    if(consulta_blends()){
+                        JOptionPane.showMessageDialog(null, "Novo blend disponível!");
+                        //sincronizar_blends();
+                        sincroniza_blend_apenas();
+                    }
+                    else{
+                        return;
+                    }
+                }
+            }};
+        timer.scheduleAtFixedRate(timer_blend, 1, tempo_blend);
+    }
+    
+    
+    private boolean consulta_blends(){
+        String sql = "select novo_blend from tb_blend_atual";
+        
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            rsNuvem = pstNuvem.executeQuery();
+            
+            if(rsNuvem.next()){
+                if(rsNuvem.getInt(1) == 1){
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Falha ao checar se há novos blends (nuvem)");
+        }
+        
+        return false;
+    }
+    
+    
+    private void sincroniza_blend_apenas(){
+        ultimo_blend_local();
+        sincronizar_blend_atual();
+        novo_blend_false();
+    }
+    
+    private void novo_blend_false(){
+        String sql = "update tb_blend_atual set novo_blend = 0 where id_blend_atual";
+        
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao setar novo_blend = 0 (nuvem) "+e);
+        }
+    }
+    
+    
+    
     
     
     //Checa se ciclo está iniciado ou não
@@ -1382,14 +1449,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
             set_sincronizar_0();
             nuvem = ModuloConexaoNuvem.conector();
             caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSincronizando dados..." , cor_tentando_conectar);
-            ultimo_blend_local();
+            //ultimo_blend_local();
             ultimo_lote_nuvem();
             consultar_estoque_silos();
             consultar_estoque_grao();
             consultar_estoque_moido();
             consultar_qtd_torrado_lotes();
             ultimo_registro_nuvem();
-            sincronizar_blend_local();
+            //sincronizar_blend_local();
             sincronizar_estoque_silos();
             sincronizar_estoque_grao();
             sincronizar_estoque_moido();
@@ -1989,7 +2056,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             btnBlendElevador.setEnabled(true);
             
             btnBlendEnviar.setEnabled(false);
-            cbBlendOperacao.setEnabled(false);
+            cbBlendOperacao.setEnabled(true);
             btnBlendAtual.setEnabled(false);
         }
         else{
