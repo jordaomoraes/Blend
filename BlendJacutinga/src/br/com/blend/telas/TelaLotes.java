@@ -241,6 +241,7 @@ public class TelaLotes extends javax.swing.JFrame {
         jLabel14.setText("DIVISÃO");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setTitle("Criação de lotes");
         setMinimumSize(new java.awt.Dimension(562, 427));
         setPreferredSize(new java.awt.Dimension(562, 427));
         setSize(new java.awt.Dimension(562, 427));

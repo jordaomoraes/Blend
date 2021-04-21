@@ -3089,12 +3089,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnSilosActionPerformed(evt);
             }
         });
-        jPanel1.add(btnSilos, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, 90, 50));
+        jPanel1.add(btnSilos, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 10, 90, 50));
 
         btnModBus.setBackground(new java.awt.Color(25, 42, 86));
-        btnModBus.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
+        btnModBus.setFont(new java.awt.Font("Segoe UI", 0, 20)); // NOI18N
         btnModBus.setForeground(new java.awt.Color(255, 255, 255));
-        btnModBus.setText("Configurações de CLP");
+        btnModBus.setText("Configurações do CLP");
         btnModBus.setBorderPainted(false);
         btnModBus.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnModBus.setFocusPainted(false);
@@ -3103,7 +3103,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnModBusActionPerformed(evt);
             }
         });
-        jPanel1.add(btnModBus, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 10, 270, 50));
+        jPanel1.add(btnModBus, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 10, 230, 50));
 
         lblBlendWifi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/no-wifi.png"))); // NOI18N
         jPanel1.add(lblBlendWifi, new org.netbeans.lib.awtextra.AbsoluteConstraints(1090, 0, 70, 70));
@@ -3375,7 +3375,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     .addGap(0, 0, Short.MAX_VALUE)))
         );
 
-        jPanel1.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(440, 0, -1, 74));
+        jPanel1.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 0, -1, 74));
 
         btnLotes.setBackground(new java.awt.Color(25, 42, 86));
         btnLotes.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
@@ -3389,7 +3389,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnLotesActionPerformed(evt);
             }
         });
-        jPanel1.add(btnLotes, new org.netbeans.lib.awtextra.AbsoluteConstraints(460, 10, 80, 50));
+        jPanel1.add(btnLotes, new org.netbeans.lib.awtextra.AbsoluteConstraints(390, 10, 80, 50));
 
         getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1620, 70));
 
