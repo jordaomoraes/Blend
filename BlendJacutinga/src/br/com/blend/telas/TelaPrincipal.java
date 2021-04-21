@@ -414,7 +414,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     private void sincroniza_blend_apenas(){
         ultimo_blend_local();
-        sincronizar_blend_atual();
+        sincronizar_blend_local();
         novo_blend_false();
     }
     
