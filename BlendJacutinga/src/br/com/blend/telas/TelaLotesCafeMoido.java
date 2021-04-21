@@ -2,8 +2,6 @@ package br.com.blend.telas;
 
 import br.com.blend.dal.ModuloConexao;
 import br.com.blend.dal.ModuloConexaoNuvem;
-import static br.com.blend.telas.TelaPrincipal.conexaoURL;
-import java.awt.TextArea;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -14,134 +12,133 @@ import java.util.Timer;
 import java.util.TimerTask;
 import javax.swing.JOptionPane;
 
+public class TelaLotesCafeMoido extends javax.swing.JFrame {
 
-public class TelaLotes extends javax.swing.JFrame {
-    Connection conexao = null;
-    Connection nuvem = null;
-    PreparedStatement pst = null;
-    ResultSet rs = null;
-    PreparedStatement pstNuvem = null;
-    ResultSet rsNuvem = null;
-    
-    //Variaveis de timer(loop)
-    final private Timer timer = new Timer();
-    private TimerTask timer_internet;
-    int tempo_internet = (1000);
-    
-    
-    //Variáveis de internet
-    static URL conexaoURL;
-    static URLConnection conn;
-    boolean temos_internet = false;
-    
-    //Variaveis de lote
-    String num_lote;
-    String nome_lote;
-    String tipo_cafe;
-    String obs;
+        public TelaLotesCafeMoido() {
+            initComponents();
+            conexao = ModuloConexao.conector();
+            txtObservacao.setLineWrap(true);
+            //Loops de checagem
+            checa_conexao_internet();
+        }
+
+        Connection conexao = null;
+        Connection nuvem = null;
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        PreparedStatement pstNuvem = null;
+        ResultSet rsNuvem = null;
+
+        //Variaveis de timer(loop)
+        final private Timer timer = new Timer();
+        private TimerTask timer_internet;
+        int tempo_internet = (1000);
+
+
+        //Variáveis de internet
+        static URL conexaoURL;
+        static URLConnection conn;
+        boolean temos_internet = false;
+
+        //Variaveis de lote
+        String num_lote;
+        String nome_lote;
+        String tipo_cafe;
+        String obs;
        
     
-    public TelaLotes() {
-        initComponents();
-        conexao = ModuloConexao.conector();
-        txtObservacao.setLineWrap(true);
-        //Loops de checagem
-        checa_conexao_internet();
-        
-    }
-    
-    
-    //Metodo para checar se há internet
-    public boolean testa_url(String endereco) {
-        try {
-            conexaoURL = new URL(endereco);
-            conn = conexaoURL.openConnection();
-            conn.setConnectTimeout(1000);
-            conn.connect();
-            temos_internet = true;
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
-    }
-    
-    //Loop para testar conexao com internet
-    private void checa_conexao_internet(){
-        if (timer_internet != null) {
-            return;
-        }
-        timer_internet = new TimerTask() {
-            @Override
-            public void run() {
-                //Checa conexao com INTERNET
-                if(testa_url("http://192.169.80.2")){
-                    temos_internet = true;
-                }
-                
-                else if(!testa_url("http://192.169.80.2")){
-                    temos_internet = false;
-                }
-            }};
-        timer.scheduleAtFixedRate(timer_internet, 1, tempo_internet);
-    }
-    
-    //Salva no banco que há novo lote disponível, para depois notificar o usuário e sincronizar
-    private void set_novo_lote_1(){
-        String sql = "update tb_lote_atual set novo_lote = 1";
-        
-        try {
-            pst = conexao.prepareStatement(sql);
-            pst.executeUpdate();
-        } catch (Exception e) {
-            System.out.println("Falha ao setar novo lote para 1");
-            System.out.println(e);
-        }
-    }
-    
-    private void novo_lote(){
-        String sql = "insert into tb_lotes_grao(nome_lote_grao, num_lote_grao, tipo_cafe_grao, obs) values(?, ?, ?, ?)";
-        
-        try {
-            nome_lote = txtNomeLote.getText();
-            num_lote = txtNumLote.getText();
-            tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
-            obs = txtObservacao.getText();
-            
-           if((nome_lote.isEmpty() || num_lote.isEmpty())){
-                JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
+        //Metodo para checar se há internet
+        public boolean testa_url(String endereco) {
+            try {
+                conexaoURL = new URL(endereco);
+                conn = conexaoURL.openConnection();
+                conn.setConnectTimeout(1000);
+                conn.connect();
+                temos_internet = true;
+                return true;
+            } catch (IOException e) {
+                return false;
             }
-            else if(check_float(num_lote) == false){
-                JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
+        }
+
+        //Loop para testar conexao com internet
+        private void checa_conexao_internet(){
+            if (timer_internet != null) {
+                return;
             }
-            else if(tipo_cafe == "TIPO DO CAFÉ..."){
-                JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
-            }
-            else{
+            timer_internet = new TimerTask() {
+                @Override
+                public void run() {
+                    //Checa conexao com INTERNET
+                    if(testa_url("http://192.169.80.2")){
+                        temos_internet = true;
+                    }
+
+                    else if(!testa_url("http://192.169.80.2")){
+                        temos_internet = false;
+                    }
+                }};
+            timer.scheduleAtFixedRate(timer_internet, 1, tempo_internet);
+        }
+
+        //Salva no banco que há novo lote disponível, para depois notificar o usuário e sincronizar
+        private void set_novo_lote_1(){
+            String sql = "update tb_lote_atual set novo_lote = 1";
+
+            try {
                 pst = conexao.prepareStatement(sql);
-                pst.setString(1, nome_lote);
-                pst.setInt(2, Integer.parseInt(num_lote));
-                pst.setString(3,tipo_cafe);
-                pst.setString(4, obs);
-                
-                int lote_adicionado = pst.executeUpdate();
-                set_lote_atual_grao(Integer.parseInt(num_lote), nome_lote);
-                set_novo_lote_1();
-                if(lote_adicionado > 0){
-                    JOptionPane.showMessageDialog(null, "Lote cadastrado com sucesso");
+                pst.executeUpdate();
+            } catch (Exception e) {
+                System.out.println("Falha ao setar novo lote para 1");
+                System.out.println(e);
+            }
+        }
+
+        private void novo_lote(){
+            String sql = "insert into tb_lotes(nome_lote, num_lote, tipo_cafe, obs) values(?, ?, ?, ?)";
+
+            try {
+                nome_lote = txtNomeLote.getText();
+                num_lote = txtNumLote.getText();
+                tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
+                obs = txtObservacao.getText();
+
+               if((nome_lote.isEmpty() || num_lote.isEmpty())){
+                    JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
+                }
+                else if(check_float(num_lote) == false){
+                    JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
+                }
+                else if(tipo_cafe == "TIPO DO CAFÉ..."){
+                    JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
                 }
                 else{
+                    pst = conexao.prepareStatement(sql);
+                    pst.setString(1, nome_lote);
+                    pst.setInt(2, Integer.parseInt(num_lote));
+                    pst.setString(3,tipo_cafe);
+                    pst.setString(4, obs);
+                    
+                    int lote_adicionado = pst.executeUpdate();
+                    set_lote_atual(Integer.parseInt(num_lote), nome_lote);
+                    set_novo_lote_1();
+                    if(lote_adicionado > 0){
+                        JOptionPane.showMessageDialog(null, "Lote cadastrado com sucesso");
+                    }
+                    else{
                         JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote");
+                    }
                 }
+
+            } catch (Exception e) {
+                System.out.println(e + "Falha ao cadastrar lote");
             }
-           
-        } catch (Exception e) {
-            System.out.println(e + "Falha ao cadastrar lote");
         }
-    }
-    
-    //Atualiza lote atal com dados do último criado
-        private void set_lote_atual_grao(int num_lote, String nome_lote){
-            String sql = "update tb_lote_atual set num_lote_atual = ?, nome_lote_atual = ? where id_lote_atual = 2";
+        
+        
+        //Atualiza lote atal com dados do último criado
+        private void set_lote_atual(int num_lote, String nome_lote){
+            String sql = "update tb_lote_atual set num_lote_atual = ?, nome_lote_atual = ? where id_lote_atual = 1";
             
             try {
                 pst = conexao.prepareStatement(sql);
@@ -149,12 +146,12 @@ public class TelaLotes extends javax.swing.JFrame {
                 pst.setString(2, nome_lote);
                 pst.executeUpdate();
             } catch (Exception e) {
-                System.out.println("Falha ao configurar lote atual_grao "+e);
+                System.out.println("Falha ao configurar lote atual "+e);
             }
         }
         
-        private void set_lote_atual_grao_nuvem(int num_lote, String nome_lote){
-            String sql = "update tb_lote_atual set num_lote_atual = ?, nome_lote_atual = ? where id_lote_atual = 2";
+        private void set_lote_atual_nuvem(int num_lote, String nome_lote){
+            String sql = "update tb_lote_atual set num_lote_atual = ?, nome_lote_atual = ? where id_lote_atual = 1";
             
             try {
                 pstNuvem = nuvem.prepareStatement(sql);
@@ -162,84 +159,79 @@ public class TelaLotes extends javax.swing.JFrame {
                 pstNuvem.setString(2, nome_lote);
                 pstNuvem.executeUpdate();
             } catch (Exception e) {
-                System.out.println("Falha ao configurar lote atual_grao (nuvem) "+e);
+                System.out.println("Falha ao configurar lote atual "+e);
             }
         }
-    
-    
-    private void novo_lote_nuvem(){
-        String sql = "insert into tb_lotes_grao(nome_lote_grao, num_lote_grao, tipo_cafe_grao, obs) values(?, ?, ?, ?)";
         
-        try {
-            nuvem = ModuloConexaoNuvem.conector();
-            
-            nome_lote = txtNomeLote.getText();
-            num_lote = txtNumLote.getText();
-            tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
-            obs = txtObservacao.getText();
-            
-            
-           if((nome_lote.isEmpty() || num_lote.isEmpty())){
-                JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
-            }
-            else if(check_float(num_lote) == false){
-                JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
-            }
-            else if(tipo_cafe == "TIPO DO CAFÉ..."){
-                JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
-            }
-            else{ 
-                pstNuvem = nuvem.prepareStatement(sql);
-                pstNuvem.setString(1, nome_lote);
-                pstNuvem.setInt(2, Integer.parseInt(num_lote));
-                pstNuvem.setString(3,tipo_cafe);
-                pstNuvem.setString(4, obs);
-                
-                int lote_adicionado = pstNuvem.executeUpdate();
-                set_lote_atual_grao_nuvem(Integer.parseInt(num_lote), nome_lote);
-                if(lote_adicionado > 0){
-                    System.out.println("Lote cadastrado na nuvem");
+
+        private void novo_lote_nuvem(){
+            String sql = "insert into tb_lotes(nome_lote, num_lote, tipo_cafe, obs) values(?, ?, ?, ?)";
+
+            try {
+                nuvem = ModuloConexaoNuvem.conector();
+
+                nome_lote = txtNomeLote.getText();
+                num_lote = txtNumLote.getText();
+                tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
+                obs = txtObservacao.getText();
+
+
+               if((nome_lote.isEmpty() || num_lote.isEmpty())){
+                    JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
                 }
-                else{
-                    JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote (nuvem)");
+                else if(check_float(num_lote) == false){
+                    JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
                 }
+                else if(tipo_cafe == "TIPO DO CAFÉ..."){
+                    JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
+                }
+                else{ 
+                    pstNuvem = nuvem.prepareStatement(sql);
+                    pstNuvem.setString(1, nome_lote);
+                    pstNuvem.setInt(2, Integer.parseInt(num_lote));
+                    pstNuvem.setString(3,tipo_cafe);
+                    pstNuvem.setString(4, obs);
+
+                    int lote_adicionado = pstNuvem.executeUpdate();
+                    set_lote_atual_nuvem(Integer.parseInt(num_lote), nome_lote);
+                    if(lote_adicionado > 0){
+                        System.out.println("Lote cadastrado na nuvem");
+                    }
+                    else{
+                        JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote (nuvem)");
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println(e + "Falha ao cadastrar lote");
             }
-        } catch (Exception e) {
-            System.out.println(e + "Falha ao cadastrar lote");
         }
-    }
-    
-    //Metodo para avisar que precisa sincronizar
-    private void set_sincronizar_1(){
-        String sql = "update tb_modbus set SINCRONIZADO = 1 where id_modbus";
-        
-        try {
-            pst = conexao.prepareStatement(sql);
-            pst.executeUpdate();
-        } catch (Exception e) {
-            System.out.println("Falha ao alterar variavel sincronizado para 1");
-            System.out.println(e);
+
+        //Metodo para avisar que precisa sincronizar
+        private void set_sincronizar_1(){
+            String sql = "update tb_modbus set SINCRONIZADO = 1 where id_modbus";
+
+            try {
+                pst = conexao.prepareStatement(sql);
+                pst.executeUpdate();
+            } catch (Exception e) {
+                System.out.println("Falha ao alterar variavel sincronizado para 1");
+                System.out.println(e);
+            }
         }
-    }
-    
-    
-    public static boolean check_float(String text) {
-        try {
-            Float.parseFloat(text);
-            return true;
-        } catch (Exception e) {
-            return false;
+
+
+        public static boolean check_float(String text) {
+            try {
+                Float.parseFloat(text);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
         }
-    }
-    
-    
-    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jLabel14 = new javax.swing.JLabel();
-        btnLoteNovo = new javax.swing.JButton();
         jPanel3 = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
@@ -252,14 +244,6 @@ public class TelaLotes extends javax.swing.JFrame {
         jPanel57 = new javax.swing.JPanel();
         jPanel58 = new javax.swing.JPanel();
         jLabel11 = new javax.swing.JLabel();
-        jPanel5 = new javax.swing.JPanel();
-        jPanel6 = new javax.swing.JPanel();
-        jLabel9 = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        txtObservacao = new javax.swing.JTextArea();
-        jPanel7 = new javax.swing.JPanel();
-        jPanel8 = new javax.swing.JPanel();
-        cbLoteTipoCafe = new javax.swing.JComboBox<>();
         jPanel9 = new javax.swing.JPanel();
         txtNomeLote = new javax.swing.JTextField();
         jLabel10 = new javax.swing.JLabel();
@@ -273,27 +257,18 @@ public class TelaLotes extends javax.swing.JFrame {
         jPanel50 = new javax.swing.JPanel();
         txtNumLote = new javax.swing.JTextField();
         jLabel8 = new javax.swing.JLabel();
-
-        jLabel14.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jLabel14.setForeground(new java.awt.Color(250, 250, 250));
-        jLabel14.setText("DIVISÃO");
+        jPanel5 = new javax.swing.JPanel();
+        jPanel6 = new javax.swing.JPanel();
+        jLabel9 = new javax.swing.JLabel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        txtObservacao = new javax.swing.JTextArea();
+        jPanel7 = new javax.swing.JPanel();
+        jPanel8 = new javax.swing.JPanel();
+        cbLoteTipoCafe = new javax.swing.JComboBox<>();
+        btnLoteNovo = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-        setTitle("Criação de lotes");
-        setMinimumSize(new java.awt.Dimension(562, 427));
-        setPreferredSize(new java.awt.Dimension(562, 427));
-        setSize(new java.awt.Dimension(562, 427));
-        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        btnLoteNovo.setBackground(new java.awt.Color(68, 141, 41));
-        btnLoteNovo.setForeground(new java.awt.Color(250, 250, 250));
-        btnLoteNovo.setText("CRIAR LOTE");
-        btnLoteNovo.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnLoteNovoActionPerformed(evt);
-            }
-        });
-        getContentPane().add(btnLoteNovo, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 320, 270, 60));
+        setTitle("Criação de lotes | Café moído");
 
         jPanel3.setBackground(new java.awt.Color(25, 42, 86));
         jPanel3.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -305,7 +280,7 @@ public class TelaLotes extends javax.swing.JFrame {
 
         jLabel7.setFont(new java.awt.Font("Segoe UI", 1, 20)); // NOI18N
         jLabel7.setForeground(new java.awt.Color(250, 250, 250));
-        jLabel7.setText("CAFÉ INTEIRO");
+        jLabel7.setText("CAFÉ MOÍDO");
         jPanel3.add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(350, 10, -1, 60));
 
         jPanel51.setBackground(new java.awt.Color(255, 255, 255));
@@ -496,46 +471,6 @@ public class TelaLotes extends javax.swing.JFrame {
         jLabel11.setForeground(new java.awt.Color(250, 250, 250));
         jLabel11.setText("CRIAÇÃO DE LOTES");
         jPanel3.add(jLabel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 10, -1, 60));
-
-        getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 560, 80));
-
-        jPanel5.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel5.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(250, 250, 250), 2), "OBSERVAÇÃO", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(250, 250, 250))); // NOI18N
-        jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        jPanel6.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel6.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-        jPanel5.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 210, 210, 100));
-
-        jLabel9.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jLabel9.setForeground(new java.awt.Color(250, 250, 250));
-        jLabel9.setText("OBSERVAÇÃO");
-        jPanel5.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 10, -1, -1));
-
-        txtObservacao.setColumns(20);
-        txtObservacao.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        txtObservacao.setRows(4);
-        txtObservacao.setTabSize(10);
-        txtObservacao.setMinimumSize(new java.awt.Dimension(162, 94));
-        jScrollPane1.setViewportView(txtObservacao);
-
-        jPanel5.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 50, 220, 110));
-
-        getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 200, 260, 180));
-
-        jPanel7.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel7.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(250, 250, 250), 2), "TIPO DO CAFÉ", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(250, 250, 250))); // NOI18N
-        jPanel7.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        jPanel8.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel8.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-        jPanel7.add(jPanel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 210, 210, 100));
-
-        cbLoteTipoCafe.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        cbLoteTipoCafe.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "TIPO DO CAFÉ...", "Supremo", "Tradicional ", "Blah blah" }));
-        jPanel7.add(cbLoteTipoCafe, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 60, 150, 31));
-
-        getContentPane().add(jPanel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 200, 270, 110));
 
         jPanel9.setBackground(new java.awt.Color(72, 126, 176));
         jPanel9.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -740,17 +675,98 @@ public class TelaLotes extends javax.swing.JFrame {
         jLabel8.setText("NÚEMRO DO LOTE");
         jPanel9.add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 10, -1, -1));
 
-        getContentPane().add(jPanel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 90, 540, 100));
+        jPanel5.setBackground(new java.awt.Color(72, 126, 176));
+        jPanel5.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(250, 250, 250), 2), "OBSERVAÇÃO", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(250, 250, 250))); // NOI18N
+        jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        setSize(new java.awt.Dimension(577, 435));
-        setLocationRelativeTo(null);
+        jPanel6.setBackground(new java.awt.Color(72, 126, 176));
+        jPanel6.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel5.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 210, 210, 100));
+
+        jLabel9.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel9.setForeground(new java.awt.Color(250, 250, 250));
+        jLabel9.setText("OBSERVAÇÃO");
+        jPanel5.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 10, -1, -1));
+
+        txtObservacao.setColumns(20);
+        txtObservacao.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        txtObservacao.setRows(4);
+        txtObservacao.setTabSize(10);
+        txtObservacao.setMinimumSize(new java.awt.Dimension(162, 94));
+        jScrollPane1.setViewportView(txtObservacao);
+
+        jPanel5.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 50, 220, 110));
+
+        jPanel7.setBackground(new java.awt.Color(72, 126, 176));
+        jPanel7.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(250, 250, 250), 2), "TIPO DO CAFÉ", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(250, 250, 250))); // NOI18N
+        jPanel7.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jPanel8.setBackground(new java.awt.Color(72, 126, 176));
+        jPanel8.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel7.add(jPanel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 210, 210, 100));
+
+        cbLoteTipoCafe.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        cbLoteTipoCafe.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "TIPO DO CAFÉ...", "Supremo", "Tradicional ", "Blah blah" }));
+        jPanel7.add(cbLoteTipoCafe, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 60, 150, 31));
+
+        btnLoteNovo.setBackground(new java.awt.Color(68, 141, 41));
+        btnLoteNovo.setForeground(new java.awt.Color(250, 250, 250));
+        btnLoteNovo.setText("CRIAR LOTE");
+        btnLoteNovo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnLoteNovoActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 560, Short.MAX_VALUE)
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                    .addGap(0, 0, Short.MAX_VALUE)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, 560, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(layout.createSequentialGroup()
+                            .addGap(10, 10, 10)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jPanel9, javax.swing.GroupLayout.PREFERRED_SIZE, 540, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGroup(layout.createSequentialGroup()
+                                    .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addGap(10, 10, 10)
+                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(btnLoteNovo, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE))))))
+                    .addGap(0, 0, Short.MAX_VALUE)))
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 380, Short.MAX_VALUE)
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                    .addGap(0, 0, Short.MAX_VALUE)
+                    .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGap(10, 10, 10)
+                    .addComponent(jPanel9, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGap(10, 10, 10)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(layout.createSequentialGroup()
+                            .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGap(10, 10, 10)
+                            .addComponent(btnLoteNovo, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGap(0, 0, Short.MAX_VALUE)))
+        );
+
+        pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnLoteNovoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoteNovoActionPerformed
-        // Cria novo lote
-        int confirma = JOptionPane.showConfirmDialog(null,"Tem certeza de que quer encerrar o lote atual?","Atenção",JOptionPane.YES_NO_OPTION);
-            if(confirma == JOptionPane.YES_OPTION){
-                if(temos_internet == true){
+    int confirma = JOptionPane.showConfirmDialog(null,"Tem certeza de que quer encerrar o lote atual?","Atenção",JOptionPane.YES_NO_OPTION);
+        if(confirma == JOptionPane.YES_OPTION){
+            // Cria novo lote
+            if(temos_internet == true){
                 novo_lote();
                 novo_lote_nuvem();
             }
@@ -760,8 +776,10 @@ public class TelaLotes extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_btnLoteNovoActionPerformed
-    
-    
+
+    /**
+     * @param args the command line arguments
+     */
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -776,20 +794,20 @@ public class TelaLotes extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(TelaLotes.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(TelaLotesCafeMoido.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(TelaLotes.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(TelaLotesCafeMoido.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(TelaLotes.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(TelaLotesCafeMoido.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(TelaLotes.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(TelaLotesCafeMoido.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new TelaLotes().setVisible(true);
+                new TelaLotesCafeMoido().setVisible(true);
             }
         });
     }
@@ -799,7 +817,6 @@ public class TelaLotes extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> cbLoteTipoCafe;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
-    private javax.swing.JLabel jLabel14;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;

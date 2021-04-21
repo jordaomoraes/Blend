@@ -182,11 +182,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
         caixa_mensagens = txtStatus.getStyledDocument();
         define_cores_mensagens();
         
-        //Busca blend atual
-        buscar_blend_atual();
-        
         //Busca lotes cadastrados e os coloca na Combo box
         set_lotes();
+        
+        //Busca blend atual
+        buscar_blend_atual();
         
         //Bloqueia Campos
         block_campos();
@@ -1261,7 +1261,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendSalvar.setEnabled(true);
         btnBlendCancelar.setEnabled(true);
         cbBlendOperacao.setEnabled(true);
-        cbBlendLote.setEnabled(true);
+        cbBlendLote.setEnabled(false);
         if(modo_manual == false){
             btnBlendEnviar.setEnabled(true);
             btnBlendMexedor.setEnabled(true);
@@ -1956,6 +1956,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         Metodo = null;
         btnBlendAtual.setEnabled(true);
         cbBlendOperacao.setEnabled(true);
+        cbBlendLote.setEnabled(false);
         if(modo_manual == false){
             btnBlendEnviar.setEnabled(true);
         }
@@ -2083,23 +2084,25 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     //Metodos relacionados aos lotes
+    //**Funcionando
     private void ultimo_lote_usado(){
         //Inicia combobox com ultimo lote utilizado
-        String sql = "select id_lote from tb_lotes where num_lote = (select num_lote_atual from tb_lote_atual)";
         
         try {
-            pst = conexao.prepareStatement(sql);
-            rs = pst.executeQuery();
+            if(cbBlendOperacao.getSelectedIndex() == 1){
+
+                cbBlendLote.setSelectedIndex(1);
+
+                String selected = cbBlendLote.getSelectedItem().toString();
+                //System.out.println(selected);
+            }
+            else if (cbBlendOperacao.getSelectedIndex() == 2){
+                
+                cbBlendLote.setSelectedIndex(2);
+
+                String selected = cbBlendLote.getSelectedItem().toString();
+            }
             
-            if(rs.next()){
-               cbBlendLote.setSelectedIndex(rs.getInt(1));
-               
-               String selected = cbBlendLote.getSelectedItem().toString();
-               //System.out.println(selected);
-            }
-            else{
-                JOptionPane.showMessageDialog(null, "Nenhum lote disponível!");
-            }
         } catch (Exception e) {
             System.out.println("Falha ao setar lote utilizado em cbBlendLotes");
             System.out.println(e);
@@ -2108,8 +2111,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     private void set_lotes(){
-        //Popula combobox com lotes criados
-        String sql = "select nome_lote from tb_lotes";
+        //Popula combobox com lotes disponiveis em lote atual
+        String sql = "select nome_lote_atual from tb_lote_atual";
         
         try {
             //Reseta combobox antes de preenche-la
@@ -2168,56 +2171,68 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
-    private void set_lote_atual_nuvem(){
-        String selected = cbBlendLote.getSelectedItem().toString();
-        
-        //Atualiza lote baseando-se no nome do lote selecionado na combobox
-        String sql = "update tb_lote_atual set num_lote_atual = (select num_lote from tb_lotes where nome_lote = ?), nome_lote_atual = ? where id_lote_atual";
+    private void atualizar_qtd_torrado_lote_grao(float QtdTotal){
+        //Atualiza qtd_torrado em lote de grãos selecionado pelo usuário(após enviar blend apenas)
+        //Permitindo que usuário reutilize lotes
+        String sql = "update tb_lotes_grao set qtd_torrado_grao = (select qtd_torrado_grao + ?) where nome_lote_grao = ?";
         
         try {
-            pstNuvem = nuvem.prepareStatement(sql);
-            pstNuvem.setString(1, selected);
-            pstNuvem.setString(2, selected);
-            pstNuvem.executeUpdate();
+            String selected = cbBlendLote.getSelectedItem().toString();
             
-        } catch (Exception e) {
-            System.out.println("Falha ao atualizar Lote Atual");
-            System.out.println(e);
-        }
-    }
-    
-    
-    private void set_lote_atual(){
-        String selected = cbBlendLote.getSelectedItem().toString();
-        
-        //Atualiza lote baseando-se no nome do lote selecionado na combobox
-        String sql = "update tb_lote_atual set num_lote_atual = (select num_lote from tb_lotes where nome_lote = ?), nome_lote_atual = ? where id_lote_atual";
-        
-        try {
             pst = conexao.prepareStatement(sql);
-            pst.setString(1, selected);
+            pst.setFloat(1, QtdTotal);
             pst.setString(2, selected);
             pst.executeUpdate();
-            
         } catch (Exception e) {
-            System.out.println("Falha ao atualizar Lote Atual");
+            System.out.println("Falha ao atualizar qtd_torrado_grao em lotes");
             System.out.println(e);
         }
     }
     
+    
+    private void atualizar_qtd_torrado_lote_grao_nuvem(float QtdTotal){
+        String sql = "update tb_lotes_grao set qtd_torrado = (select qtd_torrado + ?) where nome_lote_grao = ?";
+        
+        try {
+            String selected = cbBlendLote.getSelectedItem().toString();
+            
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.setFloat(1, QtdTotal);
+            pstNuvem.setString(2, selected);
+            pstNuvem.executeUpdate();
+            System.out.println("ATUALIZADO TORRADO_GRAO NUVEM");
+        } catch (Exception e) {
+            System.out.println("Falha ao atualizar qtd_torrado em lotes_GRAO (nuvem)");
+            System.out.println(e);
+        }
+    }
+
     
     //Metodos relacionados aos registros
     private void consultar_lote_atual(){
-        String sql = "select num_lote_atual from tb_lote_atual";
-        
-        try {
-            pst = conexao.prepareStatement(sql);
-            rs = pst.executeQuery();
-            if(rs.next()){
-                lote = rs.getInt(1);
+        if(cbBlendLote.getSelectedIndex() == 1){
+            String sql = "select num_lote_atual from tb_lote_atual where id_lote_atual = 1";
+            try {
+                pst = conexao.prepareStatement(sql);
+                rs = pst.executeQuery();
+                if(rs.next()){
+                    lote = rs.getInt(1);
+                }
+            } catch (Exception e) {
+                System.out.println("Falha ao obter id de lote atual");
             }
-        } catch (Exception e) {
-            System.out.println("Falha ao obter id de lote atual");
+        }
+        else{
+            String sql = "select num_lote_atual from tb_lote_atual where id_lote_atual = 2";
+            try {
+                pst = conexao.prepareStatement(sql);
+                rs = pst.executeQuery();
+                if(rs.next()){
+                    lote = rs.getInt(1);
+                }
+            } catch (Exception e) {
+                System.out.println("Falha ao obter id de lote atual");
+            }
         }
     }
     
@@ -2785,12 +2800,20 @@ public class TelaPrincipal extends javax.swing.JFrame {
                         set_blend_atual_nuvem();
 
                         // 5.2 - Atualiza qtd_torrado em lotes (soma quantidades)
-                        atualizar_qtd_torrado_lote(QtdTotal);
-                        atualizar_qtd_torrado_lote_nuvem(QtdTotal);
+                        if(cbBlendLote.getSelectedIndex() == 1){
+                            //Caso seja lote moido
+                            atualizar_qtd_torrado_lote(QtdTotal);
+                            atualizar_qtd_torrado_lote_nuvem(QtdTotal);
+                        }
+                        else{
+                            atualizar_qtd_torrado_lote_grao(QtdTotal);
+                            atualizar_qtd_torrado_lote_grao_nuvem(QtdTotal);
+                        }
+                        
 
-                        // 5.3 - Atualiza lote atual por aquele selecionado pelo usuario
-                        set_lote_atual();
-                        set_lote_atual_nuvem();
+                        // 5.3 - Atualiza lote atual por aquele selecionado pelo usuario (desabilitado)
+                        //set_lote_atual();
+                        //set_lote_atual_nuvem();
 
                         //6 - Salva dados do blend em registro
                         salvar_registro_blend(QtdTotal, ValorCru, ValorTorrado);
@@ -2847,11 +2870,18 @@ public class TelaPrincipal extends javax.swing.JFrame {
                         // 5.1 - Seta blend atual (local e/ou nuvem)
                         set_blend_atual();
 
-                        //5.2 - Atualiza qtd de torrado em lote
-                        atualizar_qtd_torrado_lote(QtdTotal);
+                        //5.2 - Atualiza qtd de torrado em lote de acordo com lote selecionado
+                        if(cbBlendLote.getSelectedIndex() == 1){
+                            //Para moido
+                            atualizar_qtd_torrado_lote(QtdTotal);
+                        }
+                        else{
+                            atualizar_qtd_torrado_lote_grao(QtdTotal);
+                        }
+                        
 
-                        //5.3 - Atualiza lote atual por aquele selecionado pelo usuario
-                        set_lote_atual();
+                        //5.3 - Atualiza lote atual por aquele selecionado pelo usuario (desabilitado)
+                        //set_lote_atual();
 
 
                         //6 - Salva dados do blend em registro
@@ -2942,24 +2972,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jMenuItem1 = new javax.swing.JMenuItem();
         jMenu1 = new javax.swing.JMenu();
         buttonGroup1 = new javax.swing.ButtonGroup();
-        jPanel1 = new javax.swing.JPanel();
-        btnSilos = new javax.swing.JButton();
-        btnModBus = new javax.swing.JButton();
-        lblBlendWifi = new javax.swing.JLabel();
-        lblWifiDesc = new javax.swing.JLabel();
-        jPanel41 = new javax.swing.JPanel();
-        jPanel43 = new javax.swing.JPanel();
-        jPanel44 = new javax.swing.JPanel();
-        jPanel45 = new javax.swing.JPanel();
-        jPanel46 = new javax.swing.JPanel();
-        jPanel47 = new javax.swing.JPanel();
-        jPanel48 = new javax.swing.JPanel();
-        jPanel49 = new javax.swing.JPanel();
-        jPanel6 = new javax.swing.JPanel();
-        jPanel8 = new javax.swing.JPanel();
-        jPanel9 = new javax.swing.JPanel();
-        jPanel10 = new javax.swing.JPanel();
-        btnLotes = new javax.swing.JButton();
+        jMenu2 = new javax.swing.JMenu();
+        menuBar1 = new java.awt.MenuBar();
+        menu1 = new java.awt.Menu();
+        menu2 = new java.awt.Menu();
+        jMenuItem2 = new javax.swing.JMenuItem();
+        jRadioButtonMenuItem1 = new javax.swing.JRadioButtonMenuItem();
+        jMenuItem3 = new javax.swing.JMenuItem();
+        jMenuItem4 = new javax.swing.JMenuItem();
+        jMenuItem5 = new javax.swing.JMenuItem();
         lblNomeBlend = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         lblBlendHeader = new javax.swing.JLabel();
@@ -2974,6 +2995,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendManual = new javax.swing.JButton();
         btnBlendLimpar = new javax.swing.JButton();
         btnEmergencia = new javax.swing.JButton();
+        lblBlendWifi = new javax.swing.JLabel();
         jPanel11 = new javax.swing.JPanel();
         jPanel15 = new javax.swing.JPanel();
         jPanel18 = new javax.swing.JPanel();
@@ -3053,10 +3075,38 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendElevador = new javax.swing.JButton();
         jPanel12 = new javax.swing.JPanel();
         btnBlendPower = new javax.swing.JButton();
+        lblWifiDesc = new javax.swing.JLabel();
+        jMenuBar1 = new javax.swing.JMenuBar();
+        MenuCLP = new javax.swing.JMenu();
+        btnModBus = new javax.swing.JMenuItem();
+        MenuSilos = new javax.swing.JMenu();
+        btnSilos = new javax.swing.JMenuItem();
+        jMenu4 = new javax.swing.JMenu();
+        MenuLoteMoido = new javax.swing.JMenuItem();
+        MenuLoteGrao = new javax.swing.JMenuItem();
 
         jMenuItem1.setText("jMenuItem1");
 
         jMenu1.setText("jMenu1");
+
+        jMenu2.setText("jMenu2");
+
+        menu1.setLabel("File");
+        menuBar1.add(menu1);
+
+        menu2.setLabel("Edit");
+        menuBar1.add(menu2);
+
+        jMenuItem2.setText("jMenuItem2");
+
+        jRadioButtonMenuItem1.setSelected(true);
+        jRadioButtonMenuItem1.setText("jRadioButtonMenuItem1");
+
+        jMenuItem3.setText("jMenuItem3");
+
+        jMenuItem4.setText("jMenuItem4");
+
+        jMenuItem5.setText("jMenuItem5");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Actual Soluções - Produção de Blend");
@@ -3070,329 +3120,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        jPanel1.setBackground(new java.awt.Color(25, 42, 86));
-        jPanel1.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
-        jPanel1.setForeground(new java.awt.Color(255, 255, 255));
-        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        btnSilos.setBackground(new java.awt.Color(25, 42, 86));
-        btnSilos.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
-        btnSilos.setForeground(new java.awt.Color(255, 255, 255));
-        btnSilos.setText("Silos");
-        btnSilos.setBorderPainted(false);
-        btnSilos.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnSilos.setFocusPainted(false);
-        btnSilos.setFocusable(false);
-        btnSilos.setRequestFocusEnabled(false);
-        btnSilos.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnSilosActionPerformed(evt);
-            }
-        });
-        jPanel1.add(btnSilos, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 10, 90, 50));
-
-        btnModBus.setBackground(new java.awt.Color(25, 42, 86));
-        btnModBus.setFont(new java.awt.Font("Segoe UI", 0, 20)); // NOI18N
-        btnModBus.setForeground(new java.awt.Color(255, 255, 255));
-        btnModBus.setText("Configurações do CLP");
-        btnModBus.setBorderPainted(false);
-        btnModBus.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnModBus.setFocusPainted(false);
-        btnModBus.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnModBusActionPerformed(evt);
-            }
-        });
-        jPanel1.add(btnModBus, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 10, 230, 50));
-
-        lblBlendWifi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/no-wifi.png"))); // NOI18N
-        jPanel1.add(lblBlendWifi, new org.netbeans.lib.awtextra.AbsoluteConstraints(1090, 0, 70, 70));
-
-        lblWifiDesc.setFont(new java.awt.Font("Segoe UI", 0, 16)); // NOI18N
-        lblWifiDesc.setForeground(new java.awt.Color(255, 51, 51));
-        lblWifiDesc.setText("* Operando OFFLINE");
-        jPanel1.add(lblWifiDesc, new org.netbeans.lib.awtextra.AbsoluteConstraints(1180, 20, 180, 30));
-
-        jPanel41.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel41.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        jPanel43.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel43.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        javax.swing.GroupLayout jPanel43Layout = new javax.swing.GroupLayout(jPanel43);
-        jPanel43.setLayout(jPanel43Layout);
-        jPanel43Layout.setHorizontalGroup(
-            jPanel43Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 12, Short.MAX_VALUE)
-        );
-        jPanel43Layout.setVerticalGroup(
-            jPanel43Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 52, Short.MAX_VALUE)
-        );
-
-        jPanel44.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel44.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        jPanel45.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel45.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        javax.swing.GroupLayout jPanel45Layout = new javax.swing.GroupLayout(jPanel45);
-        jPanel45.setLayout(jPanel45Layout);
-        jPanel45Layout.setHorizontalGroup(
-            jPanel45Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 12, Short.MAX_VALUE)
-        );
-        jPanel45Layout.setVerticalGroup(
-            jPanel45Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-
-        javax.swing.GroupLayout jPanel44Layout = new javax.swing.GroupLayout(jPanel44);
-        jPanel44.setLayout(jPanel44Layout);
-        jPanel44Layout.setHorizontalGroup(
-            jPanel44Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-            .addGroup(jPanel44Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel44Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel45, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-        );
-        jPanel44Layout.setVerticalGroup(
-            jPanel44Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 74, Short.MAX_VALUE)
-            .addGroup(jPanel44Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel44Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel45, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
-                    .addContainerGap()))
-        );
-
-        javax.swing.GroupLayout jPanel41Layout = new javax.swing.GroupLayout(jPanel41);
-        jPanel41.setLayout(jPanel41Layout);
-        jPanel41Layout.setHorizontalGroup(
-            jPanel41Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-            .addGroup(jPanel41Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel41Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel43, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-            .addGroup(jPanel41Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel41Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(jPanel44, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
-        );
-        jPanel41Layout.setVerticalGroup(
-            jPanel41Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 74, Short.MAX_VALUE)
-            .addGroup(jPanel41Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel41Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel43, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
-                    .addContainerGap()))
-            .addGroup(jPanel41Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel41Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(jPanel44, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
-        );
-
-        jPanel1.add(jPanel41, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 0, -1, 74));
-
-        jPanel46.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel46.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        jPanel47.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel47.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        javax.swing.GroupLayout jPanel47Layout = new javax.swing.GroupLayout(jPanel47);
-        jPanel47.setLayout(jPanel47Layout);
-        jPanel47Layout.setHorizontalGroup(
-            jPanel47Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 12, Short.MAX_VALUE)
-        );
-        jPanel47Layout.setVerticalGroup(
-            jPanel47Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 52, Short.MAX_VALUE)
-        );
-
-        jPanel48.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel48.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        jPanel49.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel49.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        javax.swing.GroupLayout jPanel49Layout = new javax.swing.GroupLayout(jPanel49);
-        jPanel49.setLayout(jPanel49Layout);
-        jPanel49Layout.setHorizontalGroup(
-            jPanel49Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 12, Short.MAX_VALUE)
-        );
-        jPanel49Layout.setVerticalGroup(
-            jPanel49Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-
-        javax.swing.GroupLayout jPanel48Layout = new javax.swing.GroupLayout(jPanel48);
-        jPanel48.setLayout(jPanel48Layout);
-        jPanel48Layout.setHorizontalGroup(
-            jPanel48Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-            .addGroup(jPanel48Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel48Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel49, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-        );
-        jPanel48Layout.setVerticalGroup(
-            jPanel48Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 74, Short.MAX_VALUE)
-            .addGroup(jPanel48Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel48Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel49, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
-                    .addContainerGap()))
-        );
-
-        javax.swing.GroupLayout jPanel46Layout = new javax.swing.GroupLayout(jPanel46);
-        jPanel46.setLayout(jPanel46Layout);
-        jPanel46Layout.setHorizontalGroup(
-            jPanel46Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-            .addGroup(jPanel46Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel46Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel47, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-            .addGroup(jPanel46Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel46Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(jPanel48, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
-        );
-        jPanel46Layout.setVerticalGroup(
-            jPanel46Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 74, Short.MAX_VALUE)
-            .addGroup(jPanel46Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel46Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel47, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
-                    .addContainerGap()))
-            .addGroup(jPanel46Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel46Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(jPanel48, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
-        );
-
-        jPanel1.add(jPanel46, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 0, -1, 74));
-
-        jPanel6.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel6.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        jPanel8.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel8.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
-        jPanel8.setLayout(jPanel8Layout);
-        jPanel8Layout.setHorizontalGroup(
-            jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 12, Short.MAX_VALUE)
-        );
-        jPanel8Layout.setVerticalGroup(
-            jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 52, Short.MAX_VALUE)
-        );
-
-        jPanel9.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel9.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        jPanel10.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel10.setPreferredSize(new java.awt.Dimension(2, 100));
-
-        javax.swing.GroupLayout jPanel10Layout = new javax.swing.GroupLayout(jPanel10);
-        jPanel10.setLayout(jPanel10Layout);
-        jPanel10Layout.setHorizontalGroup(
-            jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 12, Short.MAX_VALUE)
-        );
-        jPanel10Layout.setVerticalGroup(
-            jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-
-        javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
-        jPanel9.setLayout(jPanel9Layout);
-        jPanel9Layout.setHorizontalGroup(
-            jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-            .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel9Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel10, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-        );
-        jPanel9Layout.setVerticalGroup(
-            jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 74, Short.MAX_VALUE)
-            .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel9Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel10, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
-                    .addContainerGap()))
-        );
-
-        javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
-        jPanel6.setLayout(jPanel6Layout);
-        jPanel6Layout.setHorizontalGroup(
-            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-            .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel6Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-            .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel6Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(jPanel9, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
-        );
-        jPanel6Layout.setVerticalGroup(
-            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 74, Short.MAX_VALUE)
-            .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel6Layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jPanel8, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
-                    .addContainerGap()))
-            .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel6Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(jPanel9, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
-        );
-
-        jPanel1.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 0, -1, 74));
-
-        btnLotes.setBackground(new java.awt.Color(25, 42, 86));
-        btnLotes.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnLotes.setForeground(new java.awt.Color(255, 255, 255));
-        btnLotes.setText("Lotes");
-        btnLotes.setBorderPainted(false);
-        btnLotes.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnLotes.setFocusPainted(false);
-        btnLotes.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnLotesActionPerformed(evt);
-            }
-        });
-        jPanel1.add(btnLotes, new org.netbeans.lib.awtextra.AbsoluteConstraints(390, 10, 80, 50));
-
-        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1620, 70));
-
         lblNomeBlend.setFont(new java.awt.Font("Segoe UI", 0, 20)); // NOI18N
         getContentPane().add(lblNomeBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(458, 119, -1, -1));
 
@@ -3404,7 +3131,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblBlendHeader.setText("BLEND SELECIONADO");
         jPanel2.add(lblBlendHeader, new org.netbeans.lib.awtextra.AbsoluteConstraints(360, 10, -1, -1));
 
-        getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 150, 990, 50));
+        getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 70, 990, 50));
 
         jPanel3.setBackground(new java.awt.Color(25, 42, 86));
         jPanel3.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3516,7 +3243,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel3.add(btnEmergencia, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 240, 200, 60));
 
-        getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 90, 240, 680));
+        lblBlendWifi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/no-wifi.png"))); // NOI18N
+        jPanel3.add(lblBlendWifi, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 490, 70, 70));
+
+        getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1030, 10, 240, 680));
 
         jPanel11.setBackground(new java.awt.Color(72, 126, 176));
         jPanel11.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 3", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3594,7 +3324,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel11.add(btnSilo3Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 60, 130, 45));
 
-        getContentPane().add(jPanel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(530, 270, 240, 210));
+        getContentPane().add(jPanel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 190, 240, 210));
 
         jPanel14.setBackground(new java.awt.Color(72, 126, 176));
         jPanel14.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3621,7 +3351,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         cbBlendLote.setToolTipText("Selecionar Lote");
         jPanel14.add(cbBlendLote, new org.netbeans.lib.awtextra.AbsoluteConstraints(670, 10, 210, 30));
 
-        getContentPane().add(jPanel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 210, 990, 50));
+        getContentPane().add(jPanel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 130, 990, 50));
 
         jPanel4.setBackground(new java.awt.Color(72, 126, 176));
         jPanel4.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3653,7 +3383,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel4.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 10, 100, -1));
 
-        getContentPane().add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 610, 640, 50));
+        getContentPane().add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 530, 640, 50));
 
         jPanel5.setBackground(new java.awt.Color(72, 126, 176));
         jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3691,7 +3421,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         tbBlendTitulo.setText("RECEITAS CADASTRADAS");
         jPanel5.add(tbBlendTitulo, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
 
-        getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 670, 640, 180));
+        getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 590, 640, 180));
 
         jPanel16.setBackground(new java.awt.Color(72, 126, 176));
         jPanel16.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 1", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3729,7 +3459,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel16.add(btnSilo1Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 60, 130, 45));
 
-        getContentPane().add(jPanel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 270, 240, 210));
+        getContentPane().add(jPanel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 190, 240, 210));
 
         jPanel24.setBackground(new java.awt.Color(72, 126, 176));
         jPanel24.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 4", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3806,7 +3536,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel24.add(btnSilo4Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 60, 130, 45));
 
-        getContentPane().add(jPanel24, new org.netbeans.lib.awtextra.AbsoluteConstraints(780, 270, 240, 210));
+        getContentPane().add(jPanel24, new org.netbeans.lib.awtextra.AbsoluteConstraints(760, 190, 240, 210));
 
         jPanel32.setBackground(new java.awt.Color(72, 126, 176));
         jPanel32.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 2", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3883,7 +3613,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel32.add(btnSilo2Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 60, 130, 45));
 
-        getContentPane().add(jPanel32, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 270, 240, 210));
+        getContentPane().add(jPanel32, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 190, 240, 210));
 
         footerBlend.setBackground(new java.awt.Color(68, 141, 41));
         footerBlend.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3893,7 +3623,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblData.setText("Data - Observação");
         footerBlend.add(lblData, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 0, 920, 50));
 
-        getContentPane().add(footerBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 870, 1400, 60));
+        getContentPane().add(footerBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 790, 1400, 60));
 
         jPanel42.setBackground(new java.awt.Color(25, 42, 86));
         jPanel42.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3915,6 +3645,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
         cbBlendOperacao.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         cbBlendOperacao.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SELECIONE UMA OPERAÇÃO...", "TRADICIONAL MOÍDO", "GRÃO" }));
         cbBlendOperacao.setToolTipText("Selecionar operação");
+        cbBlendOperacao.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cbBlendOperacaoActionPerformed(evt);
+            }
+        });
         jPanel42.add(cbBlendOperacao, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 100, 230, 40));
 
         btnBlendAtual.setBackground(new java.awt.Color(255, 255, 255));
@@ -3929,7 +3664,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel42.add(btnBlendAtual, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 150, 230, 40));
 
-        getContentPane().add(jPanel42, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 610, 340, 240));
+        getContentPane().add(jPanel42, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 530, 340, 240));
 
         jPanel7.setBackground(new java.awt.Color(25, 42, 86));
         jPanel7.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3940,7 +3675,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jLabel7.setText("META GRÃO:");
         jPanel7.add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 0, -1, 50));
 
-        getContentPane().add(jPanel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 90, 340, 50));
+        getContentPane().add(jPanel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 10, 340, 50));
 
         jPanel13.setBackground(new java.awt.Color(25, 42, 86));
         jPanel13.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3951,7 +3686,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel13.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 0, -1, 50));
         jPanel13.add(txtBlendMetaMoido, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 10, 100, 31));
 
-        getContentPane().add(jPanel13, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 90, 360, 50));
+        getContentPane().add(jPanel13, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 10, 360, 50));
 
         jPanel40.setBackground(new java.awt.Color(25, 42, 86));
         jPanel40.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3966,7 +3701,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jLabel2.setText("PESO:");
         jPanel40.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 0, -1, 50));
 
-        getContentPane().add(jPanel40, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 90, 270, 50));
+        getContentPane().add(jPanel40, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 270, 50));
 
         jPanel50.setBackground(new java.awt.Color(72, 126, 176));
         jPanel50.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "MEXEDOR", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3990,7 +3725,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel50.add(btnBlendMexedor, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 40, 140, 42));
 
-        getContentPane().add(jPanel50, new org.netbeans.lib.awtextra.AbsoluteConstraints(360, 490, 330, 110));
+        getContentPane().add(jPanel50, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 410, 330, 110));
 
         jPanel52.setBackground(new java.awt.Color(72, 126, 176));
         jPanel52.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "ELEVADOR", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -4014,7 +3749,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel52.add(btnBlendElevador, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 40, 140, 40));
 
-        getContentPane().add(jPanel52, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 490, 320, 110));
+        getContentPane().add(jPanel52, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 410, 320, 110));
 
         jPanel12.setBackground(new java.awt.Color(72, 126, 176));
         jPanel12.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "INICIAR CICLO", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -4035,9 +3770,85 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel12.add(btnBlendPower, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 40, 140, 42));
 
-        getContentPane().add(jPanel12, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 490, 320, 110));
+        getContentPane().add(jPanel12, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 410, 320, 110));
 
-        setSize(new java.awt.Dimension(1410, 967));
+        lblWifiDesc.setFont(new java.awt.Font("Segoe UI", 0, 16)); // NOI18N
+        lblWifiDesc.setForeground(new java.awt.Color(255, 51, 51));
+        lblWifiDesc.setText("* Operando OFFLINE");
+        getContentPane().add(lblWifiDesc, new org.netbeans.lib.awtextra.AbsoluteConstraints(1110, 720, 160, 30));
+
+        jMenuBar1.setBackground(new java.awt.Color(250, 250, 250));
+        jMenuBar1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(204, 204, 204)));
+        jMenuBar1.setPreferredSize(new java.awt.Dimension(173, 35));
+
+        MenuCLP.setText("Configurações");
+        MenuCLP.setFont(new java.awt.Font("Segoe UI", 0, 16)); // NOI18N
+        MenuCLP.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                MenuCLPActionPerformed(evt);
+            }
+        });
+
+        btnModBus.setBackground(new java.awt.Color(250, 250, 250));
+        btnModBus.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        btnModBus.setText("Endereçamento");
+        btnModBus.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnModBusActionPerformed(evt);
+            }
+        });
+        MenuCLP.add(btnModBus);
+
+        jMenuBar1.add(MenuCLP);
+
+        MenuSilos.setText("Silos");
+        MenuSilos.setFont(new java.awt.Font("Segoe UI", 0, 16)); // NOI18N
+        MenuSilos.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                MenuSilosActionPerformed(evt);
+            }
+        });
+
+        btnSilos.setBackground(new java.awt.Color(250, 250, 250));
+        btnSilos.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        btnSilos.setText("Controle de Silos");
+        btnSilos.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSilosActionPerformed(evt);
+            }
+        });
+        MenuSilos.add(btnSilos);
+
+        jMenuBar1.add(MenuSilos);
+
+        jMenu4.setText("Lotes");
+        jMenu4.setFont(new java.awt.Font("Segoe UI", 0, 16)); // NOI18N
+
+        MenuLoteMoido.setBackground(new java.awt.Color(250, 250, 250));
+        MenuLoteMoido.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        MenuLoteMoido.setText("Lotes de café moído");
+        MenuLoteMoido.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                MenuLoteMoidoActionPerformed(evt);
+            }
+        });
+        jMenu4.add(MenuLoteMoido);
+
+        MenuLoteGrao.setBackground(new java.awt.Color(250, 250, 250));
+        MenuLoteGrao.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        MenuLoteGrao.setText("Lotes de café inteiro");
+        MenuLoteGrao.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                MenuLoteGraoActionPerformed(evt);
+            }
+        });
+        jMenu4.add(MenuLoteGrao);
+
+        jMenuBar1.add(jMenu4);
+
+        setJMenuBar(jMenuBar1);
+
+        setSize(new java.awt.Dimension(1299, 923));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -4046,18 +3857,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         //Bloqueia campos
         //block_campos();
     }//GEN-LAST:event_formWindowActivated
-
-    private void btnSilosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSilosActionPerformed
-        // Chama tela senha Silos
-        TelaSenhaSilos senhaSilos = new TelaSenhaSilos();
-        senhaSilos.setVisible(true);
-    }//GEN-LAST:event_btnSilosActionPerformed
-
-    private void btnModBusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnModBusActionPerformed
-        // Chama tela do ModBus
-        TelaSenhaModbus senhaModbus = new TelaSenhaModbus();
-        senhaModbus.setVisible(true);
-    }//GEN-LAST:event_btnModBusActionPerformed
 
     private void txtBlendPesqKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtBlendPesqKeyReleased
         // Chama função para pesquisar blend criado
@@ -4340,12 +4139,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         txtBlendMetaGrao.setEditable(true);
     }//GEN-LAST:event_btnBlendNewMetaActionPerformed
 
-    private void btnLotesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLotesActionPerformed
-        // Direciona para tela de lotes
-        TelaLotes lotes = new TelaLotes();
-        lotes.setVisible(true);
-    }//GEN-LAST:event_btnLotesActionPerformed
-
     private void btnBlendManualActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendManualActionPerformed
         // ATIVA/DESATIVA MODO MANUAL
         switch (manual) {
@@ -4497,8 +4290,52 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 System.out.println("Falha ao insirir msg 4253");
             }
         }
-        consultar_qtd_torrado_lotes();
+        //consultar_qtd_torrado_lotes();
     }//GEN-LAST:event_btnBlendLimparActionPerformed
+
+    private void MenuLoteMoidoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MenuLoteMoidoActionPerformed
+        //Redireciona para lote moído
+        TelaLotesCafeMoido loteMoido = new TelaLotesCafeMoido();
+        loteMoido.setVisible(true);
+    }//GEN-LAST:event_MenuLoteMoidoActionPerformed
+
+    private void MenuLoteGraoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MenuLoteGraoActionPerformed
+        // Redireciona para tela de café inteiro
+        TelaLotes lotes = new TelaLotes();
+        lotes.setVisible(true);
+    }//GEN-LAST:event_MenuLoteGraoActionPerformed
+
+    private void MenuSilosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MenuSilosActionPerformed
+        
+    }//GEN-LAST:event_MenuSilosActionPerformed
+
+    private void MenuCLPActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MenuCLPActionPerformed
+       
+    }//GEN-LAST:event_MenuCLPActionPerformed
+
+    private void btnModBusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnModBusActionPerformed
+         // Chama tela do ModBus
+        TelaSenhaModbus senhaModbus = new TelaSenhaModbus();
+        senhaModbus.setVisible(true);
+    }//GEN-LAST:event_btnModBusActionPerformed
+
+    private void btnSilosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSilosActionPerformed
+        // Chama tela de silos
+        TelaSenhaSilos senhaSilos = new TelaSenhaSilos();
+        senhaSilos.setVisible(true);
+    }//GEN-LAST:event_btnSilosActionPerformed
+
+    private void cbBlendOperacaoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbBlendOperacaoActionPerformed
+        //Muda Lote selecionado de acordo
+        if(cbBlendOperacao.getSelectedIndex() == 1){
+            //System.out.println("Lote de moido");
+            cbBlendLote.setSelectedIndex(1);
+        }
+        else if(cbBlendOperacao.getSelectedIndex() == 2){
+            //System.out.println("Lote de grau");
+            cbBlendLote.setSelectedIndex(2);
+        }
+    }//GEN-LAST:event_cbBlendOperacaoActionPerformed
 
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -4509,6 +4346,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenu MenuCLP;
+    private javax.swing.JMenuItem MenuLoteGrao;
+    private javax.swing.JMenuItem MenuLoteMoido;
+    private javax.swing.JMenu MenuSilos;
     private javax.swing.JButton btnBlendAdd1;
     private javax.swing.JButton btnBlendAtual;
     private javax.swing.JButton btnBlendCancelar;
@@ -4522,13 +4363,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JButton btnBlendSalvar;
     private javax.swing.JButton btnBlendTarar;
     private javax.swing.JButton btnEmergencia;
-    private javax.swing.JButton btnLotes;
-    private javax.swing.JButton btnModBus;
+    private javax.swing.JMenuItem btnModBus;
     private javax.swing.JButton btnSilo1Abrir;
     private javax.swing.JButton btnSilo2Abrir;
     private javax.swing.JButton btnSilo3Abrir;
     private javax.swing.JButton btnSilo4Abrir;
-    private javax.swing.JButton btnSilos;
+    private javax.swing.JMenuItem btnSilos;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JComboBox<String> cbBlendLote;
     private javax.swing.JComboBox<String> cbBlendOperacao;
@@ -4544,9 +4384,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenu jMenu4;
+    private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel10;
+    private javax.swing.JMenuItem jMenuItem2;
+    private javax.swing.JMenuItem jMenuItem3;
+    private javax.swing.JMenuItem jMenuItem4;
+    private javax.swing.JMenuItem jMenuItem5;
     private javax.swing.JPanel jPanel11;
     private javax.swing.JPanel jPanel12;
     private javax.swing.JPanel jPanel13;
@@ -4580,24 +4425,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel39;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel40;
-    private javax.swing.JPanel jPanel41;
     private javax.swing.JPanel jPanel42;
-    private javax.swing.JPanel jPanel43;
-    private javax.swing.JPanel jPanel44;
-    private javax.swing.JPanel jPanel45;
-    private javax.swing.JPanel jPanel46;
-    private javax.swing.JPanel jPanel47;
-    private javax.swing.JPanel jPanel48;
-    private javax.swing.JPanel jPanel49;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel50;
     private javax.swing.JPanel jPanel51;
     private javax.swing.JPanel jPanel52;
     private javax.swing.JPanel jPanel53;
-    private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
-    private javax.swing.JPanel jPanel8;
-    private javax.swing.JPanel jPanel9;
+    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JLabel lblBlendHeader;
@@ -4611,6 +4446,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JLabel lblSilosOpen3;
     private javax.swing.JLabel lblSilosOpen4;
     private javax.swing.JLabel lblWifiDesc;
+    private java.awt.Menu menu1;
+    private java.awt.Menu menu2;
+    private java.awt.MenuBar menuBar1;
     private javax.swing.JTable tbBlend;
     private javax.swing.JLabel tbBlendTitulo;
     private javax.swing.JTextField txtBlendMetaGrao;
