@@ -170,7 +170,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     //Variaveis de timer task
     final private Timer timer = new Timer();
     private TimerTask timer_clp, timer_internet, timer_blendador, timer_sincronizar, timer_blendando, timer_operacao, timer_lote, timer_mexedor, timer_elevador, timer_modo_blendador, timer_nuvem, timer_blend;
-    int tempo_clp = (1000), tempo_internet = (1000), tempo_blendador = (1000), tempo_sincronizar = (1000), tempo_blendando = (1000), tempo_operacao = (500), tempo_lote = (2000), tempo_mexedor = (1000), tempo_elevador = (1000), tempo_modo_blendador=(1000), tempo_nuvem = (5000), tempo_blend = (1000);
+    int tempo_clp = (1000), tempo_internet = (1000), tempo_blendador = (1000), tempo_sincronizar = (1000), tempo_blendando = (1000), tempo_operacao = (500), tempo_lote = (2000), tempo_mexedor = (1000), tempo_elevador = (1000), tempo_modo_blendador=(1000), tempo_nuvem = (5000), tempo_blend = (25000);
     int contador_tempo=0, contador_operacao_silos =0;
 
     public TelaPrincipal() {
@@ -392,6 +392,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private boolean consulta_blends(){
+        nuvem = ModuloConexaoNuvem.conector();
         String sql = "select novo_blend from tb_blend_atual";
         
         try {
