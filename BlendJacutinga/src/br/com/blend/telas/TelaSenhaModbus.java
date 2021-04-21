@@ -2,6 +2,8 @@ package br.com.blend.telas;
 
 import java.util.Arrays;
 import javax.swing.JOptionPane;
+import java.awt.*;
+import java.awt.Toolkit;
 
 
 public class TelaSenhaModbus extends javax.swing.JFrame {
@@ -37,7 +39,8 @@ public class TelaSenhaModbus extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Endereçamento do PLC");
-        setPreferredSize(new java.awt.Dimension(429, 319));
+        setIconImage(Toolkit.getDefaultToolkit().getImage(TelaSenhaModbus.class.getResource("/br/com/blend/icones/modbus.png"))
+        );
 
         panel1.setBackground(new java.awt.Color(25, 42, 86));
         panel1.setMinimumSize(new java.awt.Dimension(424, 340));

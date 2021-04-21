@@ -7,6 +7,7 @@ import net.proteanit.sql.DbUtils;
 import java.text.DateFormat;
 import java.util.Date;
 import javax.swing.JTable;
+import java.awt.Toolkit;
 
 
 public class TelaSilos extends javax.swing.JFrame {
@@ -245,6 +246,7 @@ public class TelaSilos extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Cadastro de Silos");
+        setIconImage(Toolkit.getDefaultToolkit().getImage(TelaSilos.class.getResource("/br/com/blend/icones/silo (1).png")));
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowActivated(java.awt.event.WindowEvent evt) {
                 formWindowActivated(evt);

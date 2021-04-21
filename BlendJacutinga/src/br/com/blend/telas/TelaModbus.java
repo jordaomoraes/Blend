@@ -2,6 +2,8 @@ package br.com.blend.telas;
 
 import java.sql.*;
 import br.com.blend.dal.ModuloConexao;
+import java.awt.*;
+import java.awt.Toolkit;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -190,8 +192,9 @@ public class TelaModbus extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Modbus");
         setBackground(new java.awt.Color(17, 29, 48));
+        setIconImage(Toolkit.getDefaultToolkit().getImage(TelaModbus.class.getResource("/br/com/blend/icones/modbus.png"))
+        );
         setMinimumSize(new java.awt.Dimension(1360, 710));
-        setPreferredSize(new java.awt.Dimension(1360, 700));
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowActivated(java.awt.event.WindowEvent evt) {
                 formWindowActivated(evt);

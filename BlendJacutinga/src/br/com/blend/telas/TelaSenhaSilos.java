@@ -2,7 +2,7 @@ package br.com.blend.telas;
 
 import java.util.Arrays;
 import javax.swing.JOptionPane;
-
+import java.awt.Toolkit;
 
 public class TelaSenhaSilos extends javax.swing.JFrame {
 
@@ -41,6 +41,8 @@ public class TelaSenhaSilos extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Controle de Silos");
         setBackground(new java.awt.Color(25, 42, 86));
+        setIconImage(Toolkit.getDefaultToolkit().getImage(TelaSenhaSilos.class.getResource("/br/com/blend/icones/silo (1).png"))
+        );
         setResizable(false);
 
         panel3.setBackground(new java.awt.Color(25, 42, 86));
