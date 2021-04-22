@@ -113,6 +113,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     int lote_disponivel = 0;
     //Array list pois mais lotes serão criados, sem tamanho fixo
     ArrayList<Float> qtd_torrado = new ArrayList<Float>();
+    ArrayList<Float> qtd_torrado_grao = new ArrayList<Float>();
     
     //Variaveis Estoque | Silos | Processos manuais
     float Qtd_estoque_s1 = 0, Qtd_estoque_s2 = 0, Qtd_estoque_s3 = 0, Qtd_estoque_s4 = 0;
@@ -1559,6 +1560,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             consultar_estoque_grao();
             consultar_estoque_moido();
             consultar_qtd_torrado_lotes();
+            consultar_qtd_torrado_grao_lotes();
             ultimo_registro_nuvem();
             //sincronizar_blend_local();
             sincronizar_estoque_silos();
@@ -1568,6 +1570,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             sincronizar_registros();
             sincronizar_lotes();
             sincronizar_qtd_torrado_lotes();
+            sincronizar_qtd_torrado_grao_lotes();
             sincronizar_status_blendador();
             caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nDados sincronizados! " , cor_sincronizar);
         } catch (Exception e) {
@@ -1777,6 +1780,47 @@ public class TelaPrincipal extends javax.swing.JFrame {
         }
     }
     
+    
+    private void consultar_qtd_torrado_grao_lotes(){
+        String sql = "select qtd_torrado_grao from tb_lotes_grao";
+        try {
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
+            
+            qtd_torrado_grao.clear();
+            while(rs.next()){
+                qtd_torrado_grao.add(rs.getFloat(1));
+            }
+            
+            //System.out.println(qtd_torrado);
+        } catch (Exception e) {
+            System.out.println("Falha ao consultar qtd_torrado_grao em lotes_grao");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void sincronizar_qtd_torrado_grao_lotes(){
+        String sql = "update tb_lotes_grao set qtd_torrado = ? where id_lote_grao=?";
+        //Criando array baseado em tamanho da lista (convertendo lista para array)
+        Float []array_qtd_torrado_grao = qtd_torrado_grao.toArray(new Float[0]);
+        int tamanho = array_qtd_torrado_grao.length;
+        
+        //Tamanho -1 pois após conversão, a lista gera 1 indice a mais
+        for(int i=0; i<= (tamanho -1); i++){
+            try {
+                //nuvem = ModuloConexaoNuvem.conector();
+                pstNuvem = nuvem.prepareStatement(sql);
+                
+                pstNuvem.setFloat(1, array_qtd_torrado_grao[i]);
+                pstNuvem.setInt(2, i+1);
+
+                pstNuvem.executeUpdate();
+            } catch (Exception e) {
+                System.out.println("Falha ao sincronizar qtd_torrado em lotes (nuvem)"+e);
+            }
+        }
+    }
     
     private void sincronizar_status_blendador(){
         if(temos_internet == true){
