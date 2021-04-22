@@ -1074,7 +1074,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         consultar_estoque_silos();
         String sql_nuvem = "update tb_silos set qtd_atual=? where id_silo=?";
         try {
-            nuvem = ModuloConexaoNuvem.conector();
+           nuvem = ModuloConexaoNuvem.conector();
             
            float peso_update = array_silos[id_silo] - peso;
             try {
@@ -1152,7 +1152,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private void set_blendador_nuvem_0(){
-        nuvem = ModuloConexaoNuvem.conector();
+        //nuvem = ModuloConexaoNuvem.conector();
         String sql = "update tb_modbus set STATUS_BLENDADOR = 0 where id_modbus";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
@@ -1165,7 +1165,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private void set_blendador_nuvem_1(){
-        nuvem = ModuloConexaoNuvem.conector();
+        //nuvem = ModuloConexaoNuvem.conector();
         String sql = "update tb_modbus set STATUS_BLENDADOR = 1 where id_modbus";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
@@ -1541,8 +1541,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private void sincronizar_blend_local(){
-        nuvem = ModuloConexaoNuvem.conector();
-        
+        //nuvem = ModuloConexaoNuvem.conector();
+        System.out.println("Sincronizando");
         String sqlNuvem = "select * from tb_blend where id_blend > ?";
         String sql = "insert into tb_blend (nome, fk_silo1, qtd_silo1, fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4) values (?, 1, ?, 2, ?, 3, ?, 4, ?)";
         
@@ -1564,6 +1564,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     pst.setString(5, rsNuvem.getString(10));
 
                     pst.executeUpdate();
+                    
+                    System.out.println("Sincronizado!");
                 } catch (Exception e) {
                     System.out.println("Falha ao sincronizar blends (local)!");
                     System.out.println(e);
@@ -1577,7 +1579,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private void ultimo_lote_nuvem(){
-        nuvem = ModuloConexaoNuvem.conector();
+        //nuvem = ModuloConexaoNuvem.conector();
         String sql = "select max(id_lote) as id from tb_lotes";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
@@ -1594,7 +1596,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private void sincronizar_lotes(){
-         nuvem = ModuloConexaoNuvem.conector();
+         //nuvem = ModuloConexaoNuvem.conector();
         
         String sql = "select * from tb_lotes where id_lote > ?";
         String sql_insert_nuvem = "insert into tb_lotes(nome_lote, num_lote, data_lote, tipo_cafe, qtd_torrado, obs) values (?, ?, ?, ?, ?, ?)";
@@ -1659,7 +1661,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         //Tamanho -1 pois após conversão, a lista gera 1 indice a mais
         for(int i=0; i<= (tamanho -1); i++){
             try {
-                nuvem = ModuloConexaoNuvem.conector();
+                //nuvem = ModuloConexaoNuvem.conector();
                 pstNuvem = nuvem.prepareStatement(sql);
                 
                 pstNuvem.setFloat(1, array_qtd_torrado[i]);
@@ -1675,7 +1677,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     private void sincronizar_status_blendador(){
         if(temos_internet == true){
-            nuvem = ModuloConexaoNuvem.conector();
+            //nuvem = ModuloConexaoNuvem.conector();
             try {
             boolean []array_coils_nuvem;
             array_coils_nuvem = m.readCoils(escravo, 0, 1);
@@ -1699,7 +1701,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     private void sincronizar_estoque_silos(){
-        nuvem = ModuloConexaoNuvem.conector();
+        //nuvem = ModuloConexaoNuvem.conector();
         String sql = "update tb_silos set qtd_atual=? where id_silo=?";
         float value = 0;
         
@@ -1722,7 +1724,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
    
     
     private void sincronizar_estoque_grao(){
-        nuvem = ModuloConexaoNuvem.conector();
+        //nuvem = ModuloConexaoNuvem.conector();
         String sql = "update tb_cafe_grao set quantidade=? where id_cafe_grao";
         
         try {
@@ -1740,7 +1742,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private void sincronizar_estoque_moido(){
-        nuvem = ModuloConexaoNuvem.conector();
+        //nuvem = ModuloConexaoNuvem.conector();
         String sql = "update tb_cafe_moido set quantidade=? where id_cafe_moido";
         
         try {
@@ -1758,7 +1760,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private void sincronizar_blend_atual(){
-       nuvem = ModuloConexaoNuvem.conector();
+       //nuvem = ModuloConexaoNuvem.conector();
        consultar_blend_atual();
        String sql = "update tb_blend_atual set id_blend_atual=?, nome=?, qtd_silo1=?, qtd_silo2=?, qtd_silo3=?, qtd_silo4=?, operacao=? where id_blend_atual";
         
@@ -1784,7 +1786,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     
     private void sincronizar_registros(){
-        nuvem = ModuloConexaoNuvem.conector();
+        //nuvem = ModuloConexaoNuvem.conector();
         
         String sql = "select * from tb_blend_registros where id_registro > ?";
         String sql_insert_nuvem = "insert into tb_blend_registros(nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, data, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, (select cafe_atual from tb_silos where id_silo = 1), ?, (select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, ?, ?, ?, ?, ?,? )";
@@ -1827,7 +1829,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     private void ultimo_registro_nuvem(){
-        nuvem = ModuloConexaoNuvem.conector();
+        //nuvem = ModuloConexaoNuvem.conector();
          //1 - Obter ultimo registro da tabela offline
         String sql = "select max(id_registro) as id from tb_blend_registros";
         try {
@@ -1931,7 +1933,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         try {
             if(temos_internet == true){
                 tbBlendTitulo.setText("RECEITAS CADASTRADAS");
-                nuvem = ModuloConexaoNuvem.conector();
+                //nuvem = ModuloConexaoNuvem.conector();
                 pstNuvem = nuvem.prepareStatement(sql);
                 rsNuvem = pstNuvem.executeQuery();
                 
@@ -1958,7 +1960,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         
         try {
             if(temos_internet == true){
-                nuvem = ModuloConexaoNuvem.conector();
+                //nuvem = ModuloConexaoNuvem.conector();
                 pstNuvem = nuvem.prepareStatement(sql);
                 
                 pstNuvem.setString(1, txtBlendPesq.getText()+'%');
@@ -2359,7 +2361,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         ValorTotal = 0;
         
         try {
-                nuvem = ModuloConexaoNuvem.conector();
+                //nuvem = ModuloConexaoNuvem.conector();
                 pstNuvem = nuvem.prepareStatement(sql);
             
                 NomeBlend = txtNomeBlend.getText();
@@ -2423,7 +2425,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     private void consultar_estoque_silos_nuvem() {
         //Fix
-        nuvem = ModuloConexaoNuvem.conector();
+        //nuvem = ModuloConexaoNuvem.conector();
         
         String sql = "select qtd_atual from tb_silos";
         //5 pois tem 1 cadastro a mais sem relação com o blend
@@ -2850,6 +2852,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
             gerar_preco_cru(qtd_silos);
             
             if(temos_internet == true){
+                //Abre conexao com nuvem para realizar todos os processos
+                nuvem = ModuloConexaoNuvem.conector();
+                
                 //3 - Checa estoque de silos e verifica se é suficiente
                 if(checa_silos(qtd_silos) == false && checa_silos_nuvem(qtd_silos) == false){
                     return;
