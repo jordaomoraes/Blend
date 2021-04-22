@@ -206,6 +206,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
         //Checa se existe algum blend (PARA CASO NAO TENHA BLEND CADASTRADO)
         check_blend();
         
+        //Busca Metas no CLP
+        busca_metas();
+        
         //Loops de checagem
         checa_conexao_clp();
         checa_conexao_internet();
@@ -3243,7 +3246,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         }
     }
     
-    
+    //Envia metas para CLP
     private void set_meta(){
         String MetaMoido = txtBlendMetaMoido.getText();
         String MetaGrao = txtBlendMetaMoido.getText();
@@ -3272,6 +3275,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 System.out.println(e);
             }
         }
+    }
+    
+    
+    //Lê metas no CLP e preenche campos
+    private void busca_metas(){
+        System.out.println("MetaS SETADAS");
     }
 
     
