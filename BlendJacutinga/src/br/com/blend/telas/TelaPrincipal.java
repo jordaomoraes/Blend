@@ -92,7 +92,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     int i = 0;
     
     //Variaveis para sincronizar
-    String ultimo_id_nuvem, ultimo_id_registro_nuvem, ultimo_id_blend_local, ultimo_id_lote_nuvem, ultimo_id_tipo_cafe_nuvem;
+    String ultimo_id_nuvem, ultimo_id_registro_nuvem, ultimo_id_blend_local, ultimo_id_lote_nuvem, ultimo_id_lote_grao_nuvem, ultimo_id_tipo_cafe_nuvem;
     boolean precisa_sincrinizar = false, sincronizar_ao_ligar = false;
     int sincronizado = 0;
     String id_atual, nome_atual, qtds1_atual, qtds2_atual, qtds3_atual, qtds4_atual, operation;
@@ -989,7 +989,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
             
             
             //Atualizar qtd_torrado do lote utilizado
-            atualizar_qtd_torrado_lote(qtd_cafe_total);
+            if(cbBlendOperacao.getSelectedIndex() == 1){
+                atualizar_qtd_torrado_lote(qtd_cafe_total);
+            }
+            else{
+                atualizar_qtd_torrado_grao_lote(qtd_cafe_total);
+            }
             
             //Chamando função que gera preço do cru, passando parametros diferentes
             gerar_preco_cru(array_qtd_cafe);
@@ -1042,8 +1047,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
             qtd_cafe_total = qtd_cafe1 + qtd_cafe2 + qtd_cafe3 + qtd_cafe4;
             
             //Atualizando qtd_torrado de lotes(nuvem)
-            atualizar_qtd_torrado_lote_nuvem(qtd_cafe_total);
-            
+            if(cbBlendOperacao.getSelectedIndex() == 1){
+                atualizar_qtd_torrado_lote_nuvem(qtd_cafe_total);
+            }
+            else{
+                atualizar_qtd_torrado_grao_lote_nuvem(qtd_cafe_total);
+            }
             
             //Chamando função que gera preço do cru, passando parametros diferentes
             gerar_preco_cru(array_qtd_cafe);
@@ -1556,6 +1565,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSincronizando dados..." , cor_tentando_conectar);
             //ultimo_blend_local();
             ultimo_lote_nuvem();
+            ultimo_lote_grao_nuvem();
             consultar_estoque_silos();
             consultar_estoque_grao();
             consultar_estoque_moido();
@@ -1569,6 +1579,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             sincronizar_blend_atual();
             sincronizar_registros();
             sincronizar_lotes();
+            sincronizar_lotes_grao();
             sincronizar_qtd_torrado_lotes();
             sincronizar_qtd_torrado_grao_lotes();
             sincronizar_status_blendador();
@@ -1734,6 +1745,61 @@ public class TelaPrincipal extends javax.swing.JFrame {
             
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Falha ao sincronizar lotes (nuvem)!");
+            System.out.println(ex);
+        }
+    }
+    
+    
+    private void ultimo_lote_grao_nuvem(){
+        //nuvem = ModuloConexaoNuvem.conector();
+        String sql = "select max(id_lote_grao) as id from tb_lotes_grao";
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            rsNuvem = pstNuvem.executeQuery();
+
+            if(rsNuvem.next()){
+                ultimo_id_lote_grao_nuvem = rsNuvem.getString(1);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao obter ultimo registro grao (nuvem)!");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void sincronizar_lotes_grao(){
+         //nuvem = ModuloConexaoNuvem.conector();
+        
+        String sql = "select * from tb_lotes_grao where id_lote_grao > ?";
+        String sql_insert_nuvem = "insert into tb_lotes_grao(nome_lote_grao, num_lote_grao, data_lote_grao, tipo_cafe_grao, qtd_torrado, obs) values (?, ?, ?, ?, ?, ?)";
+        
+        try {
+            //Pega dados salvos apenas localmente
+            pst = conexao.prepareStatement(sql);
+            pst.setString(1, ultimo_id_lote_grao_nuvem);
+            rs = pst.executeQuery();
+            
+            //Insere dados obtidos na local e os insere na nuvem
+            pstNuvem = nuvem.prepareStatement(sql_insert_nuvem);
+            
+            while(rs.next()){
+                try {
+                    pstNuvem.setString(1, rs.getString(2));
+                    pstNuvem.setString(2, rs.getString(3));
+                    pstNuvem.setString(3, rs.getString(4));
+                    pstNuvem.setString(4, rs.getString(5));
+                    pstNuvem.setString(5, rs.getString(6));
+                    pstNuvem.setString(6, rs.getString(7));
+                    pstNuvem.executeUpdate();
+                    
+                } catch (Exception e) {
+                    System.out.println("Falha ao sincronizar Lotes Grão (nuvem)!");
+                    System.out.println(e);
+                }
+            }
+            
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Falha ao sincronizar lotes de grão (nuvem)!");
             System.out.println(ex);
         }
     }
@@ -2364,6 +2430,39 @@ public class TelaPrincipal extends javax.swing.JFrame {
             pst.executeUpdate();
         } catch (Exception e) {
             System.out.println("Falha ao atualizar qtd_torrado em lotes");
+            System.out.println(e);
+        }
+    }
+    
+    private void atualizar_qtd_torrado_grao_lote(float QtdTotal){
+        String sql = "update tb_lotes_grao set qtd_torrado_grao = (select qtd_torrado_grao + ?) where nome_lote_grao = ?";
+        
+        try {
+            String selected = cbBlendLote.getSelectedItem().toString();
+            
+            pst = conexao.prepareStatement(sql);
+            pst.setFloat(1, QtdTotal);
+            pst.setString(2, selected);
+            pst.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao atualizar qtd_torrado_grao em lotes_grao");
+            System.out.println(e);
+        }
+    }
+    
+    
+    private void atualizar_qtd_torrado_grao_lote_nuvem(float QtdTotal){
+        String sql = "update tb_lotes_grao set qtd_torrado = (select qtd_torrado + ?) where nome_lote_grao = ?";
+        
+        try {
+            String selected = cbBlendLote.getSelectedItem().toString();
+            
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.setFloat(1, QtdTotal);
+            pstNuvem.setString(2, selected);
+            pstNuvem.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao atualizar qtd_torrado_grao em lotes_grao (nuvem)");
             System.out.println(e);
         }
     }
