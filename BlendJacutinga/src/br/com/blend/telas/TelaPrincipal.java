@@ -910,7 +910,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
             pst.setFloat(3, qtd_cafe2);
             pst.setFloat(4, qtd_cafe3);
             pst.setFloat(5, qtd_cafe4);
-            pst.setString(6, "Manual");
+            if(cbBlendOperacao.getSelectedIndex() == 1){
+                pst.setString(6, "moer e empacotar");
+            }
+            else if (cbBlendOperacao.getSelectedIndex() == 2){
+                pst.setString(6, "empacotar inteiro");
+            }
             pst.setFloat(7, qtd_cafe_total);
             pst.setFloat(8, ValorCru);
             pst.setFloat(9, ValorTorrado);
@@ -959,7 +964,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
             pstNuvem.setFloat(3, qtd_cafe2);
             pstNuvem.setFloat(4, qtd_cafe3);
             pstNuvem.setFloat(5, qtd_cafe4);
-            pstNuvem.setString(6, "Manual");
+            if(cbBlendOperacao.getSelectedIndex() == 1){
+                pstNuvem.setString(6, "moer e empacotar");
+            }
+            else if (cbBlendOperacao.getSelectedIndex() == 2){
+                pstNuvem.setString(6, "empacotar inteiro");
+            }
             pstNuvem.setFloat(7, qtd_cafe_total);
             pstNuvem.setFloat(8, ValorCru);
             pstNuvem.setFloat(9, ValorTorrado);
