@@ -26,8 +26,8 @@ public class TelaLotes extends javax.swing.JFrame {
     
     //Variaveis de timer(loop)
     final private Timer timer = new Timer();
-    private TimerTask timer_internet;
-    int tempo_internet = (1000);
+    private TimerTask timer_internet, timer_tipo_cafe;
+    int tempo_internet = (1000), tempo_tipo_cafe = (1000);
     
     
     //Variáveis de internet
@@ -50,6 +50,7 @@ public class TelaLotes extends javax.swing.JFrame {
         
         //Loops de checagem
         checa_conexao_internet();
+        checa_tipos_cafe();
         
     }
     
@@ -86,6 +87,89 @@ public class TelaLotes extends javax.swing.JFrame {
                 }
             }};
         timer.scheduleAtFixedRate(timer_internet, 1, tempo_internet);
+    }
+    
+    
+    //Loop para checar se há novos tipos de café
+    private void checa_tipos_cafe(){
+        if (timer_tipo_cafe != null) {
+            return;
+        }
+        timer_tipo_cafe = new TimerTask() {
+            @Override
+            public void run() {
+                if(temos_internet == true){
+                    if(consulta_tipos_cafe()){
+                        //Sincronizar tipos cafe
+                        sincronizar_tipos_cafe();
+                    }
+                    else{
+                        return;
+                    }
+                }
+            }};
+        timer.scheduleAtFixedRate(timer_tipo_cafe, 1, tempo_tipo_cafe);
+    }
+    
+    
+    private boolean consulta_tipos_cafe(){
+        nuvem = ModuloConexaoNuvem.conector();
+        String sql = "select tipo_cafe from tb_dados_web where id_dados_web = 1";
+        
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            rsNuvem = pstNuvem.executeQuery();
+            
+            if(rsNuvem.next()){
+                if(rsNuvem.getInt(1) == 1){
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Falha ao checar por novos tipos de café (nuvem) "+e);
+        }
+        return false;
+    }
+    
+    
+    private void sincronizar_tipos_cafe(){
+        nuvem = ModuloConexaoNuvem.conector();
+        
+        String sqlNuvem = "select * from tb_tipos_cafe";
+        String sqlLocal = "update tb_tipos_cafe set id_tipo_cafe = ?, nome_tipo_cafe=? where id_tipo_cafe = ?";
+        try {
+            JOptionPane.showMessageDialog(null, "Sincronizando tipos de café");
+            pstNuvem = nuvem.prepareStatement(sqlNuvem);
+            rsNuvem = pstNuvem.executeQuery();
+            
+            pst = conexao.prepareStatement(sqlLocal);
+            while(rsNuvem.next()){
+                try {
+                    pst.setInt(1, rsNuvem.getInt(1));
+                    pst.setString(2, rsNuvem.getString(2));
+                    pst.setInt(3, rsNuvem.getInt(1));
+                    pst.executeUpdate();
+                } catch (Exception e) {
+                    System.out.println("Falha ao sincronizar tipos de cafe "+e);
+                }
+            }
+            set_tipos_cafe_0();
+        } catch (Exception e) {
+            System.out.println("Falha ao sincronizar tipos de café "+e);
+        }
+    }
+    
+    
+    private void set_tipos_cafe_0(){
+        nuvem = ModuloConexaoNuvem.conector();
+        String sql = "update tb_dados_web set tipo_cafe = 0";
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao setar tipo_cafe para 0 (nuvem) "+e);
+        }
+        
     }
     
     
