@@ -92,7 +92,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     int i = 0;
     
     //Variaveis para sincronizar
-    String ultimo_id_nuvem, ultimo_id_registro_nuvem, ultimo_id_blend_local, ultimo_id_lote_nuvem;
+    String ultimo_id_nuvem, ultimo_id_registro_nuvem, ultimo_id_blend_local, ultimo_id_lote_nuvem, ultimo_id_tipo_cafe_nuvem;
     boolean precisa_sincrinizar = false, sincronizar_ao_ligar = false;
     int sincronizado = 0;
     String id_atual, nome_atual, qtds1_atual, qtds2_atual, qtds3_atual, qtds4_atual, operation;
@@ -391,6 +391,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         }
     }
     
+    
     //Metodos para checar, sincronizar tipos de café
     private void checa_tipos_cafe(){
         if (timer_tipo_cafe != null) {
@@ -403,7 +404,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     System.out.println("Procurando por tipos de cafe");
                     if(consulta_tipos_cafe()){
                         //Sincronizar tipos cafe
-                        sincronizar_tipos_cafe();
+                        sincronizar_tipos_cafe_cadastros();
+                        sincronizar_tipos_cafe_alteracoes();
                     }
                     else{
                         return;
@@ -434,7 +436,23 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
-    private void sincronizar_tipos_cafe(){
+    private void ultimo_tipo_registrado(){
+        String sql = "select max(id_tipo_cafe) as id from tb_tipos_cafe";
+        
+        try {
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
+            
+            if(rs.next()){
+                ultimo_id_tipo_cafe_nuvem = rs.getString(1);
+            }
+        } catch (Exception e) {
+            System.out.println("Falha ao obter ultimo registro de tipo de cafe (nuvem) "+e);
+        }
+    }
+    
+    
+    private void sincronizar_tipos_cafe_alteracoes(){
         nuvem = ModuloConexaoNuvem.conector();
         
         String sqlNuvem = "select * from tb_tipos_cafe";
@@ -458,6 +476,38 @@ public class TelaPrincipal extends javax.swing.JFrame {
             set_tipos_cafe_0();
         } catch (Exception e) {
             System.out.println("Falha ao sincronizar tipos de café "+e);
+        }
+    }
+    
+    
+    private void sincronizar_tipos_cafe_cadastros(){
+        ultimo_tipo_registrado();
+        String sqlNuvem = "select * from tb_tipos_cafe where id_tipo_cafe > ?";
+        String sql = "insert into tb_tipos_cafe (nome_tipo_cafe) values(?)";
+        
+        try {
+            nuvem = ModuloConexaoNuvem.conector();
+            //Pega dados salvos apenas na nuvem
+            pstNuvem = nuvem.prepareStatement(sqlNuvem);
+            pstNuvem.setString(1, ultimo_id_tipo_cafe_nuvem);
+            rsNuvem = pstNuvem.executeQuery();
+            
+            //Insere dados obtidos na nuvem e os insere no local
+            pst = conexao.prepareStatement(sql);
+            
+            while(rsNuvem.next()){
+                try {
+                    pst.setString(1, rsNuvem.getString(2));
+                    pst.executeUpdate();
+                    System.out.println("TIPOS Sincronizados!");
+                } catch (Exception e) {
+                    System.out.println("Falha ao sincronizar tipos de café (local)!");
+                    System.out.println(e);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Falha ao sincronizar dados (tipos de café) da nuvem para o local");
+            System.out.println(e);
         }
     }
     
