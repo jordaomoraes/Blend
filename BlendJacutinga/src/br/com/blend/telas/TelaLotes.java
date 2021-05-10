@@ -285,7 +285,7 @@ public class TelaLotes extends javax.swing.JFrame {
         jLabel14.setText("DIVISÃO");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-        setTitle("Criação de lotes");
+        setTitle("Criação de lotes - Café inteiro");
         setIconImage(Toolkit.getDefaultToolkit().getImage(TelaLotes.class.getResource("/br/com/blend/icones/box.png"))
         );
         setMinimumSize(new java.awt.Dimension(562, 427));
@@ -362,7 +362,7 @@ public class TelaLotes extends javax.swing.JFrame {
 
         getContentPane().add(jPanel13, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 240, 260, 210));
 
-        setSize(new java.awt.Dimension(582, 507));
+        setSize(new java.awt.Dimension(584, 507));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

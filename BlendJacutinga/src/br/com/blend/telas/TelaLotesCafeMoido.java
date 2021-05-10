@@ -270,7 +270,7 @@ public class TelaLotesCafeMoido extends javax.swing.JFrame {
         txtNomeLote = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-        setTitle("Criação de lotes | Café moído");
+        setTitle("Criação de lotes - Café moído");
         setIconImage(Toolkit.getDefaultToolkit().getImage(TelaLotesCafeMoido.class.getResource("/br/com/blend/icones/box.png"))
         );
         setMinimumSize(new java.awt.Dimension(562, 427));

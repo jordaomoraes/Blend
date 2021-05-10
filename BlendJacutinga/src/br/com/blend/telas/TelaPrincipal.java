@@ -170,8 +170,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     //Variaveis de timer task
     final private Timer timer = new Timer();
-    private TimerTask timer_clp, timer_internet, timer_blendador, timer_sincronizar, timer_blendando, timer_operacao, timer_lote, timer_mexedor, timer_elevador, timer_modo_blendador, timer_blend, timer_tipo_cafe;
-    int tempo_clp = (1000), tempo_internet = (1000), tempo_blendador = (1000), tempo_sincronizar = (1000), tempo_blendando = (1000), tempo_operacao = (500), tempo_lote = (2000), tempo_mexedor = (1000), tempo_elevador = (1000), tempo_modo_blendador=(1000), tempo_blend = (25000), tempo_tipo_cafe = (25000);
+    private TimerTask timer_clp, timer_internet, timer_blendador, timer_sincronizar, timer_blendando, timer_operacao, timer_lote, timer_mexedor, timer_elevador, timer_modo_blendador, timer_blend, timer_tipo_cafe, timer_meta;
+    int tempo_clp = (1000), tempo_internet = (1000), tempo_blendador = (1000), tempo_sincronizar = (1000), tempo_blendando = (1000), tempo_operacao = (500), tempo_lote = (2000), tempo_mexedor = (1000), tempo_elevador = (1000), tempo_modo_blendador=(1000), tempo_blend = (25000), tempo_tipo_cafe = (25000), tempo_meta = (25000);
     int contador_tempo=0, contador_operacao_silos =0;
 
     public TelaPrincipal() {
@@ -207,7 +207,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         check_blend();
         
         //Busca Metas no CLP
-        busca_metas();
+        //busca_metas();
         
         //Loops de checagem
         checa_conexao_clp();
@@ -223,6 +223,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         checa_lotes();
         checa_blends_nuvem();
         checa_tipos_cafe();
+        checa_metas();
     }
     
     //Checa se tem net e conecta com banco na nuvem
@@ -528,6 +529,34 @@ public class TelaPrincipal extends javax.swing.JFrame {
         
     }
     
+    //Lê metas do CLP
+    private void checa_metas(){
+        if (timer_meta != null) {
+            return;
+        }
+        timer_meta = new TimerTask() {
+            @Override
+            public void run() {
+               if(clp_conectado == true){
+                   try {
+                       int [] MetaTorrado = new int[2];
+                       int [] MetaGrao = new int[2];
+                       
+                       MetaTorrado = m.readHoldingRegisters(escravo, 40, 1);
+                       MetaGrao= m.readHoldingRegisters(escravo, 41, 1);
+                       
+                       txtBlendMetaMoido.setText(String.valueOf(MetaTorrado[0]));
+                       txtBlendMetaGrao.setText(String.valueOf(MetaGrao[0]));
+                   } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
+                       System.out.println("Falha ao ler metas");
+                       Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+                       clp_conectado = false;
+                       falha_conexao();
+                   }
+               }
+            }};
+        timer.scheduleAtFixedRate(timer_meta, 1, tempo_meta);
+    }
     
     
     //Checa se ciclo está iniciado ou não
@@ -3249,7 +3278,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     //Envia metas para CLP
     private void set_meta(){
         String MetaMoido = txtBlendMetaMoido.getText();
-        String MetaGrao = txtBlendMetaMoido.getText();
+        String MetaGrao = txtBlendMetaGrao.getText();
         
         if(MetaMoido.isEmpty() || MetaGrao.isEmpty()){
             JOptionPane.showMessageDialog(null, "Preencha os valores das metas!");
@@ -3275,12 +3304,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 System.out.println(e);
             }
         }
-    }
-    
-    
-    //Lê metas no CLP e preenche campos
-    private void busca_metas(){
-        System.out.println("MetaS SETADAS");
     }
 
     
