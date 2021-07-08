@@ -189,6 +189,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
         //Busca blend atual
         buscar_blend_atual();
         
+        //Busca tipos de café em cada silo
+        buscar_tipos_silo();
+        
         //Bloqueia Campos
         block_campos();
 
@@ -198,7 +201,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         //Data
         Date data = new Date();
         DateFormat formatador = DateFormat.getDateInstance(DateFormat.SHORT);
-        lblData.setText(formatador.format(data)+" - Crie seu blend selecionando as quantidades de café vindas de cada silo");
+        lblData.setText(formatador.format(data)+" - Crie seu blend selecionando uma receita ou operando manualmente.");
         
         //Checa se dados estão sincronizados
         check_sincronizar();
@@ -348,6 +351,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                         JOptionPane.showMessageDialog(null, "Novo blend disponível!");
                         //sincronizar_blends();
                         sincroniza_blend_apenas();
+                        buscar_blend();
                     }
                     else{
                         return;
@@ -1693,7 +1697,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         //nuvem = ModuloConexaoNuvem.conector();
         System.out.println("Sincronizando");
         String sqlNuvem = "select * from tb_blend where id_blend > ?";
-        String sql = "insert into tb_blend (nome, fk_silo1, qtd_silo1, fk_silo2, qtd_silo2, fk_silo3, qtd_silo3, fk_silo4, qtd_silo4) values (?, 1, ?, 2, ?, 3, ?, 4, ?)";
+        String sql = "insert into tb_blend (nome, cafe1, qtd_silo1, cafe2, qtd_silo2, cafe3, qtd_silo3, cafe4, qtd_silo4) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         try {
             //Pega dados salvos apenas na nuvem
@@ -1708,9 +1712,13 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 try {
                     pst.setString(1, rsNuvem.getString(2));
                     pst.setString(2, rsNuvem.getString(4));
-                    pst.setString(3, rsNuvem.getString(6));
-                    pst.setString(4, rsNuvem.getString(8));
-                    pst.setString(5, rsNuvem.getString(10));
+                    pst.setString(3, rsNuvem.getString(5));
+                    pst.setString(4, rsNuvem.getString(7));
+                    pst.setString(5, rsNuvem.getString(8));
+                    pst.setString(6, rsNuvem.getString(10));
+                    pst.setString(7, rsNuvem.getString(11));
+                    pst.setString(8, rsNuvem.getString(13));
+                    pst.setString(9, rsNuvem.getString(14));
 
                     pst.executeUpdate();
                     
@@ -2137,6 +2145,31 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
+    private void buscar_tipos_silo(){
+        String sql = "select cafe_atual from tb_silos";
+        
+        String [] tipos = new String[4];
+        int i = 0;
+        
+        try {
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
+            
+            while(rs.next()){
+                tipos[i] = rs.getString(1);
+                i++;       
+            }
+            
+            lblTipo1.setText(tipos[0]);
+            lblTipo2.setText(tipos[1]);
+            lblTipo3.setText(tipos[2]);
+            lblTipo4.setText(tipos[3]);
+            
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+    
     private void buscar_blend_atual(){
         //Busca blend atual, ultimo enviado ao plc
         String sql = "select id_blend_atual, nome, qtd_silo1, qtd_silo2, qtd_silo3, qtd_silo4, operacao from tb_blend_atual";
@@ -2238,10 +2271,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
             //lblNomeBlend.setText(tbBlend.getModel().getValueAt(setar,1).toString());
             txtIdBlend.setText(tbBlend.getModel().getValueAt(setar,0).toString());
             txtNomeBlend.setText(tbBlend.getModel().getValueAt(setar,1).toString());
-            txtQtdSilo1.setText(tbBlend.getModel().getValueAt(setar,3).toString());
-            txtQtdSilo2.setText(tbBlend.getModel().getValueAt(setar,5).toString());
-            txtQtdSilo3.setText(tbBlend.getModel().getValueAt(setar,7).toString());
-            txtQtdSilo4.setText(tbBlend.getModel().getValueAt(setar,9).toString()); 
+            txtQtdSilo1.setText(tbBlend.getModel().getValueAt(setar,4).toString());
+            txtQtdSilo2.setText(tbBlend.getModel().getValueAt(setar,7).toString());
+            txtQtdSilo3.setText(tbBlend.getModel().getValueAt(setar,10).toString());
+            txtQtdSilo4.setText(tbBlend.getModel().getValueAt(setar,13).toString()); 
             
         } catch (Exception e) {
             System.out.println("Falha ao setar campos da tabela" + e);
@@ -2253,15 +2286,25 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void remove_colunas(){
         tbBlend.removeColumn(tbBlend.getColumnModel().getColumn(0));
         tbBlend.removeColumn(tbBlend.getColumnModel().getColumn(1));
-        tbBlend.removeColumn(tbBlend.getColumnModel().getColumn(2));
         tbBlend.removeColumn(tbBlend.getColumnModel().getColumn(3));
-        tbBlend.removeColumn(tbBlend.getColumnModel().getColumn(4));
+        tbBlend.removeColumn(tbBlend.getColumnModel().getColumn(5));
+        tbBlend.removeColumn(tbBlend.getColumnModel().getColumn(7));
+        
+
+
         
         tbBlend.getColumnModel().getColumn(0).setHeaderValue("Nome");
-        tbBlend.getColumnModel().getColumn(1).setHeaderValue("Quantidade Silo 1");
-        tbBlend.getColumnModel().getColumn(2).setHeaderValue("Quantidade Silo 2");
-        tbBlend.getColumnModel().getColumn(3).setHeaderValue("Quantidade Silo 3");
-        tbBlend.getColumnModel().getColumn(4).setHeaderValue("Quantidade Silo 4");
+        tbBlend.getColumnModel().getColumn(1).setHeaderValue("Café 1");
+        tbBlend.getColumnModel().getColumn(2).setHeaderValue("Quantidade");
+        tbBlend.getColumnModel().getColumn(3).setHeaderValue("Café 2");
+        tbBlend.getColumnModel().getColumn(4).setHeaderValue("Quantidade");
+        tbBlend.getColumnModel().getColumn(5).setHeaderValue("Café 3");
+        tbBlend.getColumnModel().getColumn(6).setHeaderValue("Quantidade");
+        tbBlend.getColumnModel().getColumn(7).setHeaderValue("Café 4");
+        tbBlend.getColumnModel().getColumn(8).setHeaderValue("Quantidade");
+        
+        
+
         
         tbBlend.getTableHeader().repaint();
     }
@@ -3346,7 +3389,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendManual = new javax.swing.JButton();
         btnBlendLimpar = new javax.swing.JButton();
         btnEmergencia = new javax.swing.JButton();
-        lblBlendWifi = new javax.swing.JLabel();
         jPanel11 = new javax.swing.JPanel();
         jPanel15 = new javax.swing.JPanel();
         jPanel18 = new javax.swing.JPanel();
@@ -3359,6 +3401,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
         txtQtdSilo3 = new javax.swing.JTextField();
         lblSilosOpen3 = new javax.swing.JLabel();
         btnSilo3Abrir = new javax.swing.JButton();
+        lblTipo3 = new javax.swing.JLabel();
+        jLabel9 = new javax.swing.JLabel();
         jPanel14 = new javax.swing.JPanel();
         txtNomeBlend = new javax.swing.JTextField();
         txtIdBlend = new javax.swing.JTextField();
@@ -3379,6 +3423,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
         txtQtdSilo1 = new javax.swing.JTextField();
         lblSilosOpen1 = new javax.swing.JLabel();
         btnSilo1Abrir = new javax.swing.JButton();
+        lblTipo1 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
         jPanel24 = new javax.swing.JPanel();
         jPanel25 = new javax.swing.JPanel();
         jPanel26 = new javax.swing.JPanel();
@@ -3388,9 +3434,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel30 = new javax.swing.JPanel();
         jPanel31 = new javax.swing.JPanel();
         txtQtdSilo4 = new javax.swing.JTextField();
-        jLabel14 = new javax.swing.JLabel();
         lblSilosOpen4 = new javax.swing.JLabel();
         btnSilo4Abrir = new javax.swing.JButton();
+        jLabel15 = new javax.swing.JLabel();
+        lblTipo4 = new javax.swing.JLabel();
+        jLabel1 = new javax.swing.JLabel();
         jPanel32 = new javax.swing.JPanel();
         jPanel33 = new javax.swing.JPanel();
         jPanel34 = new javax.swing.JPanel();
@@ -3403,6 +3451,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jLabel6 = new javax.swing.JLabel();
         lblSilosOpen2 = new javax.swing.JLabel();
         btnSilo2Abrir = new javax.swing.JButton();
+        lblTipo2 = new javax.swing.JLabel();
+        jLabel5 = new javax.swing.JLabel();
         footerBlend = new javax.swing.JPanel();
         lblData = new javax.swing.JLabel();
         jPanel42 = new javax.swing.JPanel();
@@ -3427,6 +3477,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel12 = new javax.swing.JPanel();
         btnBlendPower = new javax.swing.JButton();
         lblWifiDesc = new javax.swing.JLabel();
+        lblBlendWifi = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         MenuCLP = new javax.swing.JMenu();
         btnModBus = new javax.swing.JMenuItem();
@@ -3594,9 +3645,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel3.add(btnEmergencia, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 240, 200, 60));
 
-        lblBlendWifi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/no-wifi.png"))); // NOI18N
-        jPanel3.add(lblBlendWifi, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 490, 70, 70));
-
         getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1030, 10, 240, 680));
 
         jPanel11.setBackground(new java.awt.Color(72, 126, 176));
@@ -3673,7 +3721,17 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnSilo3AbrirActionPerformed(evt);
             }
         });
-        jPanel11.add(btnSilo3Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 60, 130, 45));
+        jPanel11.add(btnSilo3Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 80, 130, 45));
+
+        lblTipo3.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        lblTipo3.setForeground(new java.awt.Color(255, 255, 255));
+        lblTipo3.setText("TIPO");
+        jPanel11.add(lblTipo3, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 40, -1, 30));
+
+        jLabel9.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel9.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel9.setText("ATUAL:");
+        jPanel11.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 40, -1, 30));
 
         getContentPane().add(jPanel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 190, 240, 210));
 
@@ -3734,7 +3792,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel4.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 10, 100, -1));
 
-        getContentPane().add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 530, 640, 50));
+        getContentPane().add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 530, 660, 50));
 
         jPanel5.setBackground(new java.awt.Color(72, 126, 176));
         jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3765,14 +3823,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jScrollPane1.setViewportView(tbBlend);
 
-        jPanel5.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 50, 621, 110));
+        jPanel5.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 50, 640, 130));
 
         tbBlendTitulo.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         tbBlendTitulo.setForeground(new java.awt.Color(255, 255, 255));
         tbBlendTitulo.setText("RECEITAS CADASTRADAS");
         jPanel5.add(tbBlendTitulo, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
 
-        getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 590, 640, 180));
+        getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 590, 660, 190));
 
         jPanel16.setBackground(new java.awt.Color(72, 126, 176));
         jPanel16.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 1", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3808,7 +3866,17 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnSilo1AbrirActionPerformed(evt);
             }
         });
-        jPanel16.add(btnSilo1Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 60, 130, 45));
+        jPanel16.add(btnSilo1Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 80, 130, 45));
+
+        lblTipo1.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        lblTipo1.setForeground(new java.awt.Color(255, 255, 255));
+        lblTipo1.setText("TIPO");
+        jPanel16.add(lblTipo1, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 40, -1, 30));
+
+        jLabel4.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel4.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel4.setText("ATUAL:");
+        jPanel16.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 40, -1, 30));
 
         getContentPane().add(jPanel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 190, 240, 210));
 
@@ -3866,11 +3934,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         txtQtdSilo4.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         jPanel24.add(txtQtdSilo4, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 160, 150, -1));
 
-        jLabel14.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jLabel14.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel14.setText("QUANTIDADE (Kg)");
-        jPanel24.add(jLabel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 130, -1, -1));
-
         lblSilosOpen4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/bol1.gif"))); // NOI18N
         jPanel24.add(lblSilosOpen4, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
 
@@ -3885,7 +3948,22 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnSilo4AbrirActionPerformed(evt);
             }
         });
-        jPanel24.add(btnSilo4Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 60, 130, 45));
+        jPanel24.add(btnSilo4Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 80, 130, 45));
+
+        jLabel15.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel15.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel15.setText("QUANTIDADE (Kg)");
+        jPanel24.add(jLabel15, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 130, -1, -1));
+
+        lblTipo4.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        lblTipo4.setForeground(new java.awt.Color(255, 255, 255));
+        lblTipo4.setText("TIPO");
+        jPanel24.add(lblTipo4, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 40, -1, 30));
+
+        jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel1.setText("ATUAL:");
+        jPanel24.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 40, 60, 30));
 
         getContentPane().add(jPanel24, new org.netbeans.lib.awtextra.AbsoluteConstraints(760, 190, 240, 210));
 
@@ -3962,7 +4040,17 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnSilo2AbrirActionPerformed(evt);
             }
         });
-        jPanel32.add(btnSilo2Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 60, 130, 45));
+        jPanel32.add(btnSilo2Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 80, 130, 45));
+
+        lblTipo2.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        lblTipo2.setForeground(new java.awt.Color(255, 255, 255));
+        lblTipo2.setText("TIPO");
+        jPanel32.add(lblTipo2, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 40, -1, 30));
+
+        jLabel5.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel5.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel5.setText("ATUAL:");
+        jPanel32.add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 40, -1, 30));
 
         getContentPane().add(jPanel32, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 190, 240, 210));
 
@@ -3974,7 +4062,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblData.setText("Data - Observação");
         footerBlend.add(lblData, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 0, 920, 50));
 
-        getContentPane().add(footerBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 790, 1400, 60));
+        getContentPane().add(footerBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 790, 1400, 50));
 
         jPanel42.setBackground(new java.awt.Color(25, 42, 86));
         jPanel42.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -4015,7 +4103,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel42.add(btnBlendAtual, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 150, 230, 40));
 
-        getContentPane().add(jPanel42, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 530, 340, 240));
+        getContentPane().add(jPanel42, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 530, 320, 250));
 
         jPanel7.setBackground(new java.awt.Color(25, 42, 86));
         jPanel7.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -4128,6 +4216,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblWifiDesc.setText("* Operando OFFLINE");
         getContentPane().add(lblWifiDesc, new org.netbeans.lib.awtextra.AbsoluteConstraints(1110, 720, 160, 30));
 
+        lblBlendWifi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/no-wifi.png"))); // NOI18N
+        getContentPane().add(lblBlendWifi, new org.netbeans.lib.awtextra.AbsoluteConstraints(1030, 700, 70, 70));
+
         jMenuBar1.setBackground(new java.awt.Color(250, 250, 250));
         jMenuBar1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(204, 204, 204)));
         jMenuBar1.setPreferredSize(new java.awt.Dimension(173, 35));
@@ -4199,7 +4290,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         setJMenuBar(jMenuBar1);
 
-        setSize(new java.awt.Dimension(1299, 923));
+        setSize(new java.awt.Dimension(1299, 914));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -4725,15 +4816,19 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> cbBlendOperacao;
     private javax.swing.JPanel footerBlend;
     private javax.swing.JButton jButton1;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
-    private javax.swing.JLabel jLabel14;
+    private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel9;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenu4;
@@ -4796,6 +4891,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JLabel lblSilosOpen2;
     private javax.swing.JLabel lblSilosOpen3;
     private javax.swing.JLabel lblSilosOpen4;
+    private javax.swing.JLabel lblTipo1;
+    private javax.swing.JLabel lblTipo2;
+    private javax.swing.JLabel lblTipo3;
+    private javax.swing.JLabel lblTipo4;
     private javax.swing.JLabel lblWifiDesc;
     private java.awt.Menu menu1;
     private java.awt.Menu menu2;

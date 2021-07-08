@@ -99,7 +99,7 @@ public class TelaLotesCafeMoido extends javax.swing.JFrame {
                     cbLoteTipoCafe.addItem(nome_tipo_cafe);
                 }
             } catch (Exception e) {
-                System.out.println("Façha ao popular combobox com tipos de café "+e);
+                System.out.println("Falha ao popular combobox com tipos de café "+e);
             }
         }
         
@@ -200,13 +200,13 @@ public class TelaLotesCafeMoido extends javax.swing.JFrame {
 
 
                if((nome_lote.isEmpty() || num_lote.isEmpty())){
-                    JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
+                    //JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
                 }
                 else if(check_float(num_lote) == false){
-                    JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
+                    //JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
                 }
                 else if(tipo_cafe == "TIPO DO CAFÉ..."){
-                    JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
+                    //JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
                 }
                 else{ 
                     pstNuvem = nuvem.prepareStatement(sql);
