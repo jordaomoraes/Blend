@@ -2165,10 +2165,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 i++;       
             }
             
-            lblTipo1.setText(tipos[0]);
-            lblTipo2.setText(tipos[1]);
-            lblTipo3.setText(tipos[2]);
-            lblTipo4.setText(tipos[3]);
+            lblTipo1.setText("ATUAL: "+tipos[0]);
+            lblTipo2.setText("ATUAL: "+tipos[1]);
+            lblTipo3.setText("ATUAL: "+tipos[2]);
+            lblTipo4.setText("ATUAL: "+tipos[3]);
             
         } catch (Exception e) {
             System.out.println(e);
@@ -3407,7 +3407,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblSilosOpen3 = new javax.swing.JLabel();
         btnSilo3Abrir = new javax.swing.JButton();
         lblTipo3 = new javax.swing.JLabel();
-        jLabel9 = new javax.swing.JLabel();
         jPanel14 = new javax.swing.JPanel();
         txtNomeBlend = new javax.swing.JTextField();
         txtIdBlend = new javax.swing.JTextField();
@@ -3429,7 +3428,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblSilosOpen1 = new javax.swing.JLabel();
         btnSilo1Abrir = new javax.swing.JButton();
         lblTipo1 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
         jPanel24 = new javax.swing.JPanel();
         jPanel25 = new javax.swing.JPanel();
         jPanel26 = new javax.swing.JPanel();
@@ -3443,7 +3441,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnSilo4Abrir = new javax.swing.JButton();
         jLabel15 = new javax.swing.JLabel();
         lblTipo4 = new javax.swing.JLabel();
-        jLabel1 = new javax.swing.JLabel();
         jPanel32 = new javax.swing.JPanel();
         jPanel33 = new javax.swing.JPanel();
         jPanel34 = new javax.swing.JPanel();
@@ -3457,7 +3454,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblSilosOpen2 = new javax.swing.JLabel();
         btnSilo2Abrir = new javax.swing.JButton();
         lblTipo2 = new javax.swing.JLabel();
-        jLabel5 = new javax.swing.JLabel();
         footerBlend = new javax.swing.JPanel();
         lblData = new javax.swing.JLabel();
         jPanel42 = new javax.swing.JPanel();
@@ -3731,12 +3727,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblTipo3.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         lblTipo3.setForeground(new java.awt.Color(255, 255, 255));
         lblTipo3.setText("TIPO");
-        jPanel11.add(lblTipo3, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 40, -1, 30));
-
-        jLabel9.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jLabel9.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel9.setText("ATUAL:");
-        jPanel11.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 40, -1, 30));
+        jPanel11.add(lblTipo3, new org.netbeans.lib.awtextra.AbsoluteConstraints(78, 40, 110, 30));
 
         getContentPane().add(jPanel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 190, 240, 210));
 
@@ -3876,12 +3867,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblTipo1.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         lblTipo1.setForeground(new java.awt.Color(255, 255, 255));
         lblTipo1.setText("TIPO");
-        jPanel16.add(lblTipo1, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 40, -1, 30));
-
-        jLabel4.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jLabel4.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel4.setText("ATUAL:");
-        jPanel16.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 40, -1, 30));
+        lblTipo1.setToolTipText("");
+        lblTipo1.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jPanel16.add(lblTipo1, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 40, 110, 30));
 
         getContentPane().add(jPanel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 190, 240, 210));
 
@@ -3963,12 +3951,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblTipo4.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         lblTipo4.setForeground(new java.awt.Color(255, 255, 255));
         lblTipo4.setText("TIPO");
-        jPanel24.add(lblTipo4, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 40, -1, 30));
-
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel1.setText("ATUAL:");
-        jPanel24.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 40, 60, 30));
+        jPanel24.add(lblTipo4, new org.netbeans.lib.awtextra.AbsoluteConstraints(78, 40, 110, 30));
 
         getContentPane().add(jPanel24, new org.netbeans.lib.awtextra.AbsoluteConstraints(760, 190, 240, 210));
 
@@ -4050,12 +4033,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblTipo2.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         lblTipo2.setForeground(new java.awt.Color(255, 255, 255));
         lblTipo2.setText("TIPO");
-        jPanel32.add(lblTipo2, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 40, -1, 30));
-
-        jLabel5.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jLabel5.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel5.setText("ATUAL:");
-        jPanel32.add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 40, -1, 30));
+        jPanel32.add(lblTipo2, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 40, 110, 30));
 
         getContentPane().add(jPanel32, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 190, 240, 210));
 
@@ -4067,7 +4045,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblData.setText("Data - Observação");
         footerBlend.add(lblData, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 0, 920, 50));
 
-        getContentPane().add(footerBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 790, 1400, 50));
+        getContentPane().add(footerBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 790, 1400, 120));
 
         jPanel42.setBackground(new java.awt.Color(25, 42, 86));
         jPanel42.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -4821,19 +4799,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> cbBlendOperacao;
     private javax.swing.JPanel footerBlend;
     private javax.swing.JButton jButton1;
-    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
-    private javax.swing.JLabel jLabel9;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenu4;
