@@ -294,7 +294,7 @@ public class TelaLotesCafeMoido extends javax.swing.JFrame {
         setIconImage(Toolkit.getDefaultToolkit().getImage(TelaLotesCafeMoido.class.getResource("/br/com/blend/icones/box.png"))
         );
         setMinimumSize(new java.awt.Dimension(562, 427));
-        setPreferredSize(new java.awt.Dimension(562, 427));
+        setResizable(false);
         setSize(new java.awt.Dimension(562, 427));
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 

@@ -310,6 +310,7 @@ public class TelaLotes extends javax.swing.JFrame {
         );
         setMinimumSize(new java.awt.Dimension(562, 427));
         setPreferredSize(new java.awt.Dimension(562, 427));
+        setResizable(false);
         setSize(new java.awt.Dimension(562, 427));
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
