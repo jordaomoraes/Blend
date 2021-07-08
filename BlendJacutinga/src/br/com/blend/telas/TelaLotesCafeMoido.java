@@ -85,9 +85,28 @@ public class TelaLotesCafeMoido extends javax.swing.JFrame {
         
         
         private void set_tipos_cafe(){
-            //Popula combobox com tipos de café
-            String sql = "select nome_tipo_cafe from tb_tipos_cafe";
+             //Popula combobox com tipos de café
+            String sql = "select marca from tb_embalagem";
+            nuvem = ModuloConexaoNuvem.conector();
+            try {
+                cbLoteTipoCafe.removeAllItems();
+                cbLoteTipoCafe.addItem("TIPO DO CAFÉ...");
+                pstNuvem = nuvem.prepareStatement(sql);
+                rsNuvem = pstNuvem.executeQuery();
 
+                while(rsNuvem.next()){
+                    String nome_tipo_cafe = rsNuvem.getString(1);
+                    cbLoteTipoCafe.addItem(nome_tipo_cafe);
+                }
+            } catch (Exception e) {
+                System.out.println("Falha ao popular combobox com tipos de café da numvem "+e);
+                set_tipos_cafe_off();
+            }
+        }
+        
+        private void set_tipos_cafe_off(){
+            String sql = "select marca from tb_embalagem";
+            
             try {
                 cbLoteTipoCafe.removeAllItems();
                 cbLoteTipoCafe.addItem("TIPO DO CAFÉ...");
@@ -99,7 +118,8 @@ public class TelaLotesCafeMoido extends javax.swing.JFrame {
                     cbLoteTipoCafe.addItem(nome_tipo_cafe);
                 }
             } catch (Exception e) {
-                System.out.println("Falha ao popular combobox com tipos de café "+e);
+                JOptionPane.showMessageDialog(null, "Falha ao buscar tipos de café");
+                this.dispose();
             }
         }
         

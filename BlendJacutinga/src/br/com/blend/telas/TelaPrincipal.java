@@ -376,6 +376,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 }
             }
         } catch (Exception e) {
+            temos_internet = false;
             System.out.println("Falha ao checar se há novos blends (nuvem)");
         }
         
@@ -424,10 +425,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
         timer.scheduleAtFixedRate(timer_tipo_cafe, 1, tempo_tipo_cafe);
     }
     
-    //Verifica se tem tipo de café novo ou alteração
+    //Verifica se tem marcas de café novas ou alteralções
     private boolean consulta_tipos_cafe(){
         nuvem = ModuloConexaoNuvem.conector();
-        String sql = "select tipo_cafe from tb_dados_web where id_dados_web = 1";
+        String sql = "select embalagens from tb_dados_web where id_dados_web = 1";
         
         try {
             pstNuvem = nuvem.prepareStatement(sql);
@@ -439,14 +440,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 }
             }
         } catch (Exception e) {
-            System.out.println("Falha ao checar por novos tipos de café (nuvem) "+e);
+            temos_internet = false;
+            System.out.println("Falha ao checar por novos tipos (marcas) de café (nuvem) "+e);
         }
         return false;
     }
     
     
     private void ultimo_tipo_registrado(){
-        String sql = "select max(id_tipo_cafe) as id from tb_tipos_cafe";
+        String sql = "select max(id_embalagem) as id from tb_embalagem";
         
         try {
             pst = conexao.prepareStatement(sql);
@@ -464,8 +466,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void sincronizar_tipos_cafe_alteracoes(){
         nuvem = ModuloConexaoNuvem.conector();
         
-        String sqlNuvem = "select * from tb_tipos_cafe";
-        String sqlLocal = "update tb_tipos_cafe set id_tipo_cafe = ?, nome_tipo_cafe=? where id_tipo_cafe = ?";
+        String sqlNuvem = "select * from tb_embalagem";
+        String sqlLocal = "update tb_embalagem set id_embalagem = ?, marca = ?, volume = ? where id_embalagem = ?";
         try {
             JOptionPane.showMessageDialog(null, "Novas alterações nos tipos de café disponíveis, sincronizando...");
             pstNuvem = nuvem.prepareStatement(sqlNuvem);
@@ -476,23 +478,25 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 try {
                     pst.setInt(1, rsNuvem.getInt(1));
                     pst.setString(2, rsNuvem.getString(2));
-                    pst.setInt(3, rsNuvem.getInt(1));
+                    pst.setString(3, rsNuvem.getString(3));
+                    pst.setInt(4, rsNuvem.getInt(1));
                     pst.executeUpdate();
+                    
                 } catch (Exception e) {
-                    System.out.println("Falha ao sincronizar tipos de cafe "+e);
+                    System.out.println("Falha ao sincronizar marcas de cafe "+e);
                 }
             }
             set_tipos_cafe_0();
         } catch (Exception e) {
-            System.out.println("Falha ao sincronizar tipos de café "+e);
+            System.out.println("Falha ao sincronizar marcas de café "+e);
         }
     }
     
     
     private void sincronizar_tipos_cafe_cadastros(){
         ultimo_tipo_registrado();
-        String sqlNuvem = "select * from tb_tipos_cafe where id_tipo_cafe > ?";
-        String sql = "insert into tb_tipos_cafe (nome_tipo_cafe) values(?)";
+        String sqlNuvem = "select * from tb_embalagem where id_embalagem > ?";
+        String sql = "insert into tb_embalagem (marca, volume) values(?, ?)";
         
         try {
             nuvem = ModuloConexaoNuvem.conector();
@@ -507,10 +511,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
             while(rsNuvem.next()){
                 try {
                     pst.setString(1, rsNuvem.getString(2));
+                    pst.setString(2, rsNuvem.getString(3));
                     pst.executeUpdate();
                     System.out.println("TIPOS Sincronizados!");
                 } catch (Exception e) {
-                    System.out.println("Falha ao sincronizar tipos de café (local)!");
+                    System.out.println("Falha ao sincronizar marcas de café (local)!");
                     System.out.println(e);
                 }
             }
@@ -523,7 +528,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     
     private void set_tipos_cafe_0(){
         nuvem = ModuloConexaoNuvem.conector();
-        String sql = "update tb_dados_web set tipo_cafe = 0";
+        String sql = "update tb_dados_web set embalagens = 0";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.executeUpdate();
@@ -3139,7 +3144,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             block_campos();
             falha_conexao();
             try {
-                caixa_mensagens.insertString(caixa_mensagens.getLength(), "Tentando se reconectar com clp" , cor_tentando_conectar);
+                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nTentando se reconectar com clp" , cor_tentando_conectar);
                 JOptionPane.showMessageDialog(null, "Conexao com CLP perdia, reconectando...");
                 conecta_com_clp();
             } catch (Exception e) {
