@@ -171,7 +171,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     //Variaveis de timer task
     final private Timer timer = new Timer();
     private TimerTask timer_clp, timer_internet, timer_blendador, timer_sincronizar, timer_blendando, timer_operacao, timer_lote, timer_mexedor, timer_elevador, timer_modo_blendador, timer_blend, timer_tipo_cafe, timer_meta;
-    int tempo_clp = (1000), tempo_internet = (1000), tempo_blendador = (1000), tempo_sincronizar = (1000), tempo_blendando = (1000), tempo_operacao = (500), tempo_lote = (2000), tempo_mexedor = (1000), tempo_elevador = (1000), tempo_modo_blendador=(1000), tempo_blend = (25000), tempo_tipo_cafe = (25000), tempo_meta = (25000);
+    int tempo_clp = (1000), tempo_internet = (1000), tempo_blendador = (1000), tempo_sincronizar = (5000), tempo_blendando = (1000), tempo_operacao = (500), tempo_lote = (2000), tempo_mexedor = (1000), tempo_elevador = (1000), tempo_modo_blendador=(1000), tempo_blend = (25000), tempo_tipo_cafe = (25000), tempo_meta = (25000);
     int contador_tempo=0, contador_operacao_silos =0;
 
     public TelaPrincipal() {
@@ -826,12 +826,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
             @Override
             public void run() {
                 //Sincroniza tudo
+                System.out.println("Verificando sincronizar");
                 if(precisa_sincrinizar == true && reconectado_internet == true && temos_internet == true || sincronizado == 1){
                     precisa_sincrinizar = false;
                     reconectado_internet = false;
                     //sincronizar_ao_ligar = false;
                     try {
                         check_sincronizar();
+                                        
+                        System.out.println("ENtrou NO tRY");
                     } catch (Exception e) {
                         JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados!");
                         System.out.println(e);
@@ -1761,7 +1764,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
          //nuvem = ModuloConexaoNuvem.conector();
         
         String sql = "select * from tb_lotes where id_lote > ?";
-        String sql_insert_nuvem = "insert into tb_lotes(nome_lote, num_lote, data_lote, tipo_cafe, qtd_torrado, obs) values (?, ?, ?, ?, ?, ?)";
+        String sql_insert_nuvem = "insert into tb_lotes(nome_lote, num_lote, data_lote, tipo_cafe, qtd_torrado, obs, torras) values (?, ?, ?, ?, ?, ?, ?)";
         
         try {
             //Pega dados salvos apenas localmente
@@ -1780,6 +1783,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     pstNuvem.setString(4, rs.getString(5));
                     pstNuvem.setString(5, rs.getString(6));
                     pstNuvem.setString(6, rs.getString(7));
+                    pstNuvem.setString(7, rs.getString(8));
                     pstNuvem.executeUpdate();
                     
                 } catch (Exception e) {
@@ -1816,7 +1820,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
          //nuvem = ModuloConexaoNuvem.conector();
         
         String sql = "select * from tb_lotes_grao where id_lote_grao > ?";
-        String sql_insert_nuvem = "insert into tb_lotes_grao(nome_lote_grao, num_lote_grao, data_lote_grao, tipo_cafe_grao, qtd_torrado, obs) values (?, ?, ?, ?, ?, ?)";
+        String sql_insert_nuvem = "insert into tb_lotes_grao(nome_lote_grao, num_lote_grao, data_lote_grao, tipo_cafe_grao, qtd_torrado, obs, torras) values (?, ?, ?, ?, ?, ?, ?)";
         
         try {
             //Pega dados salvos apenas localmente
@@ -1835,7 +1839,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     pstNuvem.setString(4, rs.getString(5));
                     pstNuvem.setString(5, rs.getString(6));
                     pstNuvem.setString(6, rs.getString(7));
+                    pstNuvem.setString(7, rs.getString(8));
                     pstNuvem.executeUpdate();
+                    
+                    JOptionPane.showMessageDialog(null, rs.getString(8));
+                    System.out.println(rs.getString(8));
                     
                 } catch (Exception e) {
                     System.out.println("Falha ao sincronizar Lotes Grão (nuvem)!");

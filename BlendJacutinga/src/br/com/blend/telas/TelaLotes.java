@@ -14,6 +14,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import javax.swing.JOptionPane;
 import java.awt.Toolkit;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 
 public class TelaLotes extends javax.swing.JFrame {
@@ -28,6 +30,10 @@ public class TelaLotes extends javax.swing.JFrame {
     final private Timer timer = new Timer();
     private TimerTask timer_internet, timer_tipo_cafe;
     int tempo_internet = (1000), tempo_tipo_cafe = (1000);
+    
+    //Variaveis JSON
+    JSONObject Jlotetorra = new JSONObject();
+    JSONArray Jtorras = new JSONArray();
     
     
     //Variáveis de internet
@@ -256,6 +262,76 @@ public class TelaLotes extends javax.swing.JFrame {
         }
     }
     
+    private void gerar_json_lote_torras_local(){
+        String sql = "select idtorralote from tb_torras_lote";
+        
+        Jlotetorra = new JSONObject();
+        Jtorras = new JSONArray();
+        
+       try {
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
+            
+            while(rs.next()){
+                Jtorras.put(rs.getInt(1));
+            }
+            Jlotetorra.put("Torras", Jtorras);
+            System.out.println(Jlotetorra.toString());
+        } catch (Exception e) {
+            System.out.println("Falha ao gerar json (local)! "+e);
+        }
+    }
+    
+    private void incrementa_lote_com_torras_local(){
+        gerar_json_lote_torras_local();
+        String sql_update = "update tb_lotes_grao set torras = ? order by id_lote_grao desc limit 1";
+        
+        try {
+            pst = conexao.prepareStatement(sql_update);
+            pst.setString(1, Jlotetorra.toString());
+            pst.executeUpdate();
+            
+            System.out.println("DEU CERTO");
+        } catch (Exception e) {
+             System.out.println(e + " Falha ao incrementar ultimo lote com torras (local)");
+        }
+    }
+    
+    
+    private void gerar_json_lote_torras_nuvem(){
+        String sqlNuvem = "select idtorralote from tb_torras_lote";
+        nuvem = ModuloConexaoNuvem.conector();
+        
+       try {
+            pstNuvem = nuvem.prepareStatement(sqlNuvem);
+            rsNuvem = pstNuvem.executeQuery();
+            
+            Jlotetorra = new JSONObject();
+            Jtorras = new JSONArray();
+            
+            while(rsNuvem.next()){
+                Jtorras.put(rsNuvem.getInt(1));
+            }
+            Jlotetorra.put("Torras", Jtorras);
+        } catch (Exception e) {
+            System.out.println("Falha ao gerar json! "+e);
+        }
+    }
+    
+    
+    private void incrementa_lote_com_torras_nuvem(){
+        gerar_json_lote_torras_nuvem();
+        String sql_update_nuvem = "update tb_lotes_grao set torras = ? order by id_lote_grao desc limit 1";
+        
+        try {
+            pstNuvem = nuvem.prepareStatement(sql_update_nuvem);
+            pstNuvem.setString(1, Jlotetorra.toString());
+            pstNuvem.executeUpdate();
+        } catch (Exception e) {
+             System.out.println(e + " Falha ao incrementar ultimo lote com torras");
+        }
+    }
+    
     //Metodo para avisar que precisa sincronizar
     private void set_sincronizar_1(){
         String sql = "update tb_modbus set SINCRONIZADO = 1 where id_modbus";
@@ -268,6 +344,30 @@ public class TelaLotes extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
+    
+    
+    private void truncate_torras_lote_local(){
+        String sql = "delete from tb_torras_lote";
+            
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao truncar torras lote local "+e);
+        }
+    }
+        
+    private void truncate_torras_lote_nuvem(){
+        String sql = "delete from tb_torras_lote";
+            
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao truncar torras lote local "+e);
+        }
+    }
+    
     
     
     public static boolean check_float(String text) {
@@ -392,12 +492,18 @@ public class TelaLotes extends javax.swing.JFrame {
         int confirma = JOptionPane.showConfirmDialog(null,"Tem certeza de que quer encerrar o lote atual?","Atenção",JOptionPane.YES_NO_OPTION);
             if(confirma == JOptionPane.YES_OPTION){
                 if(temos_internet == true){
+                incrementa_lote_com_torras_local();
+                incrementa_lote_com_torras_nuvem();
                 novo_lote();
                 novo_lote_nuvem();
+                truncate_torras_lote_local();
+                truncate_torras_lote_nuvem();
             }
             else if(temos_internet == false){
+                incrementa_lote_com_torras_local();
                 novo_lote();
                 set_sincronizar_1();
+                truncate_torras_lote_local();
             }
         }
     }//GEN-LAST:event_btnLoteNovoActionPerformed
