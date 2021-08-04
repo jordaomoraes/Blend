@@ -256,7 +256,7 @@ public class TelaLotesCafeMoido extends javax.swing.JFrame {
         
         
         private void gerar_json_lote_torras_local(){
-            String sql = "select idtorralote from tb_torras_lote";
+            String sql = "select idTorra from tb_torras_lote";
 
             Jlotetorra = new JSONObject();
             Jtorras = new JSONArray();
@@ -289,10 +289,10 @@ public class TelaLotesCafeMoido extends javax.swing.JFrame {
                  System.out.println(e + " Falha ao incrementar ultimo lote com torras (local)");
             }
         }
-    
-    
+
+        
         private void gerar_json_lote_torras_nuvem(){
-            String sqlNuvem = "select idtorralote from tb_torras_lote";
+            String sqlNuvem = "select idTorra from tb_torras_lote";
             nuvem = ModuloConexaoNuvem.conector();
             
             try {
@@ -321,9 +321,10 @@ public class TelaLotesCafeMoido extends javax.swing.JFrame {
                 pstNuvem.setString(1, Jlotetorra.toString());
                 pstNuvem.executeUpdate();
             } catch (Exception e) {
-                 System.out.println(e + " Falha ao incrementar ultimo lote com torras");
+                System.out.println(e + " Falha ao incrementar ultimo lote com torras");
             }
         }
+        
 
         //Metodo para avisar que precisa sincronizar
         private void set_sincronizar_1(){
@@ -337,7 +338,6 @@ public class TelaLotesCafeMoido extends javax.swing.JFrame {
                 System.out.println(e);
             }
         }
-        
         
         private void truncate_torras_lote_local(){
             String sql = "delete from tb_torras_lote";

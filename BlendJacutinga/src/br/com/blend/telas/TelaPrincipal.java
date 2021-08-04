@@ -100,6 +100,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
     //sincrnonizar estoque silos (apagar, não utilizado)
     float []array_silos_sinc;
     
+    boolean sincronizando = false;
+    
     
     //Variaveis Blend
     String IdBlend, NomeBlend, QtdSilo1, QtdSilo2, QtdSilo3, QtdSilo4;
@@ -311,18 +313,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
             public void run() {
                 //Checa conexao com INTERNET
                 if(testa_url("http://192.169.80.2")){
-                    temos_internet = true;
-                    reconectado_internet = true;
-                    lblBlendWifi.setVisible(false);
-                    lblWifiDesc.setVisible(false);
+                    set_aparencia_conectado();
                     //checa_conexao_nuvem();
                 }
                 
                 else if(!testa_url("http://192.169.80.2")){
-                    temos_internet = false;
-                    operando_offline = true;
-                    lblBlendWifi.setVisible(true);
-                    lblWifiDesc.setVisible(true);
+                    set_aparencia_desconectado();
                 }
                 
                 //Cancela as operações de editar e deletar caso internet caia no meio do processo (deprecated)
@@ -334,6 +330,23 @@ public class TelaPrincipal extends javax.swing.JFrame {
             }};
         timer.scheduleAtFixedRate(timer_internet, 1, tempo_internet);
     }
+    
+    
+    private void set_aparencia_conectado(){
+        temos_internet = true;
+        reconectado_internet = true;
+        lblBlendWifi.setVisible(false);
+        lblWifiDesc.setVisible(false);
+    }
+    
+    private void set_aparencia_desconectado(){
+        temos_internet = false;
+        operando_offline = true;
+        lblBlendWifi.setVisible(true);
+        lblWifiDesc.setVisible(true);
+    }
+    
+    
     
     
     //Checa se há novos blends
@@ -833,8 +846,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     //sincronizar_ao_ligar = false;
                     try {
                         check_sincronizar();
-                                        
-                        System.out.println("ENtrou NO tRY");
                     } catch (Exception e) {
                         JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados!");
                         System.out.println(e);
@@ -1603,6 +1614,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
     //Metodos para sincronizar cadastros e estoque
     
     private void sincronizar(){
+        sincronizando = true;
+        
         try {
             set_sincronizar_0();
             nuvem = ModuloConexaoNuvem.conector();
@@ -1628,7 +1641,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
             sincronizar_qtd_torrado_grao_lotes();
             sincronizar_status_blendador();
             caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nDados sincronizados! " , cor_sincronizar);
+            sincronizando = false;
         } catch (Exception e) {
+            sincronizando = false;
             JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados!");
             System.out.println(e);
         }
@@ -1759,17 +1774,30 @@ public class TelaPrincipal extends javax.swing.JFrame {
         }
     }
     
+    //Limpando tabela para sincronizar
+    private void truncate_lotes_nuvem(){
+        String sql = "truncate table tb_lotes";
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.executeUpdate();
+            
+        } catch (Exception e) {
+            System.out.println("Falha ao truncar tb_lotes (nuvem) para sincronizar " +e);
+        }
+    }
+    
     
     private void sincronizar_lotes(){
          //nuvem = ModuloConexaoNuvem.conector();
         
-        String sql = "select * from tb_lotes where id_lote > ?";
+        String sql = "select * from tb_lotes";
         String sql_insert_nuvem = "insert into tb_lotes(nome_lote, num_lote, data_lote, tipo_cafe, qtd_torrado, obs, torras) values (?, ?, ?, ?, ?, ?, ?)";
+        
+        truncate_lotes_nuvem();
         
         try {
             //Pega dados salvos apenas localmente
             pst = conexao.prepareStatement(sql);
-            pst.setString(1, ultimo_id_lote_nuvem);
             rs = pst.executeQuery();
             
             //Insere dados obtidos na local e os insere na nuvem
@@ -1816,16 +1844,28 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
     
     
+    private void truncate_lotes_grao_nuvem(){
+        String sql = "truncate table tb_lotes_grao";
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.executeUpdate();
+            
+        } catch (Exception e) {
+            System.out.println("Falha ao truncar tb_lotes_grao (nuvem) para sincronizar " +e);
+        }
+    }
+    
     private void sincronizar_lotes_grao(){
          //nuvem = ModuloConexaoNuvem.conector();
         
-        String sql = "select * from tb_lotes_grao where id_lote_grao > ?";
+        String sql = "select * from tb_lotes_grao";
         String sql_insert_nuvem = "insert into tb_lotes_grao(nome_lote_grao, num_lote_grao, data_lote_grao, tipo_cafe_grao, qtd_torrado, obs, torras) values (?, ?, ?, ?, ?, ?, ?)";
+        
+        truncate_lotes_grao_nuvem();
         
         try {
             //Pega dados salvos apenas localmente
             pst = conexao.prepareStatement(sql);
-            pst.setString(1, ultimo_id_lote_grao_nuvem);
             rs = pst.executeQuery();
             
             //Insere dados obtidos na local e os insere na nuvem
@@ -1841,10 +1881,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     pstNuvem.setString(6, rs.getString(7));
                     pstNuvem.setString(7, rs.getString(8));
                     pstNuvem.executeUpdate();
-                    
-                    JOptionPane.showMessageDialog(null, rs.getString(8));
-                    System.out.println(rs.getString(8));
-                    
                 } catch (Exception e) {
                     System.out.println("Falha ao sincronizar Lotes Grão (nuvem)!");
                     System.out.println(e);
@@ -2744,7 +2780,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             
             while (rs.next()) {                
                 array_silos[i] = (rs.getFloat(1));
-                //System.out.println(array_silos[i]);
+                System.out.println(array_silos[i]);
                 i++;
             }
             System.out.println("Estoque dos silos consultado!");
@@ -2771,13 +2807,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
             
             while (rsNuvem.next()) {                
                 array_silos_nuvem[i] = (rsNuvem.getFloat(1));
-                //System.out.println(array_silos_nuvem[i]);
+                System.out.println(array_silos_nuvem[i]);
                 i++;
             }
             
             System.out.println("Estoque dos silos consultado!(nuvem)");
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao consultar estoque dos silos da nuvem");
+            temos_internet = false;
             System.out.println(e);
         }
     }
@@ -3008,8 +3045,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
             consultar_estoque_silos();
             int sem_estoque[] = new int[4];
             limpa_mensagens();
+            System.out.println("Parou antes do FOR");
             for(int i = 0; i <= 3; i++){
+                System.out.println("Parou no FOR");
                 if(array_silos[i]<qtd_silos[i]){
+                    System.out.println("ENTROU NO IF");
                     sem_estoque[i] = i+1;
                     System.out.println("Silo "+ sem_estoque[i]+ " com estoque insuficiente");
                     try {
@@ -3019,15 +3059,17 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     }
                 }
             }
-
+            
             for(int i=0; i<=3; i++){
                 if(sem_estoque[i]!=0){
-                    JOptionPane.showMessageDialog(null, "Quantidades de café no silo insifuciente!");
                     return false;
                 }
             }
-
+            
+            
+            System.out.println("RETRNOU TRUE LOCAL");
             return true;
+            
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, "Falha ao checar capacidade dos silos!");
                 System.out.println(e);
@@ -3053,6 +3095,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 }
             }
 
+            System.out.println("RETORNOU TRUE");
             return true;
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, "Falha ao checar capacidade dos silos (nuvem)!");
@@ -3166,6 +3209,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
         else if(cbBlendLote.getSelectedIndex() == 0){
             JOptionPane.showMessageDialog(null, "Selecione um lote!");
         }
+        else if(sincronizando == true){
+            JOptionPane.showMessageDialog(null, "Aguarde o fim da sincronização!");
+        }
         else{
             try {
             // 1 - Pega valores de quantidade de cada silo
@@ -3178,22 +3224,26 @@ public class TelaPrincipal extends javax.swing.JFrame {
             QtdTotal = Float.parseFloat(cafe_silo1) + Float.parseFloat(cafe_silo2) + Float.parseFloat(cafe_silo3) + Float.parseFloat(cafe_silo4);
             // Gera um array com as quantidades individuais de cada silo
             qtd_silos = null;
-            qtd_silos = new float[]{Float.parseFloat(cafe_silo1), Float.parseFloat(cafe_silo2), Float.parseFloat(cafe_silo3), Float.parseFloat(cafe_silo4)};           
+            qtd_silos = new float[]{Float.parseFloat(cafe_silo1), Float.parseFloat(cafe_silo2), Float.parseFloat(cafe_silo3), Float.parseFloat(cafe_silo4)};      
+            System.out.println("Passo 2.1 - qtd_silos: "+qtd_silos[0] +"a"+ qtd_silos[1]+"b"+qtd_silos[2]+"c"+qtd_silos[3]);
             
             //2.2 - Gera preços totais do cafe usado no blend
             //passa array de quantidades para metodo de gerar preço
             gerar_preco_torrado(qtd_silos);
             gerar_preco_cru(qtd_silos);
             
-            if(temos_internet == true){
+            if(testa_url("http://192.169.80.2")){
+                set_aparencia_conectado();
                 //Abre conexao com nuvem para realizar todos os processos
                 nuvem = ModuloConexaoNuvem.conector();
                 
                 //3 - Checa estoque de silos e verifica se é suficiente
                 if(checa_silos(qtd_silos) == false && checa_silos_nuvem(qtd_silos) == false){
-                    return;
+                    JOptionPane.showMessageDialog(null, "Quantidade de café silos insuficiente!");
                 }
                 else if(checa_silos(qtd_silos) == true && checa_silos_nuvem(qtd_silos) == true){
+                    
+                    System.out.println(checa_silos(qtd_silos));
                     
                     // 4 - Retira quantidades do estoque
                     atualizar_estoque_silos(qtd_silos);
@@ -3261,13 +3311,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
             //Operação no modo OFFLINE
             
-            else if(temos_internet == false){
+            else if(!testa_url("http://192.169.80.2")){
                 set_sincronizar_1();
+                set_aparencia_desconectado();
                 precisa_sincrinizar = true;
                 
                 //3 - Checa estoque de silos e verifica se é suficiente
                 if(checa_silos(qtd_silos) == false){
-                    return;
+                    JOptionPane.showMessageDialog(null, "Quantidade de café silos insuficiente!");
                 }
                 else if(checa_silos(qtd_silos) == true){
                     // 4 - Retira quantidades do estoque
@@ -4443,6 +4494,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 silo1 = 1;
                 silo_1_abriu = true;
                 try {
+                    btnBlendManual.setEnabled(false);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_1), true);
                     btnSilo1Abrir.setText("FECHAR");
                     btnSilo1Abrir.setBackground(new Color(255,51,51));
@@ -4456,6 +4508,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 silo1 = 0;
                 silo_1_fechou = true;
                 try {
+                    btnBlendManual.setEnabled(true);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_1), false);
                     btnSilo1Abrir.setText("ABRIR");
                     btnSilo1Abrir.setBackground(new Color(68,141,41));
@@ -4475,6 +4528,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 silo2 = 1;
                 silo_2_abriu = true;
                 try {
+                    btnBlendManual.setEnabled(false);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_2), true);
                     btnSilo2Abrir.setText("FECHAR");
                     btnSilo2Abrir.setBackground(new Color(255,51,51));
@@ -4488,6 +4542,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 silo2 = 0;
                 silo_2_fechou = true;
                 try {
+                    btnBlendManual.setEnabled(true);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_2), false);
                     btnSilo2Abrir.setText("ABRIR");
                     btnSilo2Abrir.setBackground(new Color(68,141,41));
@@ -4507,6 +4562,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 silo3 = 1;
                 silo_3_abriu = true;
                 try {
+                    btnBlendManual.setEnabled(false);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_3), true);
                     btnSilo3Abrir.setText("FECHAR");
                     btnSilo3Abrir.setBackground(new Color(255,51,51));
@@ -4520,7 +4576,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 silo3 = 0;
                 silo_3_fechou = true;
                 try {
-                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_3), false);
+                    btnBlendManual.setEnabled(true);
+                    m.writeSingleCoil(escravo, Integer.parseInt(SILO_3), false);
                     btnSilo3Abrir.setText("ABRIR");
                     btnSilo3Abrir.setBackground(new Color(68,141,41));
                     lblSilosOpen3.setVisible(false);
@@ -4539,6 +4596,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 silo4 = 1;
                 silo_4_abriu = true;
                 try {
+                    btnBlendManual.setEnabled(false);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_4), true);
                     btnSilo4Abrir.setText("FECHAR");
                     btnSilo4Abrir.setBackground(new Color(255,51,51));
@@ -4552,7 +4610,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 silo4 = 0;
                 silo_4_fechou = true;
                 try {
-                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_4), false);
+                    btnBlendManual.setEnabled(true);
+                    m.writeSingleCoil(escravo, Integer.parseInt(SILO_4), false);
                     btnSilo4Abrir.setText("ABRIR");
                     btnSilo4Abrir.setBackground(new Color(68,141,41));
                     lblSilosOpen4.setVisible(false);
@@ -4578,7 +4637,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             case 0:
             {
                if(blendador_ligado == 1){
-                   JOptionPane.showMessageDialog(null, "Pare o ciclo para ativar modo manual");
+                   JOptionPane.showMessageDialog(null, "Pare o ciclo para ativar modo manual!");
                }
                else{
                    try {
@@ -4607,6 +4666,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 }
                 else if(elevador == 1){
                     JOptionPane.showMessageDialog(null, "Desligue o elevador para ativar modo automático");
+                }
+                else if(silo1 == 1 || silo2 == 1 || silo3 == 1 || silo4 == 1){
+                   JOptionPane.showMessageDialog(null, "Feche todos os silos para ativar o modo automático!");
                 }
                 else{
                     try {

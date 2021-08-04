@@ -262,8 +262,9 @@ public class TelaLotes extends javax.swing.JFrame {
         }
     }
     
+    
     private void gerar_json_lote_torras_local(){
-        String sql = "select idtorralote from tb_torras_lote";
+        String sql = "select idTorra from tb_torras_lote_grao";
         
         Jlotetorra = new JSONObject();
         Jtorras = new JSONArray();
@@ -299,7 +300,7 @@ public class TelaLotes extends javax.swing.JFrame {
     
     
     private void gerar_json_lote_torras_nuvem(){
-        String sqlNuvem = "select idtorralote from tb_torras_lote";
+        String sqlNuvem = "select idTorra from tb_torras_lote_grao";
         nuvem = ModuloConexaoNuvem.conector();
         
        try {
@@ -332,6 +333,7 @@ public class TelaLotes extends javax.swing.JFrame {
         }
     }
     
+    
     //Metodo para avisar que precisa sincronizar
     private void set_sincronizar_1(){
         String sql = "update tb_modbus set SINCRONIZADO = 1 where id_modbus";
@@ -347,7 +349,7 @@ public class TelaLotes extends javax.swing.JFrame {
     
     
     private void truncate_torras_lote_local(){
-        String sql = "delete from tb_torras_lote";
+        String sql = "delete from tb_torras_lote_grao";
             
         try {
             pst = conexao.prepareStatement(sql);
@@ -358,7 +360,7 @@ public class TelaLotes extends javax.swing.JFrame {
     }
         
     private void truncate_torras_lote_nuvem(){
-        String sql = "delete from tb_torras_lote";
+        String sql = "delete from tb_torras_lote_grao";
             
         try {
             pstNuvem = nuvem.prepareStatement(sql);
@@ -378,8 +380,6 @@ public class TelaLotes extends javax.swing.JFrame {
             return false;
         }
     }
-    
-    
     
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
