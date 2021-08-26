@@ -53,6 +53,8 @@ import net.proteanit.sql.DbUtils;
 public class TelaPrincipal extends javax.swing.JFrame {
     
     //Variáveis de conexao para operações com banco
+    
+    //comentario teste GIT
     Connection conexao = null;
     Connection nuvem = null;
     PreparedStatement pst = null;
