@@ -90,7 +90,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     int i = 0;
 
     //Variaveis para sincronizar
-    String ultimo_id_nuvem, ultimo_id_registro_nuvem, ultimo_id_blend_local, ultimo_id_lote_nuvem, 
+    String ultimo_id_nuvem, ultimo_id_registro_nuvem, ultimo_id_blend_local, ultimo_id_lote_nuvem,
             ultimo_id_lote_grao_nuvem, ultimo_id_tipo_cafe_nuvem;
     boolean precisa_sincrinizar = false, sincronizar_ao_ligar = false;
     int sincronizado = 0;
@@ -139,7 +139,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     //Variaveis para gerar registro manual
     String nome_blend, nome_cafe1, nome_cafe2, nome_cafe3, nome_cafe4, operacao;
-    float qtd_cafe1 = 0, qtd_cafe2 = 0, qtd_cafe3 = 0, qtd_cafe4 = 0, qtd_total = 0, valor_cafe_cru = 0, valor_cafe_torrado = 0, 
+    float qtd_cafe1 = 0, qtd_cafe2 = 0, qtd_cafe3 = 0, qtd_cafe4 = 0, qtd_total = 0, valor_cafe_cru = 0, valor_cafe_torrado = 0,
             valor_total = 0, lote_registro = 0;
 
     //Variaveis de status (Caixa mensagens)
@@ -288,7 +288,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 //Checa conexao com CLP (tenta ler valor)
                 //System.out.println("vou checar connection");
                 try {
-                    m.readCoils(escravo, 3, 1);
+                    m.readCoils(escravo, 46003, 1);
                 } catch (Exception e) {
                     clp_conectado = false;
                 }
@@ -325,7 +325,20 @@ public class TelaPrincipal extends javax.swing.JFrame {
             public void run() {
                 //Checa conexao com INTERNET
                 if (testa_url("http://192.169.80.2")) {
-                    set_aparencia_conectado();
+
+                    try {
+                        // System.out.println("Entrou try conexao com o banco");
+                        nuvem = ModuloConexaoNuvem.conector();
+                        if (nuvem != null) {
+                            set_aparencia_conectado();
+                        }
+                    } catch (Exception e) {
+                        banco_nuvem = false;
+                        lblStatusConexao.setText("SEM CONEXÃO COM O BANCO");
+                        // System.out.println("Nao conectou ao servidor");       
+                        //  System.out.println("Operando NORMALMENTE");
+                    }
+
                     //checa_conexao_nuvem();
                 } else if (!testa_url("http://192.169.80.2")) {
                     set_aparencia_desconectado();
@@ -365,8 +378,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
             @Override
             public void run() {
                 //Checa variavel para ver se tem blend
-                System.out.println("Procurando por blends");
-                if (temos_internet == true) {
+              
+                if (temos_internet == true && banco_nuvem == true) {
+                      System.out.println("Procurando por blends na Nuvem");
                     if (consulta_blends()) {
                         JOptionPane.showMessageDialog(null, "Novo blend disponível!");
                         //sincronizar_blends();
@@ -427,7 +441,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         timer_tipo_cafe = new TimerTask() {
             @Override
             public void run() {
-                if (temos_internet == true) {
+                if (temos_internet == true && banco_nuvem == true) {
                     System.out.println("Procurando por tipos de cafe");
                     if (consulta_tipos_cafe()) {
                         //Sincronizar tipos cafe
@@ -564,8 +578,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
                         int[] MetaTorrado = new int[2];
                         int[] MetaGrao = new int[2];
 
-                        MetaTorrado = m.readHoldingRegisters(escravo, 40, 1);
-                        MetaGrao = m.readHoldingRegisters(escravo, 41, 1);
+                        MetaTorrado = m.readHoldingRegisters(escravo, 37003, 1);
+                        MetaGrao = m.readHoldingRegisters(escravo, 37004, 1);
 
                         txtBlendMetaMoido.setText(String.valueOf(MetaTorrado[0]));
                         txtBlendMetaGrao.setText(String.valueOf(MetaGrao[0]));
@@ -600,7 +614,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                             caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nCiclo iniciado! ", cor_conectado);
                             inseriu_msg_blnd1 = true;
                             //Insere no banco falando que está desligado
-                            if (temos_internet == true) {
+                            if (temos_internet == true && banco_nuvem == true) {
                                 set_blendador_nuvem_1();
                             } else {
                                 precisa_sincrinizar = true;
@@ -620,7 +634,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                             caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nCiclo terminado! ", cor_mensagem_erro);
                             inseriu_msg_blnd2 = true;
                             //Insere no banco falando que está desligado
-                            if (temos_internet == true) {
+                            if (temos_internet == true && banco_nuvem == true) {
                                 set_blendador_nuvem_0();
                             } else {
                                 precisa_sincrinizar = true;
@@ -837,7 +851,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
             public void run() {
                 //Sincroniza tudo
                 System.out.println("Verificando sincronizar");
-                if (precisa_sincrinizar == true && reconectado_internet == true && temos_internet == true || sincronizado == 1) {
+                if (precisa_sincrinizar == true
+                        && reconectado_internet == true
+                        && temos_internet == true
+                        && banco_nuvem == true
+                        || sincronizado == 1) {
                     precisa_sincrinizar = false;
                     reconectado_internet = false;
                     //sincronizar_ao_ligar = false;
@@ -904,7 +922,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                                     JOptionPane.showMessageDialog(null, "Acabou o café do silo 1");
                                 }
                                 //Atualiza estoque de silo correspondente
-                                if (temos_internet == true) {
+                                if (temos_internet == true && banco_nuvem == true) {
                                     atualiza_silo_manual(variacao_peso, 0);
                                     atualiza_silo_manual_nuvem(variacao_peso, 0);
                                     gerou_blend_manual = true;
@@ -934,7 +952,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                                     JOptionPane.showMessageDialog(null, "Acabou o café do silo 2");
                                 }
                                 //Atualiza estoque de silo correspondente
-                                if (temos_internet == true) {
+                                if (temos_internet == true && banco_nuvem == true) {
                                     atualiza_silo_manual(variacao_peso, 1);
                                     atualiza_silo_manual_nuvem(variacao_peso, 1);
                                     gerou_blend_manual = true;
@@ -964,7 +982,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                                     JOptionPane.showMessageDialog(null, "Acabou o café do silo 3");
                                 }
                                 //Atualiza estoque de silo correspondente
-                                if (temos_internet == true) {
+                                if (temos_internet == true && banco_nuvem == true) {
                                     atualiza_silo_manual(variacao_peso, 2);
                                     atualiza_silo_manual_nuvem(variacao_peso, 2);
                                     gerou_blend_manual = true;
@@ -994,7 +1012,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                                 }
                                 //Atualiza estoque de silo correspondente
 
-                                if (temos_internet == true) {
+                                if (temos_internet == true && banco_nuvem == true) {
                                     atualiza_silo_manual(variacao_peso, 3);
                                     atualiza_silo_manual_nuvem(variacao_peso, 3);
                                     gerou_blend_manual = true;
@@ -1251,7 +1269,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void esta_blendando() {
         boolean[] array_coils;
         try {
-            array_coils = m.readCoils(escravo, 1, 1);
+            array_coils = m.readCoils(escravo, 46000, 1);
             //System.out.println(array_coils[0]);
             if (array_coils[0] == true) {
                 set_blendando = true;
@@ -1284,7 +1302,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private boolean check_blendador() {
         try {
             boolean[] array_coils;
-            array_coils = m.readCoils(escravo, 0, 1);
+            array_coils = m.readCoils(escravo, 46001, 1);
 
             if (array_coils[0] == false) {
                 return false;
@@ -1325,7 +1343,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private boolean check_modo_blendador() {
         try {
             boolean[] array_coils;
-            array_coils = m.readCoils(escravo, 42, 1);
+            array_coils = m.readCoils(escravo, 46002, 1);
 
             if (array_coils[0] == false) {
                 return false;
@@ -1618,7 +1636,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
             if (rs.next()) {
                 sincronizado = (rs.getInt(1));
-                if (sincronizado == 1 && temos_internet == true) {
+                if (sincronizado == 1 && temos_internet == true && banco_nuvem == true) {
                     sincronizar();
                 } else if (sincronizado == 0) {
                     System.out.println("Sistema sincronizado!");
@@ -1928,16 +1946,16 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     private void sincronizar_status_blendador() {
-        if (temos_internet == true) {
+        if (temos_internet == true && banco_nuvem == true) {
             //nuvem = ModuloConexaoNuvem.conector();
             try {
                 boolean[] array_coils_nuvem;
-                array_coils_nuvem = m.readCoils(escravo, 0, 1);
+                array_coils_nuvem = m.readCoils(escravo, 46002, 1);
 
-                if (array_coils_nuvem[0] == true && temos_internet == true) {
+                if (array_coils_nuvem[0] == true && temos_internet == true && banco_nuvem == true) {
                     //System.out.println(array_coils_nuvem[0]);
                     set_blendador_nuvem_1();
-                } else if (temos_internet == true) {
+                } else if (temos_internet == true && banco_nuvem == true) {
                     //System.out.println(array_coils_nuvem[0]);
                     set_blendador_nuvem_0();
                 }
@@ -2195,7 +2213,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         String sql = "select * from tb_blend";
 
         try {
-            if (temos_internet == true) {
+            if (temos_internet == true && banco_nuvem == true) {
                 tbBlendTitulo.setText("RECEITAS CADASTRADAS");
                 //nuvem = ModuloConexaoNuvem.conector();
                 pstNuvem = nuvem.prepareStatement(sql);
@@ -2221,7 +2239,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         String sql = "select * from tb_blend where nome like ?";
 
         try {
-            if (temos_internet == true) {
+            if (temos_internet == true && banco_nuvem == true) {
                 //nuvem = ModuloConexaoNuvem.conector();
                 pstNuvem = nuvem.prepareStatement(sql);
 
@@ -2945,8 +2963,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     sem_estoque[i] = i + 1;
                     System.out.println("Silo " + sem_estoque[i] + " com estoque insuficiente");
                     try {
-                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSilo " + String.valueOf(sem_estoque[i]) + 
-                                " com estoque insuficiente", cor_mensagem_erro);
+                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSilo " + String.valueOf(sem_estoque[i])
+                                + " com estoque insuficiente", cor_mensagem_erro);
                     } catch (BadLocationException ex) {
                         Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -4615,7 +4633,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     btnBlendElevador.setBackground(new Color(68, 141, 41));
 
                     if (gerou_blend_manual == true) {
-                        if (temos_internet == true) {
+                        if (temos_internet == true && banco_nuvem == true) {
                             gerar_registro_manual(qtd_cafe1, qtd_cafe2, qtd_cafe3, qtd_cafe4, qtd_total);
                             gerar_registro_manual_nuvem(qtd_cafe1, qtd_cafe2, qtd_cafe3, qtd_cafe4, qtd_total);
                             //resetando variveis para gerar novo relatório posteriormente
