@@ -49,11 +49,9 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import net.proteanit.sql.DbUtils;
 
-
 public class TelaPrincipal extends javax.swing.JFrame {
-    
+
     //Variáveis de conexao para operações com banco
-    
     //comentario teste GIT
     Connection conexao = null;
     Connection nuvem = null;
@@ -62,49 +60,47 @@ public class TelaPrincipal extends javax.swing.JFrame {
     PreparedStatement pstNuvem = null;
     ResultSet rsNuvem = null;
     String Metodo;
-    
+
     //Variáveis de CONTROLE GERAL
     int POWER = 0;
     boolean blendando = false, terminou_blendar = false, novo_blend = false;
     int blendador_ligado = 0;
-    
+
     boolean inseriu_msg_blnd1 = false, inseriu_msg_blnd2 = true;
     boolean inseriu_blendando1 = false, inseriu_blendando2 = false;
     boolean inseriu_msg_msx1 = false, inseriu_msg_msx2 = true;
     boolean inseriu_msg_elev1 = false, inseriu_msg_elev2 = true;
     boolean inseriu_msg_modo1 = false, inseriu_msg_modo2 = true;
-    
-    boolean set_blendando = false;
-    boolean [] array_coils;
-    
+
+    boolean set_blendando = false, banco_nuvem = false;
+    boolean[] array_coils;
+
     int manual = 0;
     boolean modo_manual = false;
 
     int mexedor = 0, elevador = 0;
-   
-    
-    
+
     //Variáveis para tesar url
     boolean temos_internet = false, reconectado_internet = false;
     boolean operando_offline = false;
     static URL conexaoURL;
     static URLConnection conn;
     static InputStream fechar;
-    
+
     int i = 0;
-    
+
     //Variaveis para sincronizar
-    String ultimo_id_nuvem, ultimo_id_registro_nuvem, ultimo_id_blend_local, ultimo_id_lote_nuvem, ultimo_id_lote_grao_nuvem, ultimo_id_tipo_cafe_nuvem;
+    String ultimo_id_nuvem, ultimo_id_registro_nuvem, ultimo_id_blend_local, ultimo_id_lote_nuvem, 
+            ultimo_id_lote_grao_nuvem, ultimo_id_tipo_cafe_nuvem;
     boolean precisa_sincrinizar = false, sincronizar_ao_ligar = false;
     int sincronizado = 0;
     String id_atual, nome_atual, qtds1_atual, qtds2_atual, qtds3_atual, qtds4_atual, operation;
-    
+
     //sincrnonizar estoque silos (apagar, não utilizado)
-    float []array_silos_sinc;
-    
+    float[] array_silos_sinc;
+
     boolean sincronizando = false;
-    
-    
+
     //Variaveis Blend
     String IdBlend, NomeBlend, QtdSilo1, QtdSilo2, QtdSilo3, QtdSilo4;
     float QtdTotal = 0;
@@ -112,41 +108,40 @@ public class TelaPrincipal extends javax.swing.JFrame {
     int lote = 0;
     boolean blend = false;
     int blend_disponivel = 0;
-    
+
     //Variaveis Lote
     int lote_disponivel = 0;
     //Array list pois mais lotes serão criados, sem tamanho fixo
     ArrayList<Float> qtd_torrado = new ArrayList<Float>();
     ArrayList<Float> qtd_torrado_grao = new ArrayList<Float>();
-    
+
     //Variaveis Estoque | Silos | Processos manuais
     float Qtd_estoque_s1 = 0, Qtd_estoque_s2 = 0, Qtd_estoque_s3 = 0, Qtd_estoque_s4 = 0;
     float Qtd_estoque = 0, Qtd_estoque_moido = 0, Qtd_estoque_att = 0;
-    float []array_silos = null, array_silos_nuvem = null;
+    float[] array_silos = null, array_silos_nuvem = null;
     String cafe_silo1, cafe_silo2, cafe_silo3, cafe_silo4;
     boolean silo_1_abriu, silo_1_fechou, silo_2_abriu, silo_2_fechou, silo_3_abriu, silo_3_fechou, silo_4_abriu, silo_4_fechou;
     //Principal
-    float []qtd_silos = null;
+    float[] qtd_silos = null;
     boolean gerou_blend_manual = false;
     int silo1, silo2, silo3, silo4;
-    float []preco_kg_cru, preco_kg_torrado;
+    float[] preco_kg_cru, preco_kg_torrado;
     float preco_total_cru = 0, preco_total_torrado = 0;
     //Caso de erro ao atualizar estoque
     boolean falha_estq_silo = false;
-    
-    
+
     //Variáveis para balança
-    int [] peso, pesof;
+    int[] peso, pesof;
     int tarar = 0;
     float peso_inicial_1 = 0, peso_inicial_2 = 0, peso_inicial_3 = 0, peso_inicial_4 = 0;
     float peso_real = 0, peso_final = 0, variacao_peso = 0;
     boolean pegou_peso_inicia_l = false, pegou_peso_inicia_2 = false, pegou_peso_inicia_3 = false, pegou_peso_inicia_4 = false;
-    
-    
+
     //Variaveis para gerar registro manual
     String nome_blend, nome_cafe1, nome_cafe2, nome_cafe3, nome_cafe4, operacao;
-    float qtd_cafe1 = 0, qtd_cafe2 = 0, qtd_cafe3 = 0, qtd_cafe4 = 0, qtd_total = 0, valor_cafe_cru = 0, valor_cafe_torrado = 0, valor_total = 0, lote_registro = 0;
-    
+    float qtd_cafe1 = 0, qtd_cafe2 = 0, qtd_cafe3 = 0, qtd_cafe4 = 0, qtd_total = 0, valor_cafe_cru = 0, valor_cafe_torrado = 0, 
+            valor_total = 0, lote_registro = 0;
+
     //Variaveis de status (Caixa mensagens)
     StyledDocument caixa_mensagens;
     SimpleAttributeSet cor_mensagem_erro = new SimpleAttributeSet();
@@ -155,67 +150,72 @@ public class TelaPrincipal extends javax.swing.JFrame {
     SimpleAttributeSet cor_conectado_internet = new SimpleAttributeSet();
     SimpleAttributeSet cor_novo_processo = new SimpleAttributeSet();
     SimpleAttributeSet cor_sincronizar = new SimpleAttributeSet();
-    
+
     boolean inseriu_mensagem1 = false, inseriu_mensagem2 = false;
-    
+
     //Variaveis ModBus
-    String VALOR_SILO_1, VALOR_SILO_2, VALOR_SILO_3, VALOR_SILO_4, ACC_MEXEDOR, FATOR, LASTRO_SECUR, PESO, LIGA, SILO_1, SILO_2, SILO_3, SILO_4, ESTEIRA, SEN_CAFE_MIST, MEXEDOR, PISTAO_MEXEDOR, EMERGENCIA, BLEND, MANUAL_01, MANUAL_02, MANUAL_03, MANUAL_04, TARAR, BLENDADO;
-    
+    String VALOR_SILO_1, VALOR_SILO_2, VALOR_SILO_3, VALOR_SILO_4, ACC_MEXEDOR, FATOR, LASTRO_SECUR, PESO, LIGA, SILO_1, SILO_2,
+            SILO_3, SILO_4, ESTEIRA, SEN_CAFE_MIST, MEXEDOR, PISTAO_MEXEDOR, EMERGENCIA, BLEND, MANUAL_01, MANUAL_02, MANUAL_03,
+            MANUAL_04, TARAR, BLENDADO;
+
     //Variaveis para conectar com PLC
-    String host = "127.0.0.1";
+    //  String host = "127.0.0.1";
+    String host = "192.168.0.10";
     int escravo = 1;
     boolean clp_conectado = false;
 
     Boolean status_conexao;
-    
+
     TcpParameters tcpParameters = new TcpParameters();
     ModbusMaster m = ModbusMasterFactory.createModbusMasterTCP(tcpParameters);
     ModbusSlave slave = ModbusSlaveFactory.createModbusSlaveTCP(tcpParameters);
-    
+
     //Variaveis de timer task
     final private Timer timer = new Timer();
-    private TimerTask timer_clp, timer_internet, timer_blendador, timer_sincronizar, timer_blendando, timer_operacao, timer_lote, timer_mexedor, timer_elevador, timer_modo_blendador, timer_blend, timer_tipo_cafe, timer_meta;
-    int tempo_clp = (1000), tempo_internet = (1000), tempo_blendador = (1000), tempo_sincronizar = (5000), tempo_blendando = (1000), tempo_operacao = (500), tempo_lote = (2000), tempo_mexedor = (1000), tempo_elevador = (1000), tempo_modo_blendador=(1000), tempo_blend = (25000), tempo_tipo_cafe = (25000), tempo_meta = (25000);
-    int contador_tempo=0, contador_operacao_silos =0;
+    private TimerTask timer_clp, timer_internet, timer_blendador, timer_sincronizar, timer_blendando,
+            timer_operacao, timer_lote, timer_mexedor, timer_elevador, timer_modo_blendador, timer_blend, timer_tipo_cafe, timer_meta;
+    int tempo_clp = (1000), tempo_internet = (1000), tempo_blendador = (1000), tempo_sincronizar = (5000), tempo_blendando = (1000),
+            tempo_operacao = (500), tempo_lote = (2000), tempo_mexedor = (1000), tempo_elevador = (1000), tempo_modo_blendador = (1000),
+            tempo_blend = (25000), tempo_tipo_cafe = (25000), tempo_meta = (25000);
+    int contador_tempo = 0, contador_operacao_silos = 0;
 
     public TelaPrincipal() {
         initComponents();
         conexao = ModuloConexao.conector();
         conecta_nuvem();
-        
+
         //Caixa de saida
         caixa_mensagens = txtStatus.getStyledDocument();
         define_cores_mensagens();
-        
+
         //Busca lotes cadastrados e os coloca na Combo box
         set_lotes();
-        
+
         //Busca blend atual
         buscar_blend_atual();
-        
+
         //Busca tipos de café em cada silo
         buscar_tipos_silo();
-        
+
         //Bloqueia Campos
         block_campos();
 
         // Consulta banco para pegar variaveis do ModBus
         buscar_modbus();
-        
+
         //Data
         Date data = new Date();
         DateFormat formatador = DateFormat.getDateInstance(DateFormat.SHORT);
-        lblData.setText(formatador.format(data)+" - Crie seu blend selecionando uma receita ou operando manualmente.");
-        
+        lblData.setText(formatador.format(data) + " - Crie seu blend selecionando uma receita ou operando manualmente.");
+
         //Checa se dados estão sincronizados
         check_sincronizar();
-        
+
         //Checa se existe algum blend (PARA CASO NAO TENHA BLEND CADASTRADO)
         check_blend();
-        
+
         //Busca Metas no CLP
         //busca_metas();
-        
         //Loops de checagem
         checa_conexao_clp();
         checa_conexao_internet();
@@ -232,25 +232,37 @@ public class TelaPrincipal extends javax.swing.JFrame {
         checa_tipos_cafe();
         checa_metas();
     }
-    
+
     //Checa se tem net e conecta com banco na nuvem
-    private void conecta_nuvem(){
-        if(testa_url("http://192.169.80.2")){
+    private void conecta_nuvem() {
+        if (testa_url("http://192.169.80.2")) {
             try {
+                // System.out.println("Entrou try conexao com o banco");
                 nuvem = ModuloConexaoNuvem.conector();
-                temos_internet = true;
+                if (nuvem != null) {
+                    banco_nuvem = true;
+                    temos_internet = true;
+                    lblStatusConexao.setText("INTERNET OK");
+                    lblStatusConexao.setForeground(Color.WHITE);
+                    //   System.out.println("Entrou IF Conexao igual true");
+                } else {
+                    // System.out.println("Entrou ELSE Conexao igual FALSE");
+                    banco_nuvem = false;
+                    lblStatusConexao.setText("SEM CONEXÃO COM O BANCO");
+                    lblStatusConexao.setForeground(Color.BLUE);
+                }
             } catch (Exception e) {
-                System.out.println("Falha ao conectar com banco online, sistema no OFFLINE");
+                banco_nuvem = false;
+                lblStatusConexao.setText("SEM CONEXÃO COM O BANCO");
+                // System.out.println("Nao conectou ao servidor");       
+                //  System.out.println("Operando NORMALMENTE");
             }
-            System.out.println("Operando NORMALMENTE");
-        }
-        else{
-            System.out.println("Operando OFFLINE");
+        } else {
+            lblStatusConexao.setText("SEM CONEXÃO COM A INTERNET");
             temos_internet = false;
         }
     }
-    
-    
+
     //Para testar se tem net e determinar para qual banco vai
     public boolean testa_url(String endereco) {
         try {
@@ -264,8 +276,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             return false;
         }
     }
-    
-    
+
     //Metodos para checar conexoes
     public void checa_conexao_clp() {
         if (timer_clp != null) {
@@ -281,13 +292,13 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 } catch (Exception e) {
                     clp_conectado = false;
                 }
-                if(clp_conectado == false){
+                if (clp_conectado == false) {
                     System.out.println("Tentando se conectar com CLP...");
-                    
+
                     //Tenta reconectar
                     try {
                         limpa_mensagens();
-                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "Tentando se reconectar com CLP..." , cor_tentando_conectar);
+                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "Tentando se reconectar com CLP...", cor_tentando_conectar);
                         //Conecta com clp
                         conecta_com_clp();
                     } catch (ModbusProtocolException | ModbusNumberException ex) {
@@ -295,7 +306,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                         Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (BadLocationException ex) {
                         Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch(Exception e){
+                    } catch (Exception e) {
                         System.out.println(e);
                     }
                 }
@@ -303,10 +314,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
         };
         timer.scheduleAtFixedRate(timer_clp, 1, tempo_clp);
     }
-    
-    
+
     //Metodo principal de checagem de internets
-    private void checa_conexao_internet(){
+    private void checa_conexao_internet() {
         if (timer_internet != null) {
             return;
         }
@@ -314,45 +324,40 @@ public class TelaPrincipal extends javax.swing.JFrame {
             @Override
             public void run() {
                 //Checa conexao com INTERNET
-                if(testa_url("http://192.169.80.2")){
+                if (testa_url("http://192.169.80.2")) {
                     set_aparencia_conectado();
                     //checa_conexao_nuvem();
-                }
-                
-                else if(!testa_url("http://192.169.80.2")){
+                } else if (!testa_url("http://192.169.80.2")) {
                     set_aparencia_desconectado();
                 }
-                
+
                 //Cancela as operações de editar e deletar caso internet caia no meio do processo (deprecated)
-                if(temos_internet == false && Metodo == "editar"){
+                if (temos_internet == false && Metodo == "editar") {
                     Metodo = null;
                     block_campos();
                     buscar_blend_atual();
                 }
-            }};
+            }
+        };
         timer.scheduleAtFixedRate(timer_internet, 1, tempo_internet);
     }
-    
-    
-    private void set_aparencia_conectado(){
+
+    private void set_aparencia_conectado() {
         temos_internet = true;
         reconectado_internet = true;
         lblBlendWifi.setVisible(false);
         lblWifiDesc.setVisible(false);
     }
-    
-    private void set_aparencia_desconectado(){
+
+    private void set_aparencia_desconectado() {
         temos_internet = false;
         operando_offline = true;
         lblBlendWifi.setVisible(true);
         lblWifiDesc.setVisible(true);
     }
-    
-    
-    
-    
+
     //Checa se há novos blends
-    private void checa_blends_nuvem(){
+    private void checa_blends_nuvem() {
         if (timer_blend != null) {
             return;
         }
@@ -361,32 +366,31 @@ public class TelaPrincipal extends javax.swing.JFrame {
             public void run() {
                 //Checa variavel para ver se tem blend
                 System.out.println("Procurando por blends");
-                if(temos_internet == true){
-                    if(consulta_blends()){
+                if (temos_internet == true) {
+                    if (consulta_blends()) {
                         JOptionPane.showMessageDialog(null, "Novo blend disponível!");
                         //sincronizar_blends();
                         sincroniza_blend_apenas();
                         buscar_blend();
-                    }
-                    else{
+                    } else {
                         return;
                     }
                 }
-            }};
+            }
+        };
         timer.scheduleAtFixedRate(timer_blend, 1, tempo_blend);
     }
-    
-    
-    private boolean consulta_blends(){
+
+    private boolean consulta_blends() {
         nuvem = ModuloConexaoNuvem.conector();
         String sql = "select novo_blend from tb_blend_atual";
-        
+
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             rsNuvem = pstNuvem.executeQuery();
-            
-            if(rsNuvem.next()){
-                if(rsNuvem.getInt(1) == 1){
+
+            if (rsNuvem.next()) {
+                if (rsNuvem.getInt(1) == 1) {
                     return true;
                 }
             }
@@ -394,136 +398,131 @@ public class TelaPrincipal extends javax.swing.JFrame {
             temos_internet = false;
             System.out.println("Falha ao checar se há novos blends (nuvem)");
         }
-        
+
         return false;
     }
-    
-    
-    private void sincroniza_blend_apenas(){
+
+    private void sincroniza_blend_apenas() {
         ultimo_blend_local();
         sincronizar_blend_local();
         novo_blend_false();
     }
-    
-    private void novo_blend_false(){
+
+    private void novo_blend_false() {
         String sql = "update tb_blend_atual set novo_blend = 0 where id_blend_atual";
-        
+
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.executeUpdate();
         } catch (Exception e) {
-            System.out.println("Falha ao setar novo_blend = 0 (nuvem) "+e);
+            System.out.println("Falha ao setar novo_blend = 0 (nuvem) " + e);
         }
     }
-    
-    
+
     //Metodos para checar, sincronizar tipos de café
-    private void checa_tipos_cafe(){
+    private void checa_tipos_cafe() {
         if (timer_tipo_cafe != null) {
             return;
         }
         timer_tipo_cafe = new TimerTask() {
             @Override
             public void run() {
-                if(temos_internet == true){
+                if (temos_internet == true) {
                     System.out.println("Procurando por tipos de cafe");
-                    if(consulta_tipos_cafe()){
+                    if (consulta_tipos_cafe()) {
                         //Sincronizar tipos cafe
                         sincronizar_tipos_cafe_cadastros();
                         sincronizar_tipos_cafe_alteracoes();
-                    }
-                    else{
+                    } else {
                         return;
                     }
                 }
-            }};
+            }
+        };
         timer.scheduleAtFixedRate(timer_tipo_cafe, 1, tempo_tipo_cafe);
     }
-    
+
     //Verifica se tem marcas de café novas ou alteralções
-    private boolean consulta_tipos_cafe(){
+    private boolean consulta_tipos_cafe() {
         nuvem = ModuloConexaoNuvem.conector();
         String sql = "select embalagens from tb_dados_web where id_dados_web = 1";
-        
+
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             rsNuvem = pstNuvem.executeQuery();
-            
-            if(rsNuvem.next()){
-                if(rsNuvem.getInt(1) == 1){
+
+            if (rsNuvem.next()) {
+                if (rsNuvem.getInt(1) == 1) {
                     return true;
                 }
             }
         } catch (Exception e) {
             temos_internet = false;
-            System.out.println("Falha ao checar por novos tipos (marcas) de café (nuvem) "+e);
+            System.out.println("Falha ao checar por novos tipos (marcas) de café (nuvem) " + e);
         }
         return false;
     }
-    
-    
-    private void ultimo_tipo_registrado(){
+
+    private void ultimo_tipo_registrado() {
         String sql = "select max(id_embalagem) as id from tb_embalagem";
-        
+
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            if(rs.next()){
+
+            if (rs.next()) {
                 ultimo_id_tipo_cafe_nuvem = rs.getString(1);
             }
         } catch (Exception e) {
-            System.out.println("Falha ao obter ultimo registro de tipo de cafe (nuvem) "+e);
+            System.out.println("Falha ao obter ultimo registro de tipo de cafe (nuvem) " + e);
         }
     }
-    
-    
-    private void sincronizar_tipos_cafe_alteracoes(){
+
+    private void sincronizar_tipos_cafe_alteracoes() {
         nuvem = ModuloConexaoNuvem.conector();
-        
+
         String sqlNuvem = "select * from tb_embalagem";
         String sqlLocal = "update tb_embalagem set id_embalagem = ?, marca = ?, volume = ? where id_embalagem = ?";
         try {
             JOptionPane.showMessageDialog(null, "Novas alterações nos tipos de café disponíveis, sincronizando...");
             pstNuvem = nuvem.prepareStatement(sqlNuvem);
             rsNuvem = pstNuvem.executeQuery();
-            
+
             pst = conexao.prepareStatement(sqlLocal);
-            while(rsNuvem.next()){
+            while (rsNuvem.next()) {
                 try {
                     pst.setInt(1, rsNuvem.getInt(1));
                     pst.setString(2, rsNuvem.getString(2));
                     pst.setString(3, rsNuvem.getString(3));
                     pst.setInt(4, rsNuvem.getInt(1));
                     pst.executeUpdate();
-                    
+
                 } catch (Exception e) {
-                    System.out.println("Falha ao sincronizar marcas de cafe "+e);
+                    System.out.println("Falha ao sincronizar marcas de cafe " + e);
                 }
             }
             set_tipos_cafe_0();
         } catch (Exception e) {
-            System.out.println("Falha ao sincronizar marcas de café "+e);
+            System.out.println("Falha ao sincronizar marcas de café " + e);
         }
     }
-    
-    
-    private void sincronizar_tipos_cafe_cadastros(){
+
+    private void sincronizar_tipos_cafe_cadastros() {
         ultimo_tipo_registrado();
         String sqlNuvem = "select * from tb_embalagem where id_embalagem > ?";
         String sql = "insert into tb_embalagem (marca, volume) values(?, ?)";
-        
+
         try {
             nuvem = ModuloConexaoNuvem.conector();
             //Pega dados salvos apenas na nuvem
             pstNuvem = nuvem.prepareStatement(sqlNuvem);
             pstNuvem.setString(1, ultimo_id_tipo_cafe_nuvem);
             rsNuvem = pstNuvem.executeQuery();
-            
+
             //Insere dados obtidos na nuvem e os insere no local
             pst = conexao.prepareStatement(sql);
-            
-            while(rsNuvem.next()){
+
+            while (rsNuvem.next()) {
                 try {
                     pst.setString(1, rsNuvem.getString(2));
                     pst.setString(2, rsNuvem.getString(3));
@@ -539,109 +538,107 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void set_tipos_cafe_0(){
+
+    private void set_tipos_cafe_0() {
         nuvem = ModuloConexaoNuvem.conector();
         String sql = "update tb_dados_web set embalagens = 0";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.executeUpdate();
         } catch (Exception e) {
-            System.out.println("Falha ao setar tipo_cafe para 0 (nuvem) "+e);
+            System.out.println("Falha ao setar tipo_cafe para 0 (nuvem) " + e);
         }
-        
+
     }
-    
+
     //Lê metas do CLP
-    private void checa_metas(){
+    private void checa_metas() {
         if (timer_meta != null) {
             return;
         }
         timer_meta = new TimerTask() {
             @Override
             public void run() {
-               if(clp_conectado == true){
-                   try {
-                       int [] MetaTorrado = new int[2];
-                       int [] MetaGrao = new int[2];
-                       
-                       MetaTorrado = m.readHoldingRegisters(escravo, 40, 1);
-                       MetaGrao= m.readHoldingRegisters(escravo, 41, 1);
-                       
-                       txtBlendMetaMoido.setText(String.valueOf(MetaTorrado[0]));
-                       txtBlendMetaGrao.setText(String.valueOf(MetaGrao[0]));
-                   } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
-                       System.out.println("Falha ao ler metas");
-                       Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-                       clp_conectado = false;
-                       falha_conexao();
-                   }
-               }
-            }};
+                if (clp_conectado == true) {
+                    try {
+                        int[] MetaTorrado = new int[2];
+                        int[] MetaGrao = new int[2];
+
+                        MetaTorrado = m.readHoldingRegisters(escravo, 40, 1);
+                        MetaGrao = m.readHoldingRegisters(escravo, 41, 1);
+
+                        txtBlendMetaMoido.setText(String.valueOf(MetaTorrado[0]));
+                        txtBlendMetaGrao.setText(String.valueOf(MetaGrao[0]));
+                    } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
+                        System.out.println("Falha ao ler metas");
+                        Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+                        clp_conectado = false;
+                        falha_conexao();
+                    }
+                }
+            }
+        };
         timer.scheduleAtFixedRate(timer_meta, 1, tempo_meta);
     }
-    
-    
+
     //Checa se ciclo está iniciado ou não
-    private void checa_status_blendador(){
-         if (timer_blendador != null) {
+    private void checa_status_blendador() {
+        if (timer_blendador != null) {
             return;
         }
         timer_blendador = new TimerTask() {
             @Override
             public void run() {
-            //Checa se BLENDADOR está ON ou OFF
-            if(check_blendador() == true){
-                blendador_ligado = 1;
-                btnBlendPower.setText("PARAR");
-                btnBlendPower.setBackground(new Color(255,51,51));
-                inseriu_msg_blnd2 = false;
-                if(inseriu_msg_blnd1 == false && clp_conectado == true){
-                try {
-                    caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nCiclo iniciado! " , cor_conectado);
-                    inseriu_msg_blnd1 = true;
-                    //Insere no banco falando que está desligado
-                    if(temos_internet == true){
-                        set_blendador_nuvem_1();
-                    }
-                    else{
-                        precisa_sincrinizar = true;
-                    }
-                } catch (Exception e) {
-                    System.out.println("Falhao ao setar sincronizar para 1");
-                    System.out.println(e);
-                }}
-            }
-            else if(check_blendador() == false){
-                blendador_ligado = 0;
-                btnBlendPower.setText("INICIAR");
-                btnBlendPower.setBackground(new Color(68,141,41));
-                inseriu_msg_blnd1 = false;
-                if(inseriu_msg_blnd2 == false && clp_conectado == true){
-                    try {
-                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nCiclo terminado! " , cor_mensagem_erro);
-                        inseriu_msg_blnd2 = true;
-                        //Insere no banco falando que está desligado
-                        if(temos_internet == true){
-                            set_blendador_nuvem_0();
+                //Checa se BLENDADOR está ON ou OFF
+                if (check_blendador() == true) {
+                    blendador_ligado = 1;
+                    btnBlendPower.setText("PARAR");
+                    btnBlendPower.setBackground(new Color(255, 51, 51));
+                    inseriu_msg_blnd2 = false;
+                    if (inseriu_msg_blnd1 == false && clp_conectado == true) {
+                        try {
+                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nCiclo iniciado! ", cor_conectado);
+                            inseriu_msg_blnd1 = true;
+                            //Insere no banco falando que está desligado
+                            if (temos_internet == true) {
+                                set_blendador_nuvem_1();
+                            } else {
+                                precisa_sincrinizar = true;
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Falhao ao setar sincronizar para 1");
+                            System.out.println(e);
                         }
-                        else{
-                            precisa_sincrinizar = true;
+                    }
+                } else if (check_blendador() == false) {
+                    blendador_ligado = 0;
+                    btnBlendPower.setText("INICIAR");
+                    btnBlendPower.setBackground(new Color(68, 141, 41));
+                    inseriu_msg_blnd1 = false;
+                    if (inseriu_msg_blnd2 == false && clp_conectado == true) {
+                        try {
+                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nCiclo terminado! ", cor_mensagem_erro);
+                            inseriu_msg_blnd2 = true;
+                            //Insere no banco falando que está desligado
+                            if (temos_internet == true) {
+                                set_blendador_nuvem_0();
+                            } else {
+                                precisa_sincrinizar = true;
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Falha ao setar sincronizar para 0");
+                            System.out.println(e);
                         }
-                    } catch (Exception e) {
-                        System.out.println("Falha ao setar sincronizar para 0");
-                        System.out.println(e);
-                    }  
+                    }
                 }
             }
-        }};timer.scheduleAtFixedRate(timer_blendador, 1, tempo_blendador);
+        };
+        timer.scheduleAtFixedRate(timer_blendador, 1, tempo_blendador);
     }
-    
-    
+
     //Checa se está blendando
-    private void checa_esta_blendando(){
-          if (timer_blendando != null) {
+    private void checa_esta_blendando() {
+        if (timer_blendando != null) {
             return;
         }
         timer_blendando = new TimerTask() {
@@ -649,26 +646,26 @@ public class TelaPrincipal extends javax.swing.JFrame {
             public void run() {
                 //Verifica se está blendando
                 esta_blendando();
-                if(set_blendando == true && clp_conectado == true && blendador_ligado == 1){
+                if (set_blendando == true && clp_conectado == true && blendador_ligado == 1) {
                     timer_blendando();
                     inseriu_blendando2 = false;
-                    if(inseriu_blendando1 == false){
-                       try {
-                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nBlendando... " , cor_novo_processo);
+                    if (inseriu_blendando1 == false) {
+                        try {
+                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nBlendando... ", cor_novo_processo);
                             inseriu_blendando1 = true;
                             terminou_blendar = true;
                         } catch (Exception e) {
                             System.out.println(e);
                         }
                     }
-                }
-                else if(set_blendando == false && clp_conectado == true && blendador_ligado == 1 && inseriu_blendando2 == false && terminou_blendar == true){
+                } else if (set_blendando == false && clp_conectado == true && blendador_ligado == 1
+                        && inseriu_blendando2 == false && terminou_blendar == true) {
                     inseriu_blendando1 = false;
-                    if(inseriu_blendando2 == false){
-                       try {
-                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nBlend Pronto! " , cor_conectado_internet);
-                            
-                            if(modo_manual == false){
+                    if (inseriu_blendando2 == false) {
+                        try {
+                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nBlend Pronto! ", cor_conectado_internet);
+
+                            if (modo_manual == false) {
                                 btnBlendEnviar.setEnabled(true);
                             }
                             terminou_blendar = false;
@@ -679,12 +676,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     }
                 }
             }
-        };timer.scheduleAtFixedRate(timer_blendando, 1, tempo_blendando);
+        };
+        timer.scheduleAtFixedRate(timer_blendando, 1, tempo_blendando);
     }
-    
-    
+
     //Checa modo blendador (MANUAL | AUTOMATICO)
-    private void checa_modo_blendador(){
+    private void checa_modo_blendador() {
         if (timer_modo_blendador != null) {
             return;
         }
@@ -693,33 +690,32 @@ public class TelaPrincipal extends javax.swing.JFrame {
             public void run() {
                 //Checa se mexedor está ligado ou desligado
                 try {
-                    if(check_modo_blendador()){
+                    if (check_modo_blendador()) {
                         btnBlendManual.setText("MODO AUTOMATICO");
                         //System.out.println("MANUAL LIGADO");
                         manual = 1;
                         modo_manual = true;
                         unlock_manual();
                         inseriu_msg_modo2 = false;
-                        if(inseriu_msg_modo1 == false){
+                        if (inseriu_msg_modo1 == false) {
                             try {
-                                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nModo manual ativado! " , cor_mensagem_erro);
+                                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nModo manual ativado! ", cor_mensagem_erro);
                                 inseriu_msg_modo1 = true;
                             } catch (Exception e) {
                                 System.out.println(e);
                             }
                         }
-                        
-                    }
-                    else if(!check_modo_blendador()){
+
+                    } else if (!check_modo_blendador()) {
                         btnBlendManual.setText("MODO MANUAL");
                         //System.out.println("MANUAL DESLIGADO");
                         modo_manual = false;
                         manual = 0;
                         unlock_manual();
                         inseriu_msg_modo1 = false;
-                        if(inseriu_msg_modo2 == false){
+                        if (inseriu_msg_modo2 == false) {
                             try {
-                                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nModo automático ativado!" , cor_conectado);
+                                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nModo automático ativado!", cor_conectado);
                                 inseriu_msg_modo2 = true;
                             } catch (Exception e) {
                                 System.out.println(e);
@@ -731,11 +727,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     System.out.println(e);
                 }
             }
-        };timer.scheduleAtFixedRate(timer_modo_blendador, 1, tempo_modo_blendador);
+        };
+        timer.scheduleAtFixedRate(timer_modo_blendador, 1, tempo_modo_blendador);
     }
-    
+
     //Checa status mexedor (ON | OFF)
-    private void checa_status_mexedor(){
+    private void checa_status_mexedor() {
         if (timer_mexedor != null) {
             return;
         }
@@ -744,30 +741,29 @@ public class TelaPrincipal extends javax.swing.JFrame {
             public void run() {
                 //Checa se mexedor está ligado ou desligado
                 try {
-                    if(check_mexedor()){
+                    if (check_mexedor()) {
                         mexedor = 1;
                         btnBlendMexedor.setText("DESLIGAR");
-                        btnBlendMexedor.setBackground(new Color(255,51,51));
+                        btnBlendMexedor.setBackground(new Color(255, 51, 51));
                         //System.out.println("Mexedor está ligado");
                         inseriu_msg_msx2 = false;
-                        if(inseriu_msg_msx1 == false){
+                        if (inseriu_msg_msx1 == false) {
                             try {
-                                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nMexedor ligado! " , cor_novo_processo);
+                                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nMexedor ligado! ", cor_novo_processo);
                                 inseriu_msg_msx1 = true;
                             } catch (Exception e) {
                                 System.out.println(e);
                             }
                         }
-                    }
-                    else if(!check_mexedor()){
+                    } else if (!check_mexedor()) {
                         mexedor = 0;
                         btnBlendMexedor.setText("LIGAR");
-                        btnBlendMexedor.setBackground(new Color(68,141,41));
+                        btnBlendMexedor.setBackground(new Color(68, 141, 41));
                         //System.out.println("Mexedor está desligado");
                         inseriu_msg_msx1 = false;
-                        if(inseriu_msg_msx2 == false){
+                        if (inseriu_msg_msx2 == false) {
                             try {
-                                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nMexedor desligado! " , cor_tentando_conectar);
+                                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nMexedor desligado! ", cor_tentando_conectar);
                                 inseriu_msg_msx2 = true;
                             } catch (Exception e) {
                                 System.out.println(e);
@@ -779,12 +775,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     System.out.println(e);
                 }
             }
-        };timer.scheduleAtFixedRate(timer_mexedor, 1, tempo_mexedor);
+        };
+        timer.scheduleAtFixedRate(timer_mexedor, 1, tempo_mexedor);
     }
-    
-    
+
     //Checa status elevador (ON | OFF)
-    private void checa_status_elevador(){
+    private void checa_status_elevador() {
         if (timer_elevador != null) {
             return;
         }
@@ -793,30 +789,29 @@ public class TelaPrincipal extends javax.swing.JFrame {
             public void run() {
                 //Checa se mexedor está ligado ou desligado
                 try {
-                    if(check_elevador()){
+                    if (check_elevador()) {
                         elevador = 1;
                         btnBlendElevador.setText("DESLIGAR");
-                        btnBlendElevador.setBackground(new Color(255,51,51));
+                        btnBlendElevador.setBackground(new Color(255, 51, 51));
                         //System.out.println("Mexedor está ligado");
                         inseriu_msg_elev2 = false;
-                        if(inseriu_msg_elev1 == false){
+                        if (inseriu_msg_elev1 == false) {
                             try {
-                                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nElevador ligado! " , cor_novo_processo);
+                                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nElevador ligado! ", cor_novo_processo);
                                 inseriu_msg_elev1 = true;
                             } catch (Exception e) {
                                 System.out.println(e);
                             }
                         }
-                    }
-                    else if(!check_elevador()){
+                    } else if (!check_elevador()) {
                         elevador = 0;
                         btnBlendElevador.setText("LIGAR");
-                        btnBlendElevador.setBackground(new Color(68,141,41));
+                        btnBlendElevador.setBackground(new Color(68, 141, 41));
                         //System.out.println("Mexedor está desligado");
                         inseriu_msg_elev1 = false;
-                        if(inseriu_msg_elev2 == false){
+                        if (inseriu_msg_elev2 == false) {
                             try {
-                                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nElevador Desligado! " , cor_tentando_conectar);
+                                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nElevador Desligado! ", cor_tentando_conectar);
                                 inseriu_msg_elev2 = true;
                             } catch (Exception e) {
                                 System.out.println(e);
@@ -828,12 +823,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     System.out.println(e);
                 }
             }
-        };timer.scheduleAtFixedRate(timer_elevador, 1, tempo_elevador);
+        };
+        timer.scheduleAtFixedRate(timer_elevador, 1, tempo_elevador);
     }
-    
-    
+
     //Checa se precisa sincronizar o sistema
-    private void checa_sincronizar(){
+    private void checa_sincronizar() {
         if (timer_sincronizar != null) {
             return;
         }
@@ -842,7 +837,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             public void run() {
                 //Sincroniza tudo
                 System.out.println("Verificando sincronizar");
-                if(precisa_sincrinizar == true && reconectado_internet == true && temos_internet == true || sincronizado == 1){
+                if (precisa_sincrinizar == true && reconectado_internet == true && temos_internet == true || sincronizado == 1) {
                     precisa_sincrinizar = false;
                     reconectado_internet = false;
                     //sincronizar_ao_ligar = false;
@@ -854,173 +849,162 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     }
                 }
             }
-        };timer.scheduleAtFixedRate(timer_sincronizar, 1, tempo_sincronizar);
+        };
+        timer.scheduleAtFixedRate(timer_sincronizar, 1, tempo_sincronizar);
     }
-    
-    
+
     //Checa peso da balanca (DANGER ZONE)
-    private void checa_balanca(){
+    private void checa_balanca() {
         if (timer_operacao != null) {
             return;
         }
         timer_operacao = new TimerTask() {
             @Override
             public void run() {
-                if(clp_conectado == true){
+                if (clp_conectado == true) {
                     try {
-                        
+
                         //Atualiza balanca em tempo real
                         peso = m.readHoldingRegisters(escravo, Integer.parseInt(PESO), 1);
                         peso_real = peso[0];
-                        String peso_string = String.format("%.2f", peso_real/10);
+                        String peso_string = String.format("%.2f", peso_real / 10);
                         lblBlendPeso.setText(peso_string + "Kg");
-                        
+
                         //Obtém peso inical uma vez que algum silo for aberto
-                        if(silo_1_abriu == true && pegou_peso_inicia_l == false){
+                        if (silo_1_abriu == true && pegou_peso_inicia_l == false) {
                             peso_inicial_1 = peso[0];
                             pegou_peso_inicia_l = true;
-                        }
-                        else if(silo_2_abriu == true && pegou_peso_inicia_2 == false){
+                        } else if (silo_2_abriu == true && pegou_peso_inicia_2 == false) {
                             peso_inicial_2 = peso[0];
                             //System.out.println("Peso inicial do silo 2 é "+peso_inicial_2/10);
                             pegou_peso_inicia_2 = true;
-                        }
-                        else if(silo_3_abriu == true && pegou_peso_inicia_3 == false){
+                        } else if (silo_3_abriu == true && pegou_peso_inicia_3 == false) {
                             peso_inicial_3 = peso[0];
                             pegou_peso_inicia_3 = true;
-                        }
-                        else if(silo_4_abriu == true && pegou_peso_inicia_4 == false){
+                        } else if (silo_4_abriu == true && pegou_peso_inicia_4 == false) {
                             peso_inicial_4 = peso[0];
                             pegou_peso_inicia_4 = true;
                         }
-                        
-                        if(silo_1_abriu == true && silo_1_fechou == true && pegou_peso_inicia_l == true){
+
+                        if (silo_1_abriu == true && silo_1_fechou == true && pegou_peso_inicia_l == true) {
                             silo_1_fechou = false;
                             silo_1_abriu = false;
                             pegou_peso_inicia_l = false;
-                            
-                            if(silo1 == 0){
+
+                            if (silo1 == 0) {
                                 pesof = m.readHoldingRegisters(escravo, Integer.parseInt(PESO), 1);
                                 peso_final = pesof[0];
-                                variacao_peso = (peso_final - peso_inicial_1)/10;
+                                variacao_peso = (peso_final - peso_inicial_1) / 10;
                                 //Parte relatorio manual:
                                 qtd_cafe1 = 0;
                                 qtd_cafe1 = variacao_peso;
-                                System.out.println("Qtd de cafe silo 1 "+qtd_cafe1);
-                                
-                                if(variacao_peso == 0){
+                                System.out.println("Qtd de cafe silo 1 " + qtd_cafe1);
+
+                                if (variacao_peso == 0) {
                                     JOptionPane.showMessageDialog(null, "Acabou o café do silo 1");
                                 }
                                 //Atualiza estoque de silo correspondente
-                                if(temos_internet == true){
+                                if (temos_internet == true) {
                                     atualiza_silo_manual(variacao_peso, 0);
                                     atualiza_silo_manual_nuvem(variacao_peso, 0);
                                     gerou_blend_manual = true;
-                                }
-                                else{
+                                } else {
                                     atualiza_silo_manual(variacao_peso, 0);
                                     gerou_blend_manual = true;
                                     precisa_sincrinizar = true;
                                     set_sincronizar_1();
                                 }
-                                
+
                             }
-                        }
-                        
-                        else if(silo_2_abriu == true && silo_2_fechou == true && pegou_peso_inicia_2 == true){
+                        } else if (silo_2_abriu == true && silo_2_fechou == true && pegou_peso_inicia_2 == true) {
                             silo_2_fechou = false;
                             silo_2_abriu = false;
                             pegou_peso_inicia_2 = false;
-                            
-                            if(silo2 == 0){
+
+                            if (silo2 == 0) {
                                 pesof = m.readHoldingRegisters(escravo, Integer.parseInt(PESO), 1);
                                 peso_final = pesof[0];
-                                variacao_peso = (peso_final - peso_inicial_2)/10;
+                                variacao_peso = (peso_final - peso_inicial_2) / 10;
                                 //Parte relatorio manual:
                                 qtd_cafe2 = 0;
                                 qtd_cafe2 = variacao_peso;
-                                System.out.println("Qtd de cafe silo 2 "+qtd_cafe2);
-                                
-                                if(variacao_peso == 0){
+                                System.out.println("Qtd de cafe silo 2 " + qtd_cafe2);
+
+                                if (variacao_peso == 0) {
                                     JOptionPane.showMessageDialog(null, "Acabou o café do silo 2");
                                 }
                                 //Atualiza estoque de silo correspondente
-                                if(temos_internet == true){
+                                if (temos_internet == true) {
                                     atualiza_silo_manual(variacao_peso, 1);
                                     atualiza_silo_manual_nuvem(variacao_peso, 1);
                                     gerou_blend_manual = true;
-                                }
-                                else{
+                                } else {
                                     atualiza_silo_manual(variacao_peso, 1);
                                     gerou_blend_manual = true;
                                     precisa_sincrinizar = true;
                                     set_sincronizar_1();
                                 }
-                                
+
                             }
-                        }
-                        else if(silo_3_abriu == true && silo_3_fechou == true && pegou_peso_inicia_3 == true){
+                        } else if (silo_3_abriu == true && silo_3_fechou == true && pegou_peso_inicia_3 == true) {
                             silo_3_fechou = false;
                             silo_3_abriu = false;
                             pegou_peso_inicia_3 = false;
-                            
-                            if(silo3 == 0){
+
+                            if (silo3 == 0) {
                                 pesof = m.readHoldingRegisters(escravo, Integer.parseInt(PESO), 1);
                                 peso_final = pesof[0];
-                                variacao_peso = (peso_final - peso_inicial_3)/10;
+                                variacao_peso = (peso_final - peso_inicial_3) / 10;
                                 //Parte relatorio manual:
                                 qtd_cafe3 = 0;
                                 qtd_cafe3 = variacao_peso;
-                                System.out.println("Qtd de cafe silo 3 "+qtd_cafe3);
-                                
-                                if(variacao_peso == 0){
+                                System.out.println("Qtd de cafe silo 3 " + qtd_cafe3);
+
+                                if (variacao_peso == 0) {
                                     JOptionPane.showMessageDialog(null, "Acabou o café do silo 3");
                                 }
                                 //Atualiza estoque de silo correspondente
-                                if(temos_internet == true){
+                                if (temos_internet == true) {
                                     atualiza_silo_manual(variacao_peso, 2);
                                     atualiza_silo_manual_nuvem(variacao_peso, 2);
                                     gerou_blend_manual = true;
-                                }
-                                else{
+                                } else {
                                     atualiza_silo_manual(variacao_peso, 2);
                                     gerou_blend_manual = true;
                                     precisa_sincrinizar = true;
                                     set_sincronizar_1();
                                 }
                             }
-                        }
-                        else if(silo_4_abriu == true && silo_4_fechou == true && pegou_peso_inicia_4 == true){
+                        } else if (silo_4_abriu == true && silo_4_fechou == true && pegou_peso_inicia_4 == true) {
                             silo_4_fechou = false;
                             silo_4_abriu = false;
                             pegou_peso_inicia_4 = false;
-                            
-                            if(silo4 == 0){
+
+                            if (silo4 == 0) {
                                 pesof = m.readHoldingRegisters(escravo, Integer.parseInt(PESO), 1);
                                 peso_final = pesof[0];
-                                variacao_peso = (peso_final - peso_inicial_4)/10;
+                                variacao_peso = (peso_final - peso_inicial_4) / 10;
                                 //Parte relatorio manual:
                                 qtd_cafe4 = 0;
                                 qtd_cafe4 = variacao_peso;
-                                System.out.println("Qtd de cafe silo 4 "+qtd_cafe4);
-                                
-                                if(variacao_peso == 0){
+                                System.out.println("Qtd de cafe silo 4 " + qtd_cafe4);
+
+                                if (variacao_peso == 0) {
                                     JOptionPane.showMessageDialog(null, "Acabou o café do silo 4");
                                 }
                                 //Atualiza estoque de silo correspondente
-                                
-                                if(temos_internet == true){
+
+                                if (temos_internet == true) {
                                     atualiza_silo_manual(variacao_peso, 3);
                                     atualiza_silo_manual_nuvem(variacao_peso, 3);
                                     gerou_blend_manual = true;
-                                }
-                                else{
+                                } else {
                                     atualiza_silo_manual(variacao_peso, 3);
                                     gerou_blend_manual = true;
                                     precisa_sincrinizar = true;
                                     set_sincronizar_1();
                                 }
-                                
+
                             }
                         }
                     } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
@@ -1028,48 +1012,49 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     }
                 }
             }
-        };timer.scheduleAtFixedRate(timer_operacao, 1, tempo_operacao);
+        };
+        timer.scheduleAtFixedRate(timer_operacao, 1, tempo_operacao);
     }
-    
+
     //MUITO IMPORTANTE, recebe dados para gerar relatório após blend manual
-    private void gerar_registro_manual(float qtd_cafe1, float qtd_cafe2, float qtd_cafe3, float qtd_cafe4, float qtd_cafe_total){
-        String sql = "insert into tb_blend_registros (nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, (select cafe_atual from tb_silos where id_silo = 1), ?, (select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, ?, ?, ?, ?, ?)";
-        
-        float []array_qtd_cafe = {qtd_cafe1, qtd_cafe2, qtd_cafe3, qtd_cafe4};
+    private void gerar_registro_manual(float qtd_cafe1, float qtd_cafe2, float qtd_cafe3, float qtd_cafe4, float qtd_cafe_total) {
+        String sql = "insert into tb_blend_registros (nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3,"
+                + " nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote)"
+                + " values (?, (select cafe_atual from tb_silos where id_silo = 1), ?, (select cafe_atual from tb_silos where id_silo = 2), ?, "
+                + "(select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, ?, ?, ?, ?, ?)";
+
+        float[] array_qtd_cafe = {qtd_cafe1, qtd_cafe2, qtd_cafe3, qtd_cafe4};
         float valor_total = 0;
-        
+
         try {
             consultar_lote_atual();
-            
+
             qtd_cafe_total = 0;
             qtd_cafe_total = qtd_cafe1 + qtd_cafe2 + qtd_cafe3 + qtd_cafe4;
-            
-            
+
             //Atualizar qtd_torrado do lote utilizado
-            if(cbBlendOperacao.getSelectedIndex() == 1){
+            if (cbBlendOperacao.getSelectedIndex() == 1) {
                 atualizar_qtd_torrado_lote(qtd_cafe_total);
-            }
-            else{
+            } else {
                 atualizar_qtd_torrado_grao_lote(qtd_cafe_total);
             }
-            
+
             //Chamando função que gera preço do cru, passando parametros diferentes
             gerar_preco_cru(array_qtd_cafe);
             gerar_preco_torrado(array_qtd_cafe);
-            
+
             valor_total = ValorCru + ValorTorrado;
-            
+
             pst = conexao.prepareStatement(sql);
-            
+
             pst.setString(1, "Blend Manual");
             pst.setFloat(2, qtd_cafe1);
             pst.setFloat(3, qtd_cafe2);
             pst.setFloat(4, qtd_cafe3);
             pst.setFloat(5, qtd_cafe4);
-            if(cbBlendOperacao.getSelectedIndex() == 1){
+            if (cbBlendOperacao.getSelectedIndex() == 1) {
                 pst.setString(6, "moer e empacotar");
-            }
-            else if (cbBlendOperacao.getSelectedIndex() == 2){
+            } else if (cbBlendOperacao.getSelectedIndex() == 2) {
                 pst.setString(6, "empacotar inteiro");
             }
             pst.setFloat(7, qtd_cafe_total);
@@ -1077,57 +1062,57 @@ public class TelaPrincipal extends javax.swing.JFrame {
             pst.setFloat(9, ValorTorrado);
             pst.setFloat(10, valor_total);
             pst.setFloat(11, lote);
-            
+
             pst.executeUpdate();
-            
-            
+
             //System.out.println("RELATORIO MANUAL GERADO COM SUCESSO!");
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao gerar relatório após blend manual");
             System.out.println(e);
         }
-        
+
     }
-    
-    private void gerar_registro_manual_nuvem(float qtd_cafe1, float qtd_cafe2, float qtd_cafe3, float qtd_cafe4, float qtd_cafe_total){
-        String sql = "insert into tb_blend_registros (nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, (select cafe_atual from tb_silos where id_silo = 1), ?, (select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, ?, ?, ?, ?, ?)";
-        
-        float []array_qtd_cafe = {qtd_cafe1, qtd_cafe2, qtd_cafe3, qtd_cafe4};
+
+    private void gerar_registro_manual_nuvem(float qtd_cafe1, float qtd_cafe2, float qtd_cafe3, float qtd_cafe4, float qtd_cafe_total) {
+        String sql = "insert into tb_blend_registros (nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3,"
+                + " nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote)"
+                + " values (?, (select cafe_atual from tb_silos where id_silo = 1), ?, (select cafe_atual from tb_silos where id_silo = 2), ?, "
+                + "(select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, ?, ?, ?, ?, ?)";
+
+        float[] array_qtd_cafe = {qtd_cafe1, qtd_cafe2, qtd_cafe3, qtd_cafe4};
         float valor_total = 0;
-        
+
         try {
             nuvem = ModuloConexaoNuvem.conector();
-            
+
             consultar_lote_atual();
-            
+
             qtd_cafe_total = 0;
             qtd_cafe_total = qtd_cafe1 + qtd_cafe2 + qtd_cafe3 + qtd_cafe4;
-            
+
             //Atualizando qtd_torrado de lotes(nuvem)
-            if(cbBlendOperacao.getSelectedIndex() == 1){
+            if (cbBlendOperacao.getSelectedIndex() == 1) {
                 atualizar_qtd_torrado_lote_nuvem(qtd_cafe_total);
-            }
-            else{
+            } else {
                 atualizar_qtd_torrado_grao_lote_nuvem(qtd_cafe_total);
             }
-            
+
             //Chamando função que gera preço do cru, passando parametros diferentes
             gerar_preco_cru(array_qtd_cafe);
             gerar_preco_torrado(array_qtd_cafe);
-            
+
             valor_total = ValorCru + ValorTorrado;
-            
+
             pstNuvem = nuvem.prepareStatement(sql);
-            
+
             pstNuvem.setString(1, "Blend Manual");
             pstNuvem.setFloat(2, qtd_cafe1);
             pstNuvem.setFloat(3, qtd_cafe2);
             pstNuvem.setFloat(4, qtd_cafe3);
             pstNuvem.setFloat(5, qtd_cafe4);
-            if(cbBlendOperacao.getSelectedIndex() == 1){
+            if (cbBlendOperacao.getSelectedIndex() == 1) {
                 pstNuvem.setString(6, "moer e empacotar");
-            }
-            else if (cbBlendOperacao.getSelectedIndex() == 2){
+            } else if (cbBlendOperacao.getSelectedIndex() == 2) {
                 pstNuvem.setString(6, "empacotar inteiro");
             }
             pstNuvem.setFloat(7, qtd_cafe_total);
@@ -1135,9 +1120,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
             pstNuvem.setFloat(9, ValorTorrado);
             pstNuvem.setFloat(10, valor_total);
             pstNuvem.setFloat(11, lote);
-            
+
             pstNuvem.executeUpdate();
-            
+
             //resetando variveis para gerar novo relatório posteriormente
             reset_variaveis_registro();
             //System.out.println("RELATORIO MANUAL GERADO COM SUCESSO (NUVEM)!");
@@ -1145,31 +1130,32 @@ public class TelaPrincipal extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Falha ao gerar relatório após blend manual (nuvem)!");
             System.out.println(e);
         }
-        
+
     }
-    
-    private void reset_variaveis_registro(){
+
+    private void reset_variaveis_registro() {
         //Quantidades
-        qtd_cafe1 = 0; qtd_cafe2 = 0; qtd_cafe3 = 0; qtd_cafe4 = 0;
+        qtd_cafe1 = 0;
+        qtd_cafe2 = 0;
+        qtd_cafe3 = 0;
+        qtd_cafe4 = 0;
         //Variaveis de controle
         gerou_blend_manual = false;
     }
-    
-    
+
     //Checa se novo lote foi criado
-    private boolean lote_disponivel(){
+    private boolean lote_disponivel() {
         String sql = "select novo_lote from tb_lote_atual";
-        
+
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            if(rs.next()){
+
+            if (rs.next()) {
                 lote_disponivel = rs.getInt(1);
-                if(lote_disponivel == 1){
+                if (lote_disponivel == 1) {
                     return true;
-                }
-                else if(lote_disponivel == 0){
+                } else if (lote_disponivel == 0) {
                     return false;
                 }
             }
@@ -1179,31 +1165,30 @@ public class TelaPrincipal extends javax.swing.JFrame {
         }
         return false;
     }
-    
+
     //Checa se há novo lote disponível
-    private void checa_lotes(){
+    private void checa_lotes() {
         if (timer_lote != null) {
             return;
         }
         timer_lote = new TimerTask() {
             @Override
             public void run() {
-               if(lote_disponivel()){
-                   set_lotes();
-                   set_novo_lote_0();
-               }
-               else{
-                   return;
-               }
+                if (lote_disponivel()) {
+                    set_lotes();
+                    set_novo_lote_0();
+                } else {
+                    return;
+                }
             }
-        };timer.scheduleAtFixedRate(timer_lote, 1, tempo_lote);
+        };
+        timer.scheduleAtFixedRate(timer_lote, 1, tempo_lote);
     }
-    
-    
+
     //Executado após o cadastro/sincronização, para notificar que nao há novos lotes
-    private void set_novo_lote_0(){
+    private void set_novo_lote_0() {
         String sql = "update tb_lote_atual set novo_lote = 0";
-        
+
         try {
             pst = conexao.prepareStatement(sql);
             pst.executeUpdate();
@@ -1212,72 +1197,68 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
+
     //Metodos referentes a criação de blends manuais
-    private void atualiza_silo_manual(float peso, int id_silo){
+    private void atualiza_silo_manual(float peso, int id_silo) {
         //Atualiza estoque de silo após criar blend manual
         consultar_estoque_silos();
         String sql = "update tb_silos set qtd_atual=? where id_silo=?";
         try {
-           float peso_update = array_silos[id_silo] - peso;
+            float peso_update = array_silos[id_silo] - peso;
             try {
                 pst = conexao.prepareStatement(sql);
                 pst.setFloat(1, peso_update);
-                pst.setInt(2, id_silo+1);
+                pst.setInt(2, id_silo + 1);
                 pst.executeUpdate();
             } catch (Exception e) {
                 System.out.println("Falha ao atualizar silo apos blend manual");
                 System.out.println(e);
             }
-                
-           //System.out.println("Estoque atualizado após criação de blend manual\nVariação de: "+peso+"Kg");
+
+            //System.out.println("Estoque atualizado após criação de blend manual\nVariação de: "+peso+"Kg");
         } catch (Exception e) {
             System.out.println("Falha ao atualizar silo apos blend manual");
             System.out.println(e);
         }
     }
-    
-    
-    private void atualiza_silo_manual_nuvem(float peso, int id_silo){
+
+    private void atualiza_silo_manual_nuvem(float peso, int id_silo) {
         //Atualiza estoque de silo após criar blend manual (nuvem)
         consultar_estoque_silos();
         String sql_nuvem = "update tb_silos set qtd_atual=? where id_silo=?";
         try {
-           nuvem = ModuloConexaoNuvem.conector();
-            
-           float peso_update = array_silos[id_silo] - peso;
+            nuvem = ModuloConexaoNuvem.conector();
+
+            float peso_update = array_silos[id_silo] - peso;
             try {
                 pstNuvem = nuvem.prepareStatement(sql_nuvem);
                 pstNuvem.setFloat(1, peso_update);
-                pstNuvem.setInt(2, id_silo+1);
+                pstNuvem.setInt(2, id_silo + 1);
                 pstNuvem.executeUpdate();
             } catch (Exception e) {
                 System.out.println("Falha ao atualizar silo na nuvem apos blend manual");
                 System.out.println(e);
             }
-                
-           //System.out.println("Estoque atualizado após criação de blend manual\nVariação de: "+peso+"Kg");
+
+            //System.out.println("Estoque atualizado após criação de blend manual\nVariação de: "+peso+"Kg");
         } catch (Exception e) {
             System.out.println("Falha ao atualizar silo na nuvem apos blend manual");
             System.out.println(e);
         }
     }
-    
-    
+
     //Metodos referentes ao blendador
-    private void esta_blendando(){
-        boolean [] array_coils;
+    private void esta_blendando() {
+        boolean[] array_coils;
         try {
             array_coils = m.readCoils(escravo, 1, 1);
             //System.out.println(array_coils[0]);
-            if(array_coils[0] == true){
+            if (array_coils[0] == true) {
                 set_blendando = true;
                 btnBlendEnviar.setEnabled(false);
-            }
-            else{
+            } else {
                 lblBlendHeader.setText("BLEND SELECIONADO");
-                lblBlendHeader.setForeground(new Color(255,255,255));
+                lblBlendHeader.setForeground(new Color(255, 255, 255));
                 set_blendando = false;
                 contador_tempo = 0;
             }
@@ -1288,40 +1269,36 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void timer_blendando(){
+
+    private void timer_blendando() {
         contador_tempo++;
         lblBlendHeader.setText("BLENDANDO!");
-        lblBlendHeader.setForeground(new Color(255,51,51));
+        lblBlendHeader.setForeground(new Color(255, 51, 51));
         //System.out.println(contador_tempo);
-        if(set_blendando == false){
+        if (set_blendando == false) {
             set_blendando = false;
         }
     }
-    
-    
+
     //Metodos referentes a PROCESSOS GERAIS
-    private boolean check_blendador(){
+    private boolean check_blendador() {
         try {
-            boolean [] array_coils;
+            boolean[] array_coils;
             array_coils = m.readCoils(escravo, 0, 1);
-            
-            if(array_coils[0] == false){
+
+            if (array_coils[0] == false) {
                 return false;
-            }
-            else{
+            } else {
                 return true;
             }
-                                   
+
         } catch (ModbusIOException | ModbusNumberException | ModbusProtocolException ex) {
             System.out.println(ex);
         }
         return false;
     }
-    
-    
-    private void set_blendador_nuvem_0(){
+
+    private void set_blendador_nuvem_0() {
         //nuvem = ModuloConexaoNuvem.conector();
         String sql = "update tb_modbus set STATUS_BLENDADOR = 0 where id_modbus";
         try {
@@ -1332,9 +1309,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void set_blendador_nuvem_1(){
+
+    private void set_blendador_nuvem_1() {
         //nuvem = ModuloConexaoNuvem.conector();
         String sql = "update tb_modbus set STATUS_BLENDADOR = 1 where id_modbus";
         try {
@@ -1345,67 +1321,59 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private boolean check_modo_blendador(){
+
+    private boolean check_modo_blendador() {
         try {
-            boolean [] array_coils;
+            boolean[] array_coils;
             array_coils = m.readCoils(escravo, 42, 1);
-            
-            if(array_coils[0] == false){
+
+            if (array_coils[0] == false) {
                 return false;
-            }
-            else{
+            } else {
                 return true;
             }
-                                   
+
         } catch (ModbusIOException | ModbusNumberException | ModbusProtocolException ex) {
             System.out.println(ex);
         }
         return false;
     }
-    
-    
-    private boolean check_mexedor(){
+
+    private boolean check_mexedor() {
         try {
-            boolean [] array_coils;
+            boolean[] array_coils;
             array_coils = m.readCoils(escravo, Integer.parseInt(MEXEDOR), 1);
-            
-            if(array_coils[0] == false){
+
+            if (array_coils[0] == false) {
                 return false;
-            }
-            else{
+            } else {
                 return true;
             }
-                                   
+
         } catch (ModbusIOException | ModbusNumberException | ModbusProtocolException ex) {
             System.out.println(ex);
         }
         return false;
     }
-    
-    
-    private boolean check_elevador(){
+
+    private boolean check_elevador() {
         try {
-            boolean [] array_coils;
+            boolean[] array_coils;
             array_coils = m.readCoils(escravo, Integer.parseInt(ESTEIRA), 1);
-            
-            if(array_coils[0] == false){
+
+            if (array_coils[0] == false) {
                 return false;
-            }
-            else{
+            } else {
                 return true;
             }
-                                   
+
         } catch (ModbusIOException | ModbusNumberException | ModbusProtocolException ex) {
             System.out.println(ex);
         }
         return false;
     }
-    
-    
+
     //Metodos referentes ao CLP
-      
     private void conecta_com_clp() throws ModbusProtocolException, ModbusNumberException {
         try {
             tcpParameters.setHost(InetAddress.getByName(host));
@@ -1421,11 +1389,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     clp_conectado = true;
                     recupera_conexao();
                     limpa_mensagens();
-                    caixa_mensagens.insertString(caixa_mensagens.getLength(), "Conexão com CLP iniciada! " , cor_conectado);
+                    caixa_mensagens.insertString(caixa_mensagens.getLength(), "Conexão com CLP iniciada! ", cor_conectado);
                     System.out.println("Conectado ao CLP com sucesso");
                 } catch (Exception e) {
                     falha_conexao();
-                    System.out.println(e +" Erro na linha 731");
+                    System.out.println(e + " Erro na linha 731");
                 }
             } catch (ModbusIOException e) {
                 falha_conexao();
@@ -1435,9 +1403,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 try {
                     m.disconnect();
                 } catch (ModbusIOException e) {
-                   falha_conexao();
-                  //JOptionPane.showMessageDialog(null, "Erro ao se conectar com CLP");
-                  System.out.println(e);
+                    falha_conexao();
+                    //JOptionPane.showMessageDialog(null, "Erro ao se conectar com CLP");
+                    System.out.println(e);
                 }
             }
         } catch (RuntimeException e) {
@@ -1445,67 +1413,63 @@ public class TelaPrincipal extends javax.swing.JFrame {
             throw (e);
         } catch (UnknownHostException e) {
             falha_conexao();
-            System.out.println("Erro "+e);
+            System.out.println("Erro " + e);
         }
     }
-    
-    
-    private void falha_conexao(){
-        footerBlend.setBackground(new Color(255,51,51));
-        
+
+    private void falha_conexao() {
+        footerBlend.setBackground(new Color(255, 51, 51));
+
         btnBlendPower.setEnabled(false);
         btnBlendMexedor.setEnabled(false);
         btnBlendElevador.setEnabled(false);
         btnBlendManual.setEnabled(false);
-        
+
         btnSilos.setEnabled(false);
         btnModBus.setEnabled(false);
-        
+
         lblBlendHeader.setText("BLEND SELECIONADO");
-        lblBlendHeader.setForeground(new Color(255,255,255));
+        lblBlendHeader.setForeground(new Color(255, 255, 255));
         cbBlendLote.setEnabled(false);
-        
+
         btnBlendSalvar.setEnabled(false);
         btnBlendCancelar.setEnabled(false);
-        
+
         cbBlendOperacao.setEnabled(false);
         btnBlendEnviar.setEnabled(false);
         btnBlendAtual.setEnabled(false);
         tbBlend.setEnabled(false);
-        txtBlendPesq.setEnabled(false);        
+        txtBlendPesq.setEnabled(false);
         lblBlendPesq.setEnabled(false);
-        
+
         btnBlendTarar.setEnabled(false);
         btnBlendNewMeta.setEnabled(false);
-        
-        
+
         btnSilo1Abrir.setEnabled(false);
         btnSilo2Abrir.setEnabled(false);
         btnSilo3Abrir.setEnabled(false);
         btnSilo4Abrir.setEnabled(false);
-        
+
         lblSilosOpen1.setVisible(false);
         lblSilosOpen2.setVisible(false);
         lblSilosOpen3.setVisible(false);
         lblSilosOpen4.setVisible(false);
     }
-    
-    
-    private void recupera_conexao(){
+
+    private void recupera_conexao() {
         //Volta estilo ao padrão
-        footerBlend.setBackground(new Color(68,141,41));
-        
+        footerBlend.setBackground(new Color(68, 141, 41));
+
         block_campos();
         btnBlendSalvar.setEnabled(true);
         btnBlendCancelar.setEnabled(true);
         cbBlendOperacao.setEnabled(true);
         cbBlendLote.setEnabled(false);
-        if(modo_manual == false){
+        if (modo_manual == false) {
             btnBlendEnviar.setEnabled(true);
             btnBlendMexedor.setEnabled(true);
             btnBlendElevador.setEnabled(true);
-        }
-        else{
+        } else {
             btnBlendEnviar.setEnabled(false);
             btnBlendMexedor.setEnabled(false);
             btnBlendElevador.setEnabled(false);
@@ -1513,37 +1477,34 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendManual.setEnabled(true);
         btnBlendAtual.setEnabled(true);
         tbBlend.setEnabled(true);
-        txtBlendPesq.setEnabled(true);        
+        txtBlendPesq.setEnabled(true);
         lblBlendPesq.setEnabled(true);
-        
+
         btnBlendPower.setEnabled(true);
-        
-        
+
         btnSilos.setEnabled(true);
-        btnModBus.setEnabled(true); 
+        btnModBus.setEnabled(true);
         lblSilosOpen1.setVisible(false);
         lblSilosOpen2.setVisible(false);
         lblSilosOpen3.setVisible(false);
         lblSilosOpen4.setVisible(false);
-        
-        if(modo_manual == true){
-           btnSilo1Abrir.setEnabled(true);
-           btnSilo2Abrir.setEnabled(true);
-           btnSilo3Abrir.setEnabled(true);
-           btnSilo4Abrir.setEnabled(true); 
+
+        if (modo_manual == true) {
+            btnSilo1Abrir.setEnabled(true);
+            btnSilo2Abrir.setEnabled(true);
+            btnSilo3Abrir.setEnabled(true);
+            btnSilo4Abrir.setEnabled(true);
+        } else {
+            btnSilo1Abrir.setEnabled(false);
+            btnSilo2Abrir.setEnabled(false);
+            btnSilo3Abrir.setEnabled(false);
+            btnSilo4Abrir.setEnabled(false);
         }
-        else{
-           btnSilo1Abrir.setEnabled(false);
-           btnSilo2Abrir.setEnabled(false);
-           btnSilo3Abrir.setEnabled(false);
-           btnSilo4Abrir.setEnabled(false);  
-        }
-        
+
         btnBlendTarar.setEnabled(true);
         btnBlendNewMeta.setEnabled(true);
     }
-    
-    
+
     private void buscar_modbus() {
         String sql = "select * from tb_modbus";
 
@@ -1584,15 +1545,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
+
     public void define_cores_mensagens() {
         StyleConstants.setForeground(cor_mensagem_erro, new Color(205, 0, 0));
 
         StyleConstants.setForeground(cor_tentando_conectar, new Color(255, 140, 0));
 
         StyleConstants.setForeground(cor_conectado, new Color(34, 139, 34));
-        
+
         StyleConstants.setForeground(cor_conectado_internet, new Color(10, 10, 10));
 
         StyleConstants.setForeground(cor_novo_processo, new Color(25, 25, 112));
@@ -1601,27 +1561,25 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         StyleConstants.setBold(cor_conectado, true);
     }
-    
-    
-    private void limpa_mensagens(){
+
+    private void limpa_mensagens() {
         try {
-            for(int i=0; i<=50; i++){
+            for (int i = 0; i <= 50; i++) {
                 caixa_mensagens.remove(i, caixa_mensagens.getLength());
             }
         } catch (BadLocationException ex) {
             System.out.println("Falha ao limpar console!");
         }
     }
-    
+
     //Metodos para sincronizar cadastros e estoque
-    
-    private void sincronizar(){
+    private void sincronizar() {
         sincronizando = true;
-        
+
         try {
             set_sincronizar_0();
             nuvem = ModuloConexaoNuvem.conector();
-            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSincronizando dados..." , cor_tentando_conectar);
+            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSincronizando dados...", cor_tentando_conectar);
             //ultimo_blend_local();
             ultimo_lote_nuvem();
             ultimo_lote_grao_nuvem();
@@ -1642,7 +1600,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             sincronizar_qtd_torrado_lotes();
             sincronizar_qtd_torrado_grao_lotes();
             sincronizar_status_blendador();
-            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nDados sincronizados! " , cor_sincronizar);
+            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nDados sincronizados! ", cor_sincronizar);
             sincronizando = false;
         } catch (Exception e) {
             sincronizando = false;
@@ -1650,35 +1608,32 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void check_sincronizar(){
+
+    private void check_sincronizar() {
         String sql = "select SINCRONIZADO from tb_modbus";
-        
+
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            if(rs.next()){
+
+            if (rs.next()) {
                 sincronizado = (rs.getInt(1));
-                if(sincronizado == 1 && temos_internet == true){
+                if (sincronizado == 1 && temos_internet == true) {
                     sincronizar();
-                }
-                else if(sincronizado == 0){
+                } else if (sincronizado == 0) {
                     System.out.println("Sistema sincronizado!");
                 }
             }
-            
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados ao iniciar");
             System.out.println(e);
         }
     }
-      
-    
-    private void set_sincronizar_1(){
+
+    private void set_sincronizar_1() {
         String sql = "update tb_modbus set SINCRONIZADO = 1 where id_modbus";
-        
+
         try {
             pst = conexao.prepareStatement(sql);
             pst.executeUpdate();
@@ -1687,10 +1642,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    private void set_sincronizar_0(){
+
+    private void set_sincronizar_0() {
         String sql = "update tb_modbus set SINCRONIZADO = 0 where id_modbus";
-        
+
         try {
             pst = conexao.prepareStatement(sql);
             pst.executeUpdate();
@@ -1699,16 +1654,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void ultimo_blend_local(){
+
+    private void ultimo_blend_local() {
         String sql = "select max(id_blend) as id from tb_blend";
-        
+
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            if(rs.next()){
+
+            if (rs.next()) {
                 ultimo_id_blend_local = rs.getString(1);
             }
         } catch (Exception e) {
@@ -1716,24 +1670,24 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void sincronizar_blend_local(){
+
+    private void sincronizar_blend_local() {
         //nuvem = ModuloConexaoNuvem.conector();
         System.out.println("Sincronizando");
         String sqlNuvem = "select * from tb_blend where id_blend > ?";
-        String sql = "insert into tb_blend (nome, cafe1, qtd_silo1, cafe2, qtd_silo2, cafe3, qtd_silo3, cafe4, qtd_silo4) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
+        String sql = "insert into tb_blend (nome, cafe1, qtd_silo1, cafe2, qtd_silo2, cafe3, qtd_silo3, cafe4, qtd_silo4)"
+                + " values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
         try {
             //Pega dados salvos apenas na nuvem
             pstNuvem = nuvem.prepareStatement(sqlNuvem);
             pstNuvem.setString(1, ultimo_id_blend_local);
             rsNuvem = pstNuvem.executeQuery();
-            
+
             //Insere dados obtidos na nuvem e os insere no local
             pst = conexao.prepareStatement(sql);
-            
-            while(rsNuvem.next()){
+
+            while (rsNuvem.next()) {
                 try {
                     pst.setString(1, rsNuvem.getString(2));
                     pst.setString(2, rsNuvem.getString(4));
@@ -1746,7 +1700,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     pst.setString(9, rsNuvem.getString(14));
 
                     pst.executeUpdate();
-                    
+
                     System.out.println("Sincronizado!");
                 } catch (Exception e) {
                     System.out.println("Falha ao sincronizar blends (local)!");
@@ -1758,16 +1712,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void ultimo_lote_nuvem(){
+
+    private void ultimo_lote_nuvem() {
         //nuvem = ModuloConexaoNuvem.conector();
         String sql = "select max(id_lote) as id from tb_lotes";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             rsNuvem = pstNuvem.executeQuery();
 
-            if(rsNuvem.next()){
+            if (rsNuvem.next()) {
                 ultimo_id_lote_nuvem = rsNuvem.getString(1);
             }
         } catch (Exception e) {
@@ -1775,37 +1728,37 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
+
     //Limpando tabela para sincronizar
-    private void truncate_lotes_nuvem(){
+    private void truncate_lotes_nuvem() {
         String sql = "truncate table tb_lotes";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.executeUpdate();
-            
+
         } catch (Exception e) {
-            System.out.println("Falha ao truncar tb_lotes (nuvem) para sincronizar " +e);
+            System.out.println("Falha ao truncar tb_lotes (nuvem) para sincronizar " + e);
         }
     }
-    
-    
-    private void sincronizar_lotes(){
-         //nuvem = ModuloConexaoNuvem.conector();
-        
+
+    private void sincronizar_lotes() {
+        //nuvem = ModuloConexaoNuvem.conector();
+
         String sql = "select * from tb_lotes";
-        String sql_insert_nuvem = "insert into tb_lotes(nome_lote, num_lote, data_lote, tipo_cafe, qtd_torrado, obs, torras) values (?, ?, ?, ?, ?, ?, ?)";
-        
+        String sql_insert_nuvem = "insert into tb_lotes(nome_lote, num_lote, data_lote, tipo_cafe, qtd_torrado, obs, torras) "
+                + "values (?, ?, ?, ?, ?, ?, ?)";
+
         truncate_lotes_nuvem();
-        
+
         try {
             //Pega dados salvos apenas localmente
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
+
             //Insere dados obtidos na local e os insere na nuvem
             pstNuvem = nuvem.prepareStatement(sql_insert_nuvem);
-            
-            while(rs.next()){
+
+            while (rs.next()) {
                 try {
                     pstNuvem.setString(1, rs.getString(2));
                     pstNuvem.setString(2, rs.getString(3));
@@ -1815,28 +1768,27 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     pstNuvem.setString(6, rs.getString(7));
                     pstNuvem.setString(7, rs.getString(8));
                     pstNuvem.executeUpdate();
-                    
+
                 } catch (Exception e) {
                     System.out.println("Falha ao sincronizar Lotes (nuvem)!");
                     System.out.println(e);
                 }
             }
-            
+
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Falha ao sincronizar lotes (nuvem)!");
             System.out.println(ex);
         }
     }
-    
-    
-    private void ultimo_lote_grao_nuvem(){
+
+    private void ultimo_lote_grao_nuvem() {
         //nuvem = ModuloConexaoNuvem.conector();
         String sql = "select max(id_lote_grao) as id from tb_lotes_grao";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             rsNuvem = pstNuvem.executeQuery();
 
-            if(rsNuvem.next()){
+            if (rsNuvem.next()) {
                 ultimo_id_lote_grao_nuvem = rsNuvem.getString(1);
             }
         } catch (Exception e) {
@@ -1844,36 +1796,36 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void truncate_lotes_grao_nuvem(){
+
+    private void truncate_lotes_grao_nuvem() {
         String sql = "truncate table tb_lotes_grao";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.executeUpdate();
-            
+
         } catch (Exception e) {
-            System.out.println("Falha ao truncar tb_lotes_grao (nuvem) para sincronizar " +e);
+            System.out.println("Falha ao truncar tb_lotes_grao (nuvem) para sincronizar " + e);
         }
     }
-    
-    private void sincronizar_lotes_grao(){
-         //nuvem = ModuloConexaoNuvem.conector();
-        
+
+    private void sincronizar_lotes_grao() {
+        //nuvem = ModuloConexaoNuvem.conector();
+
         String sql = "select * from tb_lotes_grao";
-        String sql_insert_nuvem = "insert into tb_lotes_grao(nome_lote_grao, num_lote_grao, data_lote_grao, tipo_cafe_grao, qtd_torrado, obs, torras) values (?, ?, ?, ?, ?, ?, ?)";
-        
+        String sql_insert_nuvem = "insert into tb_lotes_grao(nome_lote_grao, num_lote_grao, data_lote_grao, "
+                + "tipo_cafe_grao, qtd_torrado, obs, torras) values (?, ?, ?, ?, ?, ?, ?)";
+
         truncate_lotes_grao_nuvem();
-        
+
         try {
             //Pega dados salvos apenas localmente
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
+
             //Insere dados obtidos na local e os insere na nuvem
             pstNuvem = nuvem.prepareStatement(sql_insert_nuvem);
-            
-            while(rs.next()){
+
+            while (rs.next()) {
                 try {
                     pstNuvem.setString(1, rs.getString(2));
                     pstNuvem.setString(2, rs.getString(3));
@@ -1888,222 +1840,214 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     System.out.println(e);
                 }
             }
-            
+
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Falha ao sincronizar lotes de grão (nuvem)!");
             System.out.println(ex);
         }
     }
-    
-    
-    private void consultar_qtd_torrado_lotes(){
+
+    private void consultar_qtd_torrado_lotes() {
         String sql = "select qtd_torrado from tb_lotes";
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
+
             qtd_torrado.clear();
-            while(rs.next()){
+            while (rs.next()) {
                 qtd_torrado.add(rs.getFloat(1));
             }
-            
+
             //System.out.println(qtd_torrado);
         } catch (Exception e) {
             System.out.println("Falha ao consultar qtd_torrado em lotes");
             System.out.println(e);
         }
     }
-    
-    
-    private void sincronizar_qtd_torrado_lotes(){
+
+    private void sincronizar_qtd_torrado_lotes() {
         String sql = "update tb_lotes set qtd_torrado = ? where id_lote=?";
         //Criando array baseado em tamanho da lista (convertendo lista para array)
-        Float []array_qtd_torrado = qtd_torrado.toArray(new Float[0]);
+        Float[] array_qtd_torrado = qtd_torrado.toArray(new Float[0]);
         int tamanho = array_qtd_torrado.length;
-        
+
         //Tamanho -1 pois após conversão, a lista gera 1 indice a mais
-        for(int i=0; i<= (tamanho -1); i++){
+        for (int i = 0; i <= (tamanho - 1); i++) {
             try {
                 //nuvem = ModuloConexaoNuvem.conector();
                 pstNuvem = nuvem.prepareStatement(sql);
-                
+
                 pstNuvem.setFloat(1, array_qtd_torrado[i]);
-                pstNuvem.setInt(2, i+1);
+                pstNuvem.setInt(2, i + 1);
 
                 pstNuvem.executeUpdate();
             } catch (Exception e) {
-                System.out.println("Falha ao sincronizar qtd_torrado em lotes (nuvem)"+e);
+                System.out.println("Falha ao sincronizar qtd_torrado em lotes (nuvem)" + e);
             }
         }
     }
-    
-    
-    private void consultar_qtd_torrado_grao_lotes(){
+
+    private void consultar_qtd_torrado_grao_lotes() {
         String sql = "select qtd_torrado_grao from tb_lotes_grao";
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
+
             qtd_torrado_grao.clear();
-            while(rs.next()){
+            while (rs.next()) {
                 qtd_torrado_grao.add(rs.getFloat(1));
             }
-            
+
             //System.out.println(qtd_torrado);
         } catch (Exception e) {
             System.out.println("Falha ao consultar qtd_torrado_grao em lotes_grao");
             System.out.println(e);
         }
     }
-    
-    
-    private void sincronizar_qtd_torrado_grao_lotes(){
+
+    private void sincronizar_qtd_torrado_grao_lotes() {
         String sql = "update tb_lotes_grao set qtd_torrado = ? where id_lote_grao=?";
         //Criando array baseado em tamanho da lista (convertendo lista para array)
-        Float []array_qtd_torrado_grao = qtd_torrado_grao.toArray(new Float[0]);
+        Float[] array_qtd_torrado_grao = qtd_torrado_grao.toArray(new Float[0]);
         int tamanho = array_qtd_torrado_grao.length;
-        
+
         //Tamanho -1 pois após conversão, a lista gera 1 indice a mais
-        for(int i=0; i<= (tamanho -1); i++){
+        for (int i = 0; i <= (tamanho - 1); i++) {
             try {
                 //nuvem = ModuloConexaoNuvem.conector();
                 pstNuvem = nuvem.prepareStatement(sql);
-                
+
                 pstNuvem.setFloat(1, array_qtd_torrado_grao[i]);
-                pstNuvem.setInt(2, i+1);
+                pstNuvem.setInt(2, i + 1);
 
                 pstNuvem.executeUpdate();
             } catch (Exception e) {
-                System.out.println("Falha ao sincronizar qtd_torrado em lotes (nuvem)"+e);
+                System.out.println("Falha ao sincronizar qtd_torrado em lotes (nuvem)" + e);
             }
         }
     }
-    
-    private void sincronizar_status_blendador(){
-        if(temos_internet == true){
+
+    private void sincronizar_status_blendador() {
+        if (temos_internet == true) {
             //nuvem = ModuloConexaoNuvem.conector();
             try {
-            boolean []array_coils_nuvem;
-            array_coils_nuvem = m.readCoils(escravo, 0, 1);
-            
-            if(array_coils_nuvem[0] == true && temos_internet == true){
-                //System.out.println(array_coils_nuvem[0]);
-                set_blendador_nuvem_1();
-            }
-            else if(temos_internet == true){
-                //System.out.println(array_coils_nuvem[0]);
-                set_blendador_nuvem_0();
-            }
-            }catch (ModbusIOException | ModbusNumberException | ModbusProtocolException e) {
+                boolean[] array_coils_nuvem;
+                array_coils_nuvem = m.readCoils(escravo, 0, 1);
+
+                if (array_coils_nuvem[0] == true && temos_internet == true) {
+                    //System.out.println(array_coils_nuvem[0]);
+                    set_blendador_nuvem_1();
+                } else if (temos_internet == true) {
+                    //System.out.println(array_coils_nuvem[0]);
+                    set_blendador_nuvem_0();
+                }
+            } catch (ModbusIOException | ModbusNumberException | ModbusProtocolException e) {
                 System.out.println("Falha ao sincronizar status do blendador (nuvem)");
                 System.out.println(e);
             }
-        }
-        else{
+        } else {
             precisa_sincrinizar = true;
         }
     }
-    
-    private void sincronizar_estoque_silos(){
+
+    private void sincronizar_estoque_silos() {
         //nuvem = ModuloConexaoNuvem.conector();
         String sql = "update tb_silos set qtd_atual=? where id_silo=?";
         float value = 0;
-        
-        for(int i =0; i<=3; i++ ){
+
+        for (int i = 0; i <= 3; i++) {
             try {
                 value = array_silos[i];
                 pstNuvem = nuvem.prepareStatement(sql);
-                
+
                 pstNuvem.setFloat(1, array_silos[i]);
                 pstNuvem.setInt(2, i + 1);
-                
+
                 //System.out.println(value);
                 pstNuvem.executeUpdate();
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados locais com estoque dos silos (nuvem)");
-                System.out.println(e);         
+                System.out.println(e);
             }
         }
     }
-   
-    
-    private void sincronizar_estoque_grao(){
+
+    private void sincronizar_estoque_grao() {
         //nuvem = ModuloConexaoNuvem.conector();
         String sql = "update tb_cafe_grao set quantidade=? where id_cafe_grao";
-        
-        try {
-                pstNuvem = nuvem.prepareStatement(sql);
 
-                //System.out.println(Qtd_estoque_att);
-                pstNuvem.setFloat(1, Qtd_estoque);
-                pstNuvem.executeUpdate();
-                
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de grãos (nuvem)");
-                System.out.println(e); 
-            }
-    }
-    
-    
-    private void sincronizar_estoque_moido(){
-        //nuvem = ModuloConexaoNuvem.conector();
-        String sql = "update tb_cafe_moido set quantidade=? where id_cafe_moido";
-        
-        try {
-                pstNuvem = nuvem.prepareStatement(sql);
-                
-                //System.out.println(Qtd_estoque_att);
-                pstNuvem.setFloat(1, Qtd_estoque_moido);
-                pstNuvem.executeUpdate();
-                
-            } catch (Exception e) {
-               JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de café moído (nuvem)");
-                System.out.println(e); 
-        }
-    }
-    
-    
-    private void sincronizar_blend_atual(){
-       //nuvem = ModuloConexaoNuvem.conector();
-       consultar_blend_atual();
-       String sql = "update tb_blend_atual set id_blend_atual=?, nome=?, qtd_silo1=?, qtd_silo2=?, qtd_silo3=?, qtd_silo4=?, operacao=? where id_blend_atual";
-        
         try {
             pstNuvem = nuvem.prepareStatement(sql);
-            
-            pstNuvem.setString(1,id_atual);
-            pstNuvem.setString(2,nome_atual);
-            pstNuvem.setFloat(3,Float.parseFloat(qtds1_atual));
-            pstNuvem.setFloat(4,Float.parseFloat(qtds2_atual));
-            pstNuvem.setFloat(5,Float.parseFloat(qtds3_atual));
-            pstNuvem.setFloat(6,Float.parseFloat(qtds4_atual));
-            pstNuvem.setString(7,operation);
-            
+
+            //System.out.println(Qtd_estoque_att);
+            pstNuvem.setFloat(1, Qtd_estoque);
             pstNuvem.executeUpdate();
-            
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de grãos (nuvem)");
+            System.out.println(e);
         }
-        catch (Exception e) {
+    }
+
+    private void sincronizar_estoque_moido() {
+        //nuvem = ModuloConexaoNuvem.conector();
+        String sql = "update tb_cafe_moido set quantidade=? where id_cafe_moido";
+
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+
+            //System.out.println(Qtd_estoque_att);
+            pstNuvem.setFloat(1, Qtd_estoque_moido);
+            pstNuvem.executeUpdate();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de café moído (nuvem)");
+            System.out.println(e);
+        }
+    }
+
+    private void sincronizar_blend_atual() {
+        //nuvem = ModuloConexaoNuvem.conector();
+        consultar_blend_atual();
+        String sql = "update tb_blend_atual set id_blend_atual=?, nome=?, qtd_silo1=?, qtd_silo2=?, qtd_silo3=?,"
+                + " qtd_silo4=?, operacao=? where id_blend_atual";
+
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+
+            pstNuvem.setString(1, id_atual);
+            pstNuvem.setString(2, nome_atual);
+            pstNuvem.setFloat(3, Float.parseFloat(qtds1_atual));
+            pstNuvem.setFloat(4, Float.parseFloat(qtds2_atual));
+            pstNuvem.setFloat(5, Float.parseFloat(qtds3_atual));
+            pstNuvem.setFloat(6, Float.parseFloat(qtds4_atual));
+            pstNuvem.setString(7, operation);
+
+            pstNuvem.executeUpdate();
+
+        } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao setar blend atual na nuvem");
             System.out.println(e);
         }
     }
-    
-    
-    private void sincronizar_registros(){
+
+    private void sincronizar_registros() {
         //nuvem = ModuloConexaoNuvem.conector();
-        
+
         String sql = "select * from tb_blend_registros where id_registro > ?";
-        String sql_insert_nuvem = "insert into tb_blend_registros(nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, data, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, (select cafe_atual from tb_silos where id_silo = 1), ?, (select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, ?, ?, ?, ?, ?,? )";
+        String sql_insert_nuvem = "insert into tb_blend_registros(nome_blend, nome_cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2,"
+                + " nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, data, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote)"
+                + " values (?, (select cafe_atual from tb_silos where id_silo = 1), ?, (select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, ?, ?, ?, ?, ?,? )";
         try {
             //Pega dados salvos apenas localmente
             pst = conexao.prepareStatement(sql);
             pst.setString(1, ultimo_id_registro_nuvem);
             rs = pst.executeQuery();
-            
+
             //Insere dados obtidos na local e os insere na nuvem
             pstNuvem = nuvem.prepareStatement(sql_insert_nuvem);
-            
-            while(rs.next()){
+
+            while (rs.next()) {
                 try {
                     pstNuvem.setString(1, rs.getString(2));
                     pstNuvem.setString(2, rs.getString(4));
@@ -2119,28 +2063,28 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     pstNuvem.setString(12, rs.getString(17));
 
                     pstNuvem.executeUpdate();
-                    
+
                 } catch (Exception e) {
                     System.out.println("Falha ao sincronizar Registros (nuvem)!");
                     System.out.println(e);
                 }
             }
-            
+
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Falha ao sincronizar Registros (nuvem)!");
             System.out.println(ex);
         }
     }
-    
-    private void ultimo_registro_nuvem(){
+
+    private void ultimo_registro_nuvem() {
         //nuvem = ModuloConexaoNuvem.conector();
-         //1 - Obter ultimo registro da tabela offline
+        //1 - Obter ultimo registro da tabela offline
         String sql = "select max(id_registro) as id from tb_blend_registros";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             rsNuvem = pstNuvem.executeQuery();
 
-            if(rsNuvem.next()){
+            if (rsNuvem.next()) {
                 ultimo_id_registro_nuvem = rsNuvem.getString(1);
             }
         } catch (Exception e) {
@@ -2148,20 +2092,18 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-           
+
     //Metodos referentes ao Blend
-    private void check_blend(){
+    private void check_blend() {
         String sql = "select * from tb_blend";
-        
+
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            if(rs.next()){
+
+            if (rs.next()) {
                 blend = true;
-            }
-            else{
+            } else {
                 blend = false;
             }
         } catch (Exception e) {
@@ -2169,66 +2111,63 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void consultar_blend_atual(){
+
+    private void consultar_blend_atual() {
         String sql = "select id_blend_atual, nome, qtd_silo1, qtd_silo2, qtd_silo3, qtd_silo4, operacao from tb_blend_atual";
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            if(rs.next()){
+
+            if (rs.next()) {
                 id_atual = (rs.getString(1));
                 nome_atual = (rs.getString(2));
                 qtds1_atual = (rs.getString(3));
-                qtds2_atual =(rs.getString(4));
-                qtds3_atual =(rs.getString(5));
-                qtds4_atual =(rs.getString(6));
+                qtds2_atual = (rs.getString(4));
+                qtds3_atual = (rs.getString(5));
+                qtds4_atual = (rs.getString(6));
                 operation = rs.getString(7);
-            }
-            else{
-                caixa_mensagens.insertString(caixa_mensagens.getLength(), "Blend Atual ainda não cadastrado!" , cor_mensagem_erro);
+            } else {
+                caixa_mensagens.insertString(caixa_mensagens.getLength(), "Blend Atual ainda não cadastrado!", cor_mensagem_erro);
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao buscar blend atual para sincronizar");
             System.out.println(e);
         }
     }
-    
-    
-    private void buscar_tipos_silo(){
+
+    private void buscar_tipos_silo() {
         String sql = "select cafe_atual from tb_silos";
-        
-        String [] tipos = new String[4];
+
+        String[] tipos = new String[4];
         int i = 0;
-        
+
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            while(rs.next()){
+
+            while (rs.next()) {
                 tipos[i] = rs.getString(1);
-                i++;       
+                i++;
             }
-            
-            lblTipo1.setText("ATUAL: "+tipos[0]);
-            lblTipo2.setText("ATUAL: "+tipos[1]);
-            lblTipo3.setText("ATUAL: "+tipos[2]);
-            lblTipo4.setText("ATUAL: "+tipos[3]);
-            
+
+            lblTipo1.setText("ATUAL: " + tipos[0]);
+            lblTipo2.setText("ATUAL: " + tipos[1]);
+            lblTipo3.setText("ATUAL: " + tipos[2]);
+            lblTipo4.setText("ATUAL: " + tipos[3]);
+
         } catch (Exception e) {
             System.out.println(e);
         }
     }
-    
-    private void buscar_blend_atual(){
+
+    private void buscar_blend_atual() {
         //Busca blend atual, ultimo enviado ao plc
         String sql = "select id_blend_atual, nome, qtd_silo1, qtd_silo2, qtd_silo3, qtd_silo4, operacao from tb_blend_atual";
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            if(rs.next()){
+
+            if (rs.next()) {
                 txtIdBlend.setText(rs.getString(1));
                 txtNomeBlend.setText(rs.getString(2));
                 txtQtdSilo1.setText(rs.getString(3));
@@ -2236,45 +2175,40 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 txtQtdSilo3.setText(rs.getString(5));
                 txtQtdSilo4.setText(rs.getString(6));
                 String operacao = rs.getString(7);
-                if(operacao.equals("moer")){
+                if (operacao.equals("moer")) {
                     cbBlendOperacao.setSelectedIndex(1);
-                }
-                else if (operacao.equals("grao")){
+                } else if (operacao.equals("grao")) {
                     cbBlendOperacao.setSelectedIndex(2);
-                }
-                else{
+                } else {
                     cbBlendOperacao.setSelectedIndex(0);
                 }
-            }
-            else{
-                caixa_mensagens.insertString(caixa_mensagens.getLength(), "Blend Atual ainda não cadastrado!" , cor_mensagem_erro);
+            } else {
+                caixa_mensagens.insertString(caixa_mensagens.getLength(), "Blend Atual ainda não cadastrado!", cor_mensagem_erro);
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao buscar blend atual");
             System.out.println(e);
         }
     }
-    
-    
-    private void buscar_blend(){
+
+    private void buscar_blend() {
         String sql = "select * from tb_blend";
-        
+
         try {
-            if(temos_internet == true){
+            if (temos_internet == true) {
                 tbBlendTitulo.setText("RECEITAS CADASTRADAS");
                 //nuvem = ModuloConexaoNuvem.conector();
                 pstNuvem = nuvem.prepareStatement(sql);
                 rsNuvem = pstNuvem.executeQuery();
-                
+
                 tbBlend.setModel(DbUtils.resultSetToTableModel(rsNuvem));
-            }
-            else{
+            } else {
                 tbBlendTitulo.setText("RECEITAS CADASTRADAS (LOCALMENTE)");
                 pst = conexao.prepareStatement(sql);
                 rs = pst.executeQuery();
                 tbBlend.setModel(DbUtils.resultSetToTableModel(rs));
             }
-            
+
             //Remove campos desnecessários da table
             remove_colunas();
         } catch (Exception e) {
@@ -2282,68 +2216,60 @@ public class TelaPrincipal extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Falha ao buscar blend");
         }
     }
-    
-    
-    private void pesquisar_blend(){
+
+    private void pesquisar_blend() {
         String sql = "select * from tb_blend where nome like ?";
-        
+
         try {
-            if(temos_internet == true){
+            if (temos_internet == true) {
                 //nuvem = ModuloConexaoNuvem.conector();
                 pstNuvem = nuvem.prepareStatement(sql);
-                
-                pstNuvem.setString(1, txtBlendPesq.getText()+'%');
+
+                pstNuvem.setString(1, txtBlendPesq.getText() + '%');
                 rsNuvem = pstNuvem.executeQuery();
-                
+
                 tbBlend.setModel(DbUtils.resultSetToTableModel(rsNuvem));
-            }
-            else{
+            } else {
                 pst = conexao.prepareStatement(sql);
-            
-                pst.setString(1,txtBlendPesq.getText()+'%');
+
+                pst.setString(1, txtBlendPesq.getText() + '%');
                 rs = pst.executeQuery();
 
                 tbBlend.setModel(DbUtils.resultSetToTableModel(rs));
             }
-            
-           
+
             remove_colunas();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao pesquisar blend");
         }
-        
+
     }
 
-    
-    private void set_campos_blend(){
+    private void set_campos_blend() {
         try {
             int setar = tbBlend.getSelectedRow();
-            
+
             //lblNomeBlend.setText(tbBlend.getModel().getValueAt(setar,1).toString());
-            txtIdBlend.setText(tbBlend.getModel().getValueAt(setar,0).toString());
-            txtNomeBlend.setText(tbBlend.getModel().getValueAt(setar,1).toString());
-            txtQtdSilo1.setText(tbBlend.getModel().getValueAt(setar,4).toString());
-            txtQtdSilo2.setText(tbBlend.getModel().getValueAt(setar,7).toString());
-            txtQtdSilo3.setText(tbBlend.getModel().getValueAt(setar,10).toString());
-            txtQtdSilo4.setText(tbBlend.getModel().getValueAt(setar,13).toString()); 
-            
+            txtIdBlend.setText(tbBlend.getModel().getValueAt(setar, 0).toString());
+            txtNomeBlend.setText(tbBlend.getModel().getValueAt(setar, 1).toString());
+            txtQtdSilo1.setText(tbBlend.getModel().getValueAt(setar, 4).toString());
+            txtQtdSilo2.setText(tbBlend.getModel().getValueAt(setar, 7).toString());
+            txtQtdSilo3.setText(tbBlend.getModel().getValueAt(setar, 10).toString());
+            txtQtdSilo4.setText(tbBlend.getModel().getValueAt(setar, 13).toString());
+
         } catch (Exception e) {
             System.out.println("Falha ao setar campos da tabela" + e);
         }
-        
+
     }
-    
-    
-    private void remove_colunas(){
+
+    private void remove_colunas() {
         tbBlend.removeColumn(tbBlend.getColumnModel().getColumn(0));
         tbBlend.removeColumn(tbBlend.getColumnModel().getColumn(1));
         tbBlend.removeColumn(tbBlend.getColumnModel().getColumn(3));
         tbBlend.removeColumn(tbBlend.getColumnModel().getColumn(5));
         tbBlend.removeColumn(tbBlend.getColumnModel().getColumn(7));
-        
 
-
-        
         tbBlend.getColumnModel().getColumn(0).setHeaderValue("Nome");
         tbBlend.getColumnModel().getColumn(1).setHeaderValue("Café 1");
         tbBlend.getColumnModel().getColumn(2).setHeaderValue("Quantidade");
@@ -2353,23 +2279,18 @@ public class TelaPrincipal extends javax.swing.JFrame {
         tbBlend.getColumnModel().getColumn(6).setHeaderValue("Quantidade");
         tbBlend.getColumnModel().getColumn(7).setHeaderValue("Café 4");
         tbBlend.getColumnModel().getColumn(8).setHeaderValue("Quantidade");
-        
-        
 
-        
         tbBlend.getTableHeader().repaint();
     }
-    
-    
-    private void block_campos(){
+
+    private void block_campos() {
         Metodo = null;
         btnBlendAtual.setEnabled(true);
         cbBlendOperacao.setEnabled(true);
         cbBlendLote.setEnabled(false);
-        if(modo_manual == false){
+        if (modo_manual == false) {
             btnBlendEnviar.setEnabled(true);
-        }
-        else{
+        } else {
             btnBlendEnviar.setEnabled(false);
         }
         txtStatus.setEditable(false);
@@ -2379,58 +2300,55 @@ public class TelaPrincipal extends javax.swing.JFrame {
         txtQtdSilo2.setEditable(false);
         txtQtdSilo3.setEditable(false);
         txtQtdSilo4.setEditable(false);
-        btnBlendNewMeta.setBackground(new Color(255,255,255));
+        btnBlendNewMeta.setBackground(new Color(255, 255, 255));
         btnBlendNewMeta.setEnabled(true);
         txtBlendMetaMoido.setEditable(false);
         txtBlendMetaGrao.setEditable(false);
     }
-    
-    
-    private void unlock_manual(){
-        if(modo_manual == true){
+
+    private void unlock_manual() {
+        if (modo_manual == true) {
             btnSilo1Abrir.setEnabled(true);
             btnSilo2Abrir.setEnabled(true);
             btnSilo3Abrir.setEnabled(true);
-            btnSilo4Abrir.setEnabled(true); 
-            
+            btnSilo4Abrir.setEnabled(true);
+
             btnBlendPower.setEnabled(false);
             btnBlendMexedor.setEnabled(true);
             btnBlendElevador.setEnabled(true);
-            
+
             btnBlendEnviar.setEnabled(false);
             cbBlendOperacao.setEnabled(true);
             btnBlendAtual.setEnabled(false);
-        }
-        else{
+        } else {
             btnSilo1Abrir.setEnabled(false);
             btnSilo2Abrir.setEnabled(false);
             btnSilo3Abrir.setEnabled(false);
-            btnSilo4Abrir.setEnabled(false); 
-            
+            btnSilo4Abrir.setEnabled(false);
+
             btnBlendPower.setEnabled(true);
             btnBlendMexedor.setEnabled(false);
             btnBlendElevador.setEnabled(false);
-            
-            if(blendando == false){
+
+            if (blendando == false) {
                 btnBlendEnviar.setEnabled(true);
-            }
-            else{
+            } else {
                 btnBlendEnviar.setEnabled(true);
             }
             cbBlendOperacao.setEnabled(true);
             btnBlendAtual.setEnabled(true);
         }
     }
-    
-      
-    private void set_blend_atual(){
+
+    private void set_blend_atual() {
         //Atualiza/sobrescreve dados da tabela blend atual, para manter o sistema sincronizado com os dados enviados ao PLC
-        
-        String sql = "update tb_blend_atual set id_blend_atual=?, nome=?, qtd_silo1=?, qtd_silo2=?, qtd_silo3=?, qtd_silo4=?, operacao=? where id_blend_atual";
-        
+
+        String sql = "update tb_blend_atual set id_blend_atual=?, nome=?, qtd_silo1=?, qtd_silo2=?, qtd_silo3=?, qtd_silo4=?,"
+                + " operacao=? where id_blend_atual";
+
         try {
             pst = conexao.prepareStatement(sql);
-            
+
             IdBlend = txtIdBlend.getText();
             NomeBlend = txtNomeBlend.getText();
             QtdSilo1 = txtQtdSilo1.getText();
@@ -2438,118 +2356,112 @@ public class TelaPrincipal extends javax.swing.JFrame {
             QtdSilo3 = txtQtdSilo3.getText();
             QtdSilo4 = txtQtdSilo4.getText();
             int operacao = cbBlendOperacao.getSelectedIndex();
-            
-            pst.setString(1,IdBlend);
-            pst.setString(2,NomeBlend);
-            pst.setFloat(3,Float.parseFloat(QtdSilo1));
-            pst.setFloat(4,Float.parseFloat(QtdSilo2));
-            pst.setFloat(5,Float.parseFloat(QtdSilo3));
-            pst.setFloat(6,Float.parseFloat(QtdSilo4));
-            if(operacao == 1){
+
+            pst.setString(1, IdBlend);
+            pst.setString(2, NomeBlend);
+            pst.setFloat(3, Float.parseFloat(QtdSilo1));
+            pst.setFloat(4, Float.parseFloat(QtdSilo2));
+            pst.setFloat(5, Float.parseFloat(QtdSilo3));
+            pst.setFloat(6, Float.parseFloat(QtdSilo4));
+            if (operacao == 1) {
                 pst.setString(7, "moer");
+            } else if (operacao == 2) {
+                pst.setString(7, "grao");
             }
-            else if(operacao == 2){
-               pst.setString(7, "grao"); 
-            }
-            
+
             pst.executeUpdate();
-            
-        }
-        catch (Exception e) {
+
+        } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao setar blend atual");
             System.out.println(e);
         }
     }
-    
-    
-    private void set_blend_atual_nuvem(){
+
+    private void set_blend_atual_nuvem() {
         String sql = "update tb_blend_atual set id_blend_atual=?, nome=?, qtd_silo1=?, qtd_silo2=?, qtd_silo3=?, qtd_silo4=? where id_blend_atual";
-        
+
         try {
             pstNuvem = nuvem.prepareStatement(sql);
-            
+
             IdBlend = txtIdBlend.getText();
             NomeBlend = txtNomeBlend.getText();
             QtdSilo1 = txtQtdSilo1.getText();
             QtdSilo2 = txtQtdSilo2.getText();
             QtdSilo3 = txtQtdSilo3.getText();
             QtdSilo4 = txtQtdSilo4.getText();
-            
-            pstNuvem.setString(1,IdBlend);
-            pstNuvem.setString(2,NomeBlend);
-            pstNuvem.setFloat(3,Float.parseFloat(QtdSilo1));
-            pstNuvem.setFloat(4,Float.parseFloat(QtdSilo2));
-            pstNuvem.setFloat(5,Float.parseFloat(QtdSilo3));
-            pstNuvem.setFloat(6,Float.parseFloat(QtdSilo4));
-            
+
+            pstNuvem.setString(1, IdBlend);
+            pstNuvem.setString(2, NomeBlend);
+            pstNuvem.setFloat(3, Float.parseFloat(QtdSilo1));
+            pstNuvem.setFloat(4, Float.parseFloat(QtdSilo2));
+            pstNuvem.setFloat(5, Float.parseFloat(QtdSilo3));
+            pstNuvem.setFloat(6, Float.parseFloat(QtdSilo4));
+
             pstNuvem.executeUpdate();
-            
-        }
-        catch (Exception e) {
+
+        } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao setar blend atual na nuvem");
             System.out.println(e);
         }
     }
-    
-    
+
     //Metodos relacionados aos lotes
     //**Funcionando
-    private void ultimo_lote_usado(){
+    private void ultimo_lote_usado() {
         //Inicia combobox com ultimo lote utilizado
-        
+
         try {
-            if(cbBlendOperacao.getSelectedIndex() == 1){
+            if (cbBlendOperacao.getSelectedIndex() == 1) {
 
                 cbBlendLote.setSelectedIndex(1);
 
                 String selected = cbBlendLote.getSelectedItem().toString();
                 //System.out.println(selected);
-            }
-            else if (cbBlendOperacao.getSelectedIndex() == 2){
-                
+            } else if (cbBlendOperacao.getSelectedIndex() == 2) {
+
                 cbBlendLote.setSelectedIndex(2);
 
                 String selected = cbBlendLote.getSelectedItem().toString();
             }
-            
+
         } catch (Exception e) {
             System.out.println("Falha ao setar lote utilizado em cbBlendLotes");
             System.out.println(e);
         }
-        
+
     }
-    
-    private void set_lotes(){
+
+    private void set_lotes() {
         //Popula combobox com lotes disponiveis em lote atual
         String sql = "select nome_lote_atual from tb_lote_atual";
-        
+
         try {
             //Reseta combobox antes de preenche-la
             cbBlendLote.removeAllItems();
             cbBlendLote.addItem("SELECIONE UM LOTE...");
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            while(rs.next()){
+
+            while (rs.next()) {
                 String nome_lote = rs.getString(1);
                 cbBlendLote.addItem(nome_lote);
             }
             ultimo_lote_usado();
-            
+
         } catch (Exception e) {
             System.out.println("Falha ao popular combobox com lotes salvos");
             System.out.println(e);
         }
     }
-    
-    private void atualizar_qtd_torrado_lote(float QtdTotal){
+
+    private void atualizar_qtd_torrado_lote(float QtdTotal) {
         //Atualiza td_torrado em lote selecionado pelo usuário(após enviar blend apenas)
         //Permitindo que usuário reutilize lotes
         String sql = "update tb_lotes set qtd_torrado = (select qtd_torrado + ?) where nome_lote = ?";
-        
+
         try {
             String selected = cbBlendLote.getSelectedItem().toString();
-            
+
             pst = conexao.prepareStatement(sql);
             pst.setFloat(1, QtdTotal);
             pst.setString(2, selected);
@@ -2559,13 +2471,13 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    private void atualizar_qtd_torrado_grao_lote(float QtdTotal){
+
+    private void atualizar_qtd_torrado_grao_lote(float QtdTotal) {
         String sql = "update tb_lotes_grao set qtd_torrado_grao = (select qtd_torrado_grao + ?) where nome_lote_grao = ?";
-        
+
         try {
             String selected = cbBlendLote.getSelectedItem().toString();
-            
+
             pst = conexao.prepareStatement(sql);
             pst.setFloat(1, QtdTotal);
             pst.setString(2, selected);
@@ -2575,14 +2487,13 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void atualizar_qtd_torrado_grao_lote_nuvem(float QtdTotal){
+
+    private void atualizar_qtd_torrado_grao_lote_nuvem(float QtdTotal) {
         String sql = "update tb_lotes_grao set qtd_torrado = (select qtd_torrado + ?) where nome_lote_grao = ?";
-        
+
         try {
             String selected = cbBlendLote.getSelectedItem().toString();
-            
+
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.setFloat(1, QtdTotal);
             pstNuvem.setString(2, selected);
@@ -2592,15 +2503,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
+
     //Faz a mesma coisa que o método de cima, porém para a núvem
-    private void atualizar_qtd_torrado_lote_nuvem(float QtdTotal){
+    private void atualizar_qtd_torrado_lote_nuvem(float QtdTotal) {
         String sql = "update tb_lotes set qtd_torrado = (select qtd_torrado + ?) where nome_lote = ?";
-        
+
         try {
             String selected = cbBlendLote.getSelectedItem().toString();
-            
+
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.setFloat(1, QtdTotal);
             pstNuvem.setString(2, selected);
@@ -2611,16 +2521,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void atualizar_qtd_torrado_lote_grao(float QtdTotal){
+
+    private void atualizar_qtd_torrado_lote_grao(float QtdTotal) {
         //Atualiza qtd_torrado em lote de grãos selecionado pelo usuário(após enviar blend apenas)
         //Permitindo que usuário reutilize lotes
         String sql = "update tb_lotes_grao set qtd_torrado_grao = (select qtd_torrado_grao + ?) where nome_lote_grao = ?";
-        
+
         try {
             String selected = cbBlendLote.getSelectedItem().toString();
-            
+
             pst = conexao.prepareStatement(sql);
             pst.setFloat(1, QtdTotal);
             pst.setString(2, selected);
@@ -2630,14 +2539,13 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void atualizar_qtd_torrado_lote_grao_nuvem(float QtdTotal){
+
+    private void atualizar_qtd_torrado_lote_grao_nuvem(float QtdTotal) {
         String sql = "update tb_lotes_grao set qtd_torrado = (select qtd_torrado + ?) where nome_lote_grao = ?";
-        
+
         try {
             String selected = cbBlendLote.getSelectedItem().toString();
-            
+
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.setFloat(1, QtdTotal);
             pstNuvem.setString(2, selected);
@@ -2649,27 +2557,25 @@ public class TelaPrincipal extends javax.swing.JFrame {
         }
     }
 
-    
     //Metodos relacionados aos registros
-    private void consultar_lote_atual(){
-        if(cbBlendLote.getSelectedIndex() == 1){
+    private void consultar_lote_atual() {
+        if (cbBlendLote.getSelectedIndex() == 1) {
             String sql = "select num_lote_atual from tb_lote_atual where id_lote_atual = 1";
             try {
                 pst = conexao.prepareStatement(sql);
                 rs = pst.executeQuery();
-                if(rs.next()){
+                if (rs.next()) {
                     lote = rs.getInt(1);
                 }
             } catch (Exception e) {
                 System.out.println("Falha ao obter id de lote atual");
             }
-        }
-        else{
+        } else {
             String sql = "select num_lote_atual from tb_lote_atual where id_lote_atual = 2";
             try {
                 pst = conexao.prepareStatement(sql);
                 rs = pst.executeQuery();
-                if(rs.next()){
+                if (rs.next()) {
                     lote = rs.getInt(1);
                 }
             } catch (Exception e) {
@@ -2677,142 +2583,142 @@ public class TelaPrincipal extends javax.swing.JFrame {
             }
         }
     }
-    
-    
-    
-    private void salvar_registro_blend(float QtdTotal, float ValorTotalCru, float ValorTotalTorrado){
+
+    private void salvar_registro_blend(float QtdTotal, float ValorTotalCru, float ValorTotalTorrado) {
         consultar_lote_atual();
-        
-        String sql="insert into tb_blend_registros( nome_blend, nome_Cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, (select cafe_atual from tb_silos where id_silo = 1) , ?, (select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, "+QtdTotal+", "+ValorTotalCru+", "+ValorTotalTorrado+", ?, ?)";
-        
+
+        String sql = "insert into tb_blend_registros( nome_blend, nome_Cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2,"
+                + " nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado,"
+                + " valor_total, lote) values (?, (select cafe_atual from tb_silos where id_silo = 1) , ?, "
+                + "(select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?,"
+                + " (select cafe_atual from tb_silos where id_silo = 4),"
+                + " ?, ?, " + QtdTotal + ", " + ValorTotalCru + ", " + ValorTotalTorrado + ", ?, ?)";
+
         ValorTotal = 0;
-        
+
         try {
-                pst = conexao.prepareStatement(sql);
-            
-                NomeBlend = txtNomeBlend.getText();
-                QtdSilo1 = txtQtdSilo1.getText();
-                QtdSilo2 = txtQtdSilo2.getText();
-                QtdSilo3 = txtQtdSilo3.getText();
-                QtdSilo4 = txtQtdSilo4.getText();
-                String Moer = "moer e empacotar";
-                String Grao = "empacotar inteiro";
-                    
-                pst.setString(1,NomeBlend);
-                pst.setFloat(2,Float.parseFloat(QtdSilo1));
-                pst.setFloat(3,Float.parseFloat(QtdSilo2));
-                pst.setFloat(4,Float.parseFloat(QtdSilo3));
-                pst.setFloat(5,Float.parseFloat(QtdSilo4));
-            
-                if(cbBlendOperacao.getSelectedIndex() == 1){
-                    pst.setString(6,Moer);
-                }
-                else if(cbBlendOperacao.getSelectedIndex() == 2){
-                    pst.setString(6,Grao);
-                }
-                
-                ValorTotal = ValorTotalCru + ValorTotalTorrado;
-                
-                pst.setFloat(7, ValorTotal);
-                pst.setInt(8, lote);
-                
-                pst.executeUpdate();
-                
+            pst = conexao.prepareStatement(sql);
+
+            NomeBlend = txtNomeBlend.getText();
+            QtdSilo1 = txtQtdSilo1.getText();
+            QtdSilo2 = txtQtdSilo2.getText();
+            QtdSilo3 = txtQtdSilo3.getText();
+            QtdSilo4 = txtQtdSilo4.getText();
+            String Moer = "moer e empacotar";
+            String Grao = "empacotar inteiro";
+
+            pst.setString(1, NomeBlend);
+            pst.setFloat(2, Float.parseFloat(QtdSilo1));
+            pst.setFloat(3, Float.parseFloat(QtdSilo2));
+            pst.setFloat(4, Float.parseFloat(QtdSilo3));
+            pst.setFloat(5, Float.parseFloat(QtdSilo4));
+
+            if (cbBlendOperacao.getSelectedIndex() == 1) {
+                pst.setString(6, Moer);
+            } else if (cbBlendOperacao.getSelectedIndex() == 2) {
+                pst.setString(6, Grao);
+            }
+
+            ValorTotal = ValorTotalCru + ValorTotalTorrado;
+
+            pst.setFloat(7, ValorTotal);
+            pst.setInt(8, lote);
+
+            pst.executeUpdate();
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao salvar registro de Blend!");
             System.out.println(e);
         }
     }
-    
-    
-    private void salvar_registro_bend_nuvem(float QtdTotal, float ValorTotalCru, float ValorTotalTorrado){
+
+    private void salvar_registro_bend_nuvem(float QtdTotal, float ValorTotalCru, float ValorTotalTorrado) {
         consultar_lote_atual();
-        
-        String sql="insert into tb_blend_registros( nome_blend, nome_Cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3, nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) values (?, (select cafe_atual from tb_silos where id_silo = 1) , ?, (select cafe_atual from tb_silos where id_silo = 2), ?, (select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?, "+QtdTotal+", "+ValorTotalCru+", "+ValorTotalTorrado+", ?, ?)";
-        
+
+        String sql = "insert into tb_blend_registros( nome_blend, nome_Cafe1, qtd_cafe1, nome_cafe2, qtd_cafe2, nome_cafe3, qtd_cafe3,"
+                + " nome_cafe4, qtd_cafe4, operacao, qtd_total, valor_cafe_cru, valor_cafe_torrado, valor_total, lote) "
+                + "values (?, (select cafe_atual from tb_silos where id_silo = 1) , ?, (select cafe_atual from tb_silos where id_silo = 2), ?, "
+                + "(select cafe_atual from tb_silos where id_silo = 3), ?, (select cafe_atual from tb_silos where id_silo = 4), ?, ?,"
+                + " " + QtdTotal + ", " + ValorTotalCru + ", " + ValorTotalTorrado + ", ?, ?)";
+
         ValorTotal = 0;
-        
+
         try {
-                //nuvem = ModuloConexaoNuvem.conector();
-                pstNuvem = nuvem.prepareStatement(sql);
-            
-                NomeBlend = txtNomeBlend.getText();
-                QtdSilo1 = txtQtdSilo1.getText();
-                QtdSilo2 = txtQtdSilo2.getText();
-                QtdSilo3 = txtQtdSilo3.getText();
-                QtdSilo4 = txtQtdSilo4.getText();
-                String Moer = "moer e empacotar";
-                String Grao = "empacotar inteiro";
-                    
-                pstNuvem.setString(1,NomeBlend);
-                pstNuvem.setFloat(2,Float.parseFloat(QtdSilo1));
-                pstNuvem.setFloat(3,Float.parseFloat(QtdSilo2));
-                pstNuvem.setFloat(4,Float.parseFloat(QtdSilo3));
-                pstNuvem.setFloat(5,Float.parseFloat(QtdSilo4));
-            
-                if(cbBlendOperacao.getSelectedIndex() == 1){
-                    pstNuvem.setString(6,Moer);
-                }
-                else if(cbBlendOperacao.getSelectedIndex() == 2){
-                    pstNuvem.setString(6,Grao);
-                }
-                
-                ValorTotal = ValorTotalCru + ValorTotalTorrado;
-                
-                pstNuvem.setFloat(7, ValorTotal);
-                pstNuvem.setInt(8, lote);
-                
-                pstNuvem.executeUpdate();
-                
+            //nuvem = ModuloConexaoNuvem.conector();
+            pstNuvem = nuvem.prepareStatement(sql);
+
+            NomeBlend = txtNomeBlend.getText();
+            QtdSilo1 = txtQtdSilo1.getText();
+            QtdSilo2 = txtQtdSilo2.getText();
+            QtdSilo3 = txtQtdSilo3.getText();
+            QtdSilo4 = txtQtdSilo4.getText();
+            String Moer = "moer e empacotar";
+            String Grao = "empacotar inteiro";
+
+            pstNuvem.setString(1, NomeBlend);
+            pstNuvem.setFloat(2, Float.parseFloat(QtdSilo1));
+            pstNuvem.setFloat(3, Float.parseFloat(QtdSilo2));
+            pstNuvem.setFloat(4, Float.parseFloat(QtdSilo3));
+            pstNuvem.setFloat(5, Float.parseFloat(QtdSilo4));
+
+            if (cbBlendOperacao.getSelectedIndex() == 1) {
+                pstNuvem.setString(6, Moer);
+            } else if (cbBlendOperacao.getSelectedIndex() == 2) {
+                pstNuvem.setString(6, Grao);
+            }
+
+            ValorTotal = ValorTotalCru + ValorTotalTorrado;
+
+            pstNuvem.setFloat(7, ValorTotal);
+            pstNuvem.setInt(8, lote);
+
+            pstNuvem.executeUpdate();
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao salvar registro de Blend na Nuvem!");
             System.out.println(e);
         }
     }
-       
-    
-    
-    private void consultar_estoque_silos(){
+
+    private void consultar_estoque_silos() {
         String sql = "select qtd_atual from tb_silos";
-        array_silos = new float[4];       
+        array_silos = new float[4];
         int i = 0;
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            while (rs.next()) {                
+
+            while (rs.next()) {
                 array_silos[i] = (rs.getFloat(1));
                 System.out.println(array_silos[i]);
                 i++;
             }
             System.out.println("Estoque dos silos consultado!");
-            
-            
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao consultar estoque dos silos");
             System.out.println(e);
         }
     }
-    
-    
+
     private void consultar_estoque_silos_nuvem() {
         //Fix
         //nuvem = ModuloConexaoNuvem.conector();
-        
+
         String sql = "select qtd_atual from tb_silos";
         //5 pois tem 1 cadastro a mais sem relação com o blend
-        array_silos_nuvem = new float[5];       
+        array_silos_nuvem = new float[5];
         int i = 0;
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             rsNuvem = pstNuvem.executeQuery();
-            
-            while (rsNuvem.next()) {                
+
+            while (rsNuvem.next()) {
                 array_silos_nuvem[i] = (rsNuvem.getFloat(1));
                 System.out.println(array_silos_nuvem[i]);
                 i++;
             }
-            
+
             System.out.println("Estoque dos silos consultado!(nuvem)");
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao consultar estoque dos silos da nuvem");
@@ -2820,9 +2726,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void atualizar_estoque_silos(float[] qtd_silos){
+
+    private void atualizar_estoque_silos(float[] qtd_silos) {
         //consultar_estoque_silos();
         String sql = "update tb_silos set qtd_atual=? where id_silo=?";
         float value = 0;
@@ -2830,34 +2735,32 @@ public class TelaPrincipal extends javax.swing.JFrame {
             try {
                 //value = array_silos[i];
                 pst = conexao.prepareStatement(sql);
-                
+
                 try {
                     pst.setFloat(1, array_silos[i] - qtd_silos[i]);
                     System.out.println("Primeiro parametro: ");
                     System.out.println(array_silos[i] - qtd_silos[i]);
                     pst.setInt(2, i + 1);
                     System.out.println("Segundo parametro:");
-                    System.out.println(i+1); 
+                    System.out.println(i + 1);
                     pst.executeUpdate();
                 } catch (Exception e) {
                     falha_estq_silo = true;
-                    System.out.println("ERRO RUIM"+e);
+                    System.out.println("ERRO RUIM" + e);
                 }
-                
-                
+
                 System.out.println("Estoque dos silos atualizado");
                 //java.sql.SQLException: Parameter index out of range (2 > number of parameters, which is 0).
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque dos silos");
                 falha_estq_silo = true;
-                System.out.println(e);         
+                System.out.println(e);
             }
         }
     }
-    
-    
-    private void atualizar_estoque_silos_nuvem(float[] qtd_silos){
-        
+
+    private void atualizar_estoque_silos_nuvem(float[] qtd_silos) {
+
         consultar_estoque_silos_nuvem();
         String sql = "update tb_silos set qtd_atual=? where id_silo=?";
         float value = 0;
@@ -2865,546 +2768,522 @@ public class TelaPrincipal extends javax.swing.JFrame {
             try {
                 value = array_silos_nuvem[i];
                 pstNuvem = nuvem.prepareStatement(sql);
-                
+
                 pstNuvem.setFloat(1, array_silos_nuvem[i] - qtd_silos[i]);
                 System.out.println("Primeiro parametro (nuvem): ");
                 System.out.println(array_silos_nuvem[i] - qtd_silos[i]);
                 pstNuvem.setInt(2, i + 1);
                 System.out.println("Segundo parametro (nuvem): ");
-                System.out.println(i+1);
-                
+                System.out.println(i + 1);
+
                 System.out.println("Estoque dos silos atualizado (nuvem)");
                 pstNuvem.executeUpdate();
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque dos silos (nuvem)");
                 falha_estq_silo = true;
-                System.out.println(e);         
+                System.out.println(e);
             }
         }
     }
-    
-    
-    private void consultar_estoque_grao(){
-          String sql = "select quantidade from tb_cafe_grao";
-          
-          try {
+
+    private void consultar_estoque_grao() {
+        String sql = "select quantidade from tb_cafe_grao";
+
+        try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            if(rs.next()){
+
+            if (rs.next()) {
                 Qtd_estoque = rs.getFloat(1);
-            }
-            else{
+            } else {
                 JOptionPane.showMessageDialog(null, "Nenhum grao cadastrado!");
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao consultar estoque de grãos");
-            System.out.println(e);  
+            System.out.println(e);
         }
     }
-    
-    
-    private void consultar_estoque_grao_nuvem(){
-          String sql = "select quantidade from tb_cafe_grao";
-          
-          try {
+
+    private void consultar_estoque_grao_nuvem() {
+        String sql = "select quantidade from tb_cafe_grao";
+
+        try {
             pstNuvem = nuvem.prepareStatement(sql);
             rsNuvem = pstNuvem.executeQuery();
-            
-            if(rsNuvem.next()){
+
+            if (rsNuvem.next()) {
                 Qtd_estoque = rsNuvem.getFloat(1);
-            }
-            else{
+            } else {
                 return;
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao consultar estoque de grãos (nuvem)");
-            System.out.println(e);  
+            System.out.println(e);
         }
     }
-    
-    
-    private void consultar_estoque_moido(){
+
+    private void consultar_estoque_moido() {
         String sql = "select quantidade from tb_cafe_moido";
-          
-          try {
+
+        try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            if(rs.next()){
+
+            if (rs.next()) {
                 Qtd_estoque_moido = rs.getFloat(1);
-            }
-            else{
+            } else {
                 JOptionPane.showMessageDialog(null, "Nenhum café cadastrado no estoque!");
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao consultar estoque de café moído");
-            System.out.println(e); 
+            System.out.println(e);
         }
     }
-    
-    
-    private void consultar_estoque_moido_nuvem(){
+
+    private void consultar_estoque_moido_nuvem() {
         String sql = "select quantidade from tb_cafe_moido";
-          
-          try {
+
+        try {
             pstNuvem = nuvem.prepareStatement(sql);
             rsNuvem = pstNuvem.executeQuery();
-            
-            if(rsNuvem.next()){
+
+            if (rsNuvem.next()) {
                 Qtd_estoque_moido = rsNuvem.getFloat(1);
-            }
-            else{
+            } else {
                 return;
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao consultar estoque de café moído (nuvem)");
-            System.out.println(e); 
+            System.out.println(e);
         }
     }
-    
 
-    private void atualizar_estoque_grao(float QtdTotal){
+    private void atualizar_estoque_grao(float QtdTotal) {
         consultar_estoque_grao();
         String sql = "update tb_cafe_grao set quantidade=? where id_cafe_grao";
         try {
-                pst = conexao.prepareStatement(sql);
-                
-                Qtd_estoque_att = Qtd_estoque + QtdTotal;
-                
-                //System.out.println(Qtd_estoque_att);
-                pst.setFloat(1, Qtd_estoque_att);
-                pst.executeUpdate();
-                
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de grãos");
-                System.out.println(e); 
-            }
+            pst = conexao.prepareStatement(sql);
+
+            Qtd_estoque_att = Qtd_estoque + QtdTotal;
+
+            //System.out.println(Qtd_estoque_att);
+            pst.setFloat(1, Qtd_estoque_att);
+            pst.executeUpdate();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de grãos");
+            System.out.println(e);
+        }
     }
-    
-    
-    private void atualizar_estoque_grao_nuvem(float QtdTotal){
+
+    private void atualizar_estoque_grao_nuvem(float QtdTotal) {
         consultar_estoque_grao_nuvem();
         String sql = "update tb_cafe_grao set quantidade=? where id_cafe_grao";
         try {
-                pstNuvem = nuvem.prepareStatement(sql);
-                
-                Qtd_estoque_att = Qtd_estoque + QtdTotal;
-                
-                //System.out.println(Qtd_estoque_att);
-                pstNuvem.setFloat(1, Qtd_estoque_att);
-                pstNuvem.executeUpdate();
-                
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de grãos");
-                System.out.println(e); 
-            }
+            pstNuvem = nuvem.prepareStatement(sql);
+
+            Qtd_estoque_att = Qtd_estoque + QtdTotal;
+
+            //System.out.println(Qtd_estoque_att);
+            pstNuvem.setFloat(1, Qtd_estoque_att);
+            pstNuvem.executeUpdate();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de grãos");
+            System.out.println(e);
+        }
     }
-    
-    
-    private void atualizar_estoque_moido(float QtdTotal){
+
+    private void atualizar_estoque_moido(float QtdTotal) {
         consultar_estoque_moido();
         String sql = "update tb_cafe_moido set quantidade=? where id_cafe_moido";
-        
+
         try {
-                pst = conexao.prepareStatement(sql);
-                
-                Qtd_estoque_att = Qtd_estoque_moido + QtdTotal;
-                
-                //System.out.println(Qtd_estoque_att);
-                pst.setFloat(1, Qtd_estoque_att);
-                pst.executeUpdate();
-                
-            } catch (Exception e) {
-               JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de café moído");
-                System.out.println(e); 
-            }
+            pst = conexao.prepareStatement(sql);
+
+            Qtd_estoque_att = Qtd_estoque_moido + QtdTotal;
+
+            //System.out.println(Qtd_estoque_att);
+            pst.setFloat(1, Qtd_estoque_att);
+            pst.executeUpdate();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de café moído");
+            System.out.println(e);
+        }
     }
-    
-    
-    private void atualizar_estoque_moido_nuvem(float QtdTotal){
+
+    private void atualizar_estoque_moido_nuvem(float QtdTotal) {
         consultar_estoque_moido_nuvem();
         String sql = "update tb_cafe_moido set quantidade=? where id_cafe_moido";
-        
+
         try {
-                pstNuvem = nuvem.prepareStatement(sql);
-                
-                Qtd_estoque_att = Qtd_estoque_moido + QtdTotal;
-                
-                //System.out.println(Qtd_estoque_att);
-                pstNuvem.setFloat(1, Qtd_estoque_att);
-                pstNuvem.executeUpdate();
-                
-            } catch (Exception e) {
-               JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de café moído (nuvem)");
-                System.out.println(e); 
-            }
+            pstNuvem = nuvem.prepareStatement(sql);
+
+            Qtd_estoque_att = Qtd_estoque_moido + QtdTotal;
+
+            //System.out.println(Qtd_estoque_att);
+            pstNuvem.setFloat(1, Qtd_estoque_att);
+            pstNuvem.executeUpdate();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao atualizar estoque de café moído (nuvem)");
+            System.out.println(e);
+        }
     }
-   
-    
-    private boolean checa_silos(float []qtd_silos){
+
+    private boolean checa_silos(float[] qtd_silos) {
         try {
             consultar_estoque_silos();
             int sem_estoque[] = new int[4];
             limpa_mensagens();
             System.out.println("Parou antes do FOR");
-            for(int i = 0; i <= 3; i++){
+            for (int i = 0; i <= 3; i++) {
                 System.out.println("Parou no FOR");
-                if(array_silos[i]<qtd_silos[i]){
+                if (array_silos[i] < qtd_silos[i]) {
                     System.out.println("ENTROU NO IF");
-                    sem_estoque[i] = i+1;
-                    System.out.println("Silo "+ sem_estoque[i]+ " com estoque insuficiente");
+                    sem_estoque[i] = i + 1;
+                    System.out.println("Silo " + sem_estoque[i] + " com estoque insuficiente");
                     try {
-                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSilo "+String.valueOf(sem_estoque[i])+" com estoque insuficiente", cor_mensagem_erro);
+                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSilo " + String.valueOf(sem_estoque[i]) + 
+                                " com estoque insuficiente", cor_mensagem_erro);
                     } catch (BadLocationException ex) {
                         Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
-            
-            for(int i=0; i<=3; i++){
-                if(sem_estoque[i]!=0){
+
+            for (int i = 0; i <= 3; i++) {
+                if (sem_estoque[i] != 0) {
                     return false;
                 }
             }
-            
-            
+
             System.out.println("RETRNOU TRUE LOCAL");
             return true;
-            
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Falha ao checar capacidade dos silos!");
-                System.out.println(e);
-            }
-        
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao checar capacidade dos silos!");
+            System.out.println(e);
+        }
+
         return false;
     }
-    
-    
-    private boolean checa_silos_nuvem(float []qtd_silos){
+
+    private boolean checa_silos_nuvem(float[] qtd_silos) {
         try {
             consultar_estoque_silos_nuvem();
             int sem_estoque[] = new int[4];
-            for(int i = 0; i <= 3; i++){
-                if(array_silos_nuvem[i]<qtd_silos[i]){
-                    sem_estoque[i] = i+1;
+            for (int i = 0; i <= 3; i++) {
+                if (array_silos_nuvem[i] < qtd_silos[i]) {
+                    sem_estoque[i] = i + 1;
                 }
             }
 
-            for(int i=0; i<=3; i++){
-                if(sem_estoque[i]!=0){
+            for (int i = 0; i <= 3; i++) {
+                if (sem_estoque[i] != 0) {
                     return false;
                 }
             }
 
             System.out.println("RETORNOU TRUE");
             return true;
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Falha ao checar capacidade dos silos (nuvem)!");
-                System.out.println(e);
-            }
-        
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao checar capacidade dos silos (nuvem)!");
+            System.out.println(e);
+        }
+
         return false;
     }
-    
-    
+
     //Metodos relacionados ao preco do blend
-    private void consultar_preco_kg_cru(){
+    private void consultar_preco_kg_cru() {
         String sql = "select preco_kg_cru from tb_silos";
-        
-        preco_kg_cru = new float[5];       
+
+        preco_kg_cru = new float[5];
         int i = 0;
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-        
-        while (rs.next()) {                
-            preco_kg_cru[i] = (rs.getFloat(1));
-            //System.out.println("preco por quilo do cafe cru"+ preco_kg_cru[i]);
-            i++;
-        }
+
+            while (rs.next()) {
+                preco_kg_cru[i] = (rs.getFloat(1));
+                //System.out.println("preco por quilo do cafe cru"+ preco_kg_cru[i]);
+                i++;
+            }
         } catch (Exception e) {
             System.out.println("falha ao consultar preço por kilo do café cru");
         }
     }
-    
-    private void consultar_preco_kg_torrado(){
+
+    private void consultar_preco_kg_torrado() {
         String sql = "select preco_kg_torrado from tb_silos";
-        
-        preco_kg_torrado = new float[5];       
+
+        preco_kg_torrado = new float[5];
         int i = 0;
         try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-        
-        while (rs.next()) {                
-            preco_kg_torrado[i] = (rs.getFloat(1));
-            i++;
-        }
+
+            while (rs.next()) {
+                preco_kg_torrado[i] = (rs.getFloat(1));
+                i++;
+            }
         } catch (Exception e) {
             System.out.println("falha ao consultar preço por kilo do café torrado");
         }
     }
-    
-    
-    private void gerar_preco_cru(float []qtd_silos){
+
+    private void gerar_preco_cru(float[] qtd_silos) {
         consultar_preco_kg_cru();
         ValorCru = 0;
-        float []preco_total_cru = new float[4];
+        float[] preco_total_cru = new float[4];
         float soma_preco_cru = 0;
-        
+
         try {
-            for(int i=0; i<=3; i++){
+            for (int i = 0; i <= 3; i++) {
                 preco_total_cru[i] = preco_kg_cru[i] * qtd_silos[i];
                 //System.out.println(preco_total_cru[i]);
-                
+
                 soma_preco_cru += preco_total_cru[i];
             }
             ValorCru = soma_preco_cru;
-            System.out.println("2 - Preço total do café crú usado no blend: "+soma_preco_cru);
-            
+            System.out.println("2 - Preço total do café crú usado no blend: " + soma_preco_cru);
+
         } catch (Exception e) {
-            System.out.println("Erro ao gerar preco total do cru no blend "+ e);
+            System.out.println("Erro ao gerar preco total do cru no blend " + e);
         }
     }
-    
-    
-    private void gerar_preco_torrado(float []qtd_silos){
+
+    private void gerar_preco_torrado(float[] qtd_silos) {
         consultar_preco_kg_torrado();
         ValorTorrado = 0;
-        float []preco_total_torrado = new float[4];
+        float[] preco_total_torrado = new float[4];
         float soma_preco_torrado = 0;
-        
+
         try {
-            for(int i=0; i<=3; i++){
+            for (int i = 0; i <= 3; i++) {
                 preco_total_torrado[i] = preco_kg_torrado[i] * qtd_silos[i];
                 //System.out.println(preco_total_cru[i]);
-                
+
                 soma_preco_torrado += preco_total_torrado[i];
             }
             ValorTorrado = soma_preco_torrado;
-            System.out.println("1 - Preço total do café torrado usado no blend: "+soma_preco_torrado);
-            
+            System.out.println("1 - Preço total do café torrado usado no blend: " + soma_preco_torrado);
+
         } catch (Exception e) {
-            System.out.println("Erro ao gerar preco total do torrado no blend "+ e);
+            System.out.println("Erro ao gerar preco total do torrado no blend " + e);
         }
     }
-    
-    
-    private void enviar_para_clp(){
+
+    private void enviar_para_clp() {
         // Envia dados do blend para o PLC
-        if(clp_conectado == false){
+        if (clp_conectado == false) {
             block_campos();
             falha_conexao();
             try {
-                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nTentando se reconectar com clp" , cor_tentando_conectar);
+                caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nTentando se reconectar com clp", cor_tentando_conectar);
                 JOptionPane.showMessageDialog(null, "Conexao com CLP perdia, reconectando...");
                 conecta_com_clp();
             } catch (Exception e) {
                 System.out.println("Não foi possível se conectar com CLP!");
                 JOptionPane.showMessageDialog(null, "Não foi possível se conectar com CLP!");
             }
-        }
-        else if(blendador_ligado == 0){
+        } else if (blendador_ligado == 0) {
             JOptionPane.showMessageDialog(null, "Inicie um ciclo para enviar dados!");
-        }
-        else if(cbBlendLote.getSelectedIndex() == 0){
+        } else if (cbBlendLote.getSelectedIndex() == 0) {
             JOptionPane.showMessageDialog(null, "Selecione um lote!");
-        }
-        else if(sincronizando == true){
+        } else if (sincronizando == true) {
             JOptionPane.showMessageDialog(null, "Aguarde o fim da sincronização!");
-        }
-        else{
+        } else {
             try {
-            // 1 - Pega valores de quantidade de cada silo
-            cafe_silo1 = txtQtdSilo1.getText();
-            cafe_silo2 = txtQtdSilo2.getText();
-            cafe_silo3 = txtQtdSilo3.getText();
-            cafe_silo4= txtQtdSilo4.getText();
-            
-            // 2.1 - Gera uma quantidade total de café
-            QtdTotal = Float.parseFloat(cafe_silo1) + Float.parseFloat(cafe_silo2) + Float.parseFloat(cafe_silo3) + Float.parseFloat(cafe_silo4);
-            // Gera um array com as quantidades individuais de cada silo
-            qtd_silos = null;
-            qtd_silos = new float[]{Float.parseFloat(cafe_silo1), Float.parseFloat(cafe_silo2), Float.parseFloat(cafe_silo3), Float.parseFloat(cafe_silo4)};      
-            System.out.println("Passo 2.1 - qtd_silos: "+qtd_silos[0] +"a"+ qtd_silos[1]+"b"+qtd_silos[2]+"c"+qtd_silos[3]);
-            
-            //2.2 - Gera preços totais do cafe usado no blend
-            //passa array de quantidades para metodo de gerar preço
-            gerar_preco_torrado(qtd_silos);
-            gerar_preco_cru(qtd_silos);
-            
-            if(testa_url("http://192.169.80.2")){
-                set_aparencia_conectado();
-                //Abre conexao com nuvem para realizar todos os processos
-                nuvem = ModuloConexaoNuvem.conector();
-                
-                //3 - Checa estoque de silos e verifica se é suficiente
-                if(checa_silos(qtd_silos) == false && checa_silos_nuvem(qtd_silos) == false){
-                    JOptionPane.showMessageDialog(null, "Quantidade de café silos insuficiente!");
-                }
-                else if(checa_silos(qtd_silos) == true && checa_silos_nuvem(qtd_silos) == true){
-                    
-                    System.out.println(checa_silos(qtd_silos));
-                    
-                    // 4 - Retira quantidades do estoque
-                    atualizar_estoque_silos(qtd_silos);
-                    atualizar_estoque_silos_nuvem(qtd_silos);
-                    
-                    
-                    //Fix temporário para erro desconhecido (falha att estq silos)
-                    if(falha_estq_silo == false){
-                        // 5.1 - Seta blend atual (local e/ou nuvem)
-                        set_blend_atual();
-                        set_blend_atual_nuvem();
+                // 1 - Pega valores de quantidade de cada silo
+                cafe_silo1 = txtQtdSilo1.getText();
+                cafe_silo2 = txtQtdSilo2.getText();
+                cafe_silo3 = txtQtdSilo3.getText();
+                cafe_silo4 = txtQtdSilo4.getText();
 
-                        // 5.2 - Atualiza qtd_torrado em lotes (soma quantidades)
-                        if(cbBlendLote.getSelectedIndex() == 1){
-                            //Caso seja lote moido
-                            atualizar_qtd_torrado_lote(QtdTotal);
-                            atualizar_qtd_torrado_lote_nuvem(QtdTotal);
+                // 2.1 - Gera uma quantidade total de café
+                QtdTotal = Float.parseFloat(cafe_silo1) + Float.parseFloat(cafe_silo2) + Float.parseFloat(cafe_silo3) + Float.parseFloat(cafe_silo4);
+                // Gera um array com as quantidades individuais de cada silo
+                qtd_silos = null;
+                qtd_silos = new float[]{Float.parseFloat(cafe_silo1), Float.parseFloat(cafe_silo2), Float.parseFloat(cafe_silo3), Float.parseFloat(cafe_silo4)};
+                System.out.println("Passo 2.1 - qtd_silos: " + qtd_silos[0] + "a" + qtd_silos[1] + "b" + qtd_silos[2] + "c" + qtd_silos[3]);
+
+                //2.2 - Gera preços totais do cafe usado no blend
+                //passa array de quantidades para metodo de gerar preço
+                gerar_preco_torrado(qtd_silos);
+                gerar_preco_cru(qtd_silos);
+
+                if (testa_url("http://192.169.80.2")) {
+
+                    try {
+                        // System.out.println("Entrou try conexao com o banco");
+                        nuvem = ModuloConexaoNuvem.conector();
+                        if (nuvem != null) {
+
+                            set_aparencia_conectado();
+                            //Abre conexao com nuvem para realizar todos os processos
+
+                            //3 - Checa estoque de silos e verifica se é suficiente
+                            if (checa_silos(qtd_silos) == false && checa_silos_nuvem(qtd_silos) == false) {
+                                JOptionPane.showMessageDialog(null, "Quantidade de café silos insuficiente!");
+                            } else if (checa_silos(qtd_silos) == true && checa_silos_nuvem(qtd_silos) == true) {
+
+                                System.out.println(checa_silos(qtd_silos));
+
+                                // 4 - Retira quantidades do estoque
+                                atualizar_estoque_silos(qtd_silos);
+                                atualizar_estoque_silos_nuvem(qtd_silos);
+
+                                //Fix temporário para erro desconhecido (falha att estq silos)
+                                if (falha_estq_silo == false) {
+                                    // 5.1 - Seta blend atual (local e/ou nuvem)
+                                    set_blend_atual();
+                                    set_blend_atual_nuvem();
+
+                                    // 5.2 - Atualiza qtd_torrado em lotes (soma quantidades)
+                                    if (cbBlendLote.getSelectedIndex() == 1) {
+                                        //Caso seja lote moido
+                                        atualizar_qtd_torrado_lote(QtdTotal);
+                                        atualizar_qtd_torrado_lote_nuvem(QtdTotal);
+                                    } else {
+                                        atualizar_qtd_torrado_lote_grao(QtdTotal);
+                                        atualizar_qtd_torrado_lote_grao_nuvem(QtdTotal);
+                                    }
+
+                                    // 5.3 - Atualiza lote atual por aquele selecionado pelo usuario (desabilitado)
+                                    //set_lote_atual();
+                                    //set_lote_atual_nuvem();
+                                    //6 - Salva dados do blend em registro
+                                    salvar_registro_blend(QtdTotal, ValorCru, ValorTorrado);
+                                    salvar_registro_bend_nuvem(QtdTotal, ValorCru, ValorTorrado);
+
+                                    //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
+                                    if (cbBlendOperacao.getSelectedIndex() == 1) {
+                                        atualizar_estoque_moido(QtdTotal);
+                                        atualizar_estoque_moido_nuvem(QtdTotal);
+                                        m.writeSingleRegister(escravo, 47, 0);
+                                    } else if (cbBlendOperacao.getSelectedIndex() == 2) {
+                                        atualizar_estoque_grao(QtdTotal);
+                                        atualizar_estoque_grao_nuvem(QtdTotal);
+                                        m.writeSingleRegister(escravo, 47, 1);
+                                    }
+
+                                    //4 - Envia dados do blend para PLC
+                                    m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_1), Math.round(Float.parseFloat(cafe_silo1) * 10));
+                                    m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_2), Math.round(Float.parseFloat(cafe_silo2) * 10));
+                                    m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_3), Math.round(Float.parseFloat(cafe_silo3) * 10));
+                                    m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_4), Math.round(Float.parseFloat(cafe_silo4) * 10));
+
+                                    caixa_mensagens.insertString(caixa_mensagens.getLength(), "Dados enviados com sucesso!", cor_novo_processo);
+                                    //System.out.println(ValorCru+"e"+ValorTorrado);
+                                    JOptionPane.showMessageDialog(null, "Dados enviados com sucesso!");
+                                    //  System.out.println("Dados enviados com sucesso!");
+                                } else {
+                                    JOptionPane.showMessageDialog(null, "Falha ao enviar dados! Tente novamente!");
+                                    falha_estq_silo = false;
+                                }
+
+                            }
+
+                        } else {
+                            // System.out.println("Entrou ELSE Conexao igual FALSE");
+                            banco_nuvem = false;
+                            lblStatusConexao.setText("SEM CONEXÃO COM O BANCO");
+                            lblStatusConexao.setForeground(Color.BLUE);
                         }
-                        else{
-                            atualizar_qtd_torrado_lote_grao(QtdTotal);
-                            atualizar_qtd_torrado_lote_grao_nuvem(QtdTotal);
-                        }
-                        
 
-                        // 5.3 - Atualiza lote atual por aquele selecionado pelo usuario (desabilitado)
-                        //set_lote_atual();
-                        //set_lote_atual_nuvem();
-
-                        //6 - Salva dados do blend em registro
-                        salvar_registro_blend(QtdTotal, ValorCru, ValorTorrado);
-                        salvar_registro_bend_nuvem(QtdTotal, ValorCru, ValorTorrado);
-
-                        //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
-                        if(cbBlendOperacao.getSelectedIndex() == 1){
-                            atualizar_estoque_moido(QtdTotal);
-                            atualizar_estoque_moido_nuvem(QtdTotal);
-                            m.writeSingleRegister(escravo, 47, 0);
-                        }
-                        else if(cbBlendOperacao.getSelectedIndex() == 2){
-                            atualizar_estoque_grao(QtdTotal);
-                            atualizar_estoque_grao_nuvem(QtdTotal);
-                            m.writeSingleRegister(escravo, 47, 1);
-                        }
-
-
-                        //4 - Envia dados do blend para PLC
-                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_1), Math.round(Float.parseFloat(cafe_silo1)*10));
-                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_2), Math.round(Float.parseFloat(cafe_silo2)*10));
-                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_3), Math.round(Float.parseFloat(cafe_silo3)*10));
-                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_4), Math.round(Float.parseFloat(cafe_silo4)*10));
-
-                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "Dados enviados com sucesso!" , cor_novo_processo);
-                        //System.out.println(ValorCru+"e"+ValorTorrado);
-                        JOptionPane.showMessageDialog(null, "Dados enviados com sucesso!");
-                        System.out.println("Dados enviados com sucesso!");
+                    } catch (Exception e) {
+                        banco_nuvem = false;
+                        // System.out.println("Nao conectou ao servidor");
                     }
-                    else{
-                        JOptionPane.showMessageDialog(null, "Falha ao enviar dados! Tente novamente!");
-                        falha_estq_silo = false;
+
+                    nuvem = ModuloConexaoNuvem.conector();
+
+                } //Operação no modo OFFLINE
+                else if (!testa_url("http://192.169.80.2")) {
+                    set_sincronizar_1();
+                    set_aparencia_desconectado();
+                    precisa_sincrinizar = true;
+
+                    //3 - Checa estoque de silos e verifica se é suficiente
+                    if (checa_silos(qtd_silos) == false) {
+                        JOptionPane.showMessageDialog(null, "Quantidade de café silos insuficiente!");
+                    } else if (checa_silos(qtd_silos) == true) {
+                        // 4 - Retira quantidades do estoque
+                        atualizar_estoque_silos(qtd_silos);
+
+                        if (falha_estq_silo == false) {
+                            // 5.1 - Seta blend atual (local e/ou nuvem)
+                            set_blend_atual();
+
+                            //5.2 - Atualiza qtd de torrado em lote de acordo com lote selecionado
+                            if (cbBlendLote.getSelectedIndex() == 1) {
+                                //Para moido
+                                atualizar_qtd_torrado_lote(QtdTotal);
+                            } else {
+                                atualizar_qtd_torrado_lote_grao(QtdTotal);
+                            }
+
+                            //5.3 - Atualiza lote atual por aquele selecionado pelo usuario (desabilitado)
+                            //set_lote_atual();
+                            //6 - Salva dados do blend em registro
+                            salvar_registro_blend(QtdTotal, ValorCru, ValorTorrado);
+
+                            //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
+                            if (cbBlendOperacao.getSelectedIndex() == 1) {
+                                atualizar_estoque_moido(QtdTotal);
+                                m.writeSingleRegister(escravo, 47, 0);
+                            } else if (cbBlendOperacao.getSelectedIndex() == 2) {
+                                atualizar_estoque_grao(QtdTotal);
+                                m.writeSingleRegister(escravo, 47, 1);
+                            }
+
+                            //4 - Envia dados do blend para PLC
+                            m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_1), Math.round(Float.parseFloat(cafe_silo1) * 10));
+                            m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_2), Math.round(Float.parseFloat(cafe_silo2) * 10));
+                            m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_3), Math.round(Float.parseFloat(cafe_silo3) * 10));
+                            m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_4), Math.round(Float.parseFloat(cafe_silo4) * 10));
+
+                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "Dados enviados com sucesso!", cor_novo_processo);
+                            JOptionPane.showMessageDialog(null, "Dados enviados com sucesso!");
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Falha ao enviar dados! Tente novamente");
+                        }
                     }
-                    
+
                 }
-            }
-            
 
-            //Operação no modo OFFLINE
-            
-            else if(!testa_url("http://192.169.80.2")){
-                set_sincronizar_1();
-                set_aparencia_desconectado();
-                precisa_sincrinizar = true;
-                
-                //3 - Checa estoque de silos e verifica se é suficiente
-                if(checa_silos(qtd_silos) == false){
-                    JOptionPane.showMessageDialog(null, "Quantidade de café silos insuficiente!");
-                }
-                else if(checa_silos(qtd_silos) == true){
-                    // 4 - Retira quantidades do estoque
-                    atualizar_estoque_silos(qtd_silos);
-                    
-                    if(falha_estq_silo == false){
-                        // 5.1 - Seta blend atual (local e/ou nuvem)
-                        set_blend_atual();
-
-                        //5.2 - Atualiza qtd de torrado em lote de acordo com lote selecionado
-                        if(cbBlendLote.getSelectedIndex() == 1){
-                            //Para moido
-                            atualizar_qtd_torrado_lote(QtdTotal);
-                        }
-                        else{
-                            atualizar_qtd_torrado_lote_grao(QtdTotal);
-                        }
-                        
-
-                        //5.3 - Atualiza lote atual por aquele selecionado pelo usuario (desabilitado)
-                        //set_lote_atual();
-
-
-                        //6 - Salva dados do blend em registro
-                        salvar_registro_blend(QtdTotal ,ValorCru, ValorTorrado);
-
-                        //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
-                        if(cbBlendOperacao.getSelectedIndex() == 1){
-                            atualizar_estoque_moido(QtdTotal);
-                            m.writeSingleRegister(escravo, 47, 0);
-                        }
-                        else if(cbBlendOperacao.getSelectedIndex() == 2){
-                            atualizar_estoque_grao(QtdTotal);
-                            m.writeSingleRegister(escravo, 47, 1);
-                        }
-
-                        //4 - Envia dados do blend para PLC
-                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_1), Math.round(Float.parseFloat(cafe_silo1)*10));
-                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_2), Math.round(Float.parseFloat(cafe_silo2)*10));
-                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_3), Math.round(Float.parseFloat(cafe_silo3)*10));
-                        m.writeSingleRegister(escravo, Integer.parseInt(VALOR_SILO_4), Math.round(Float.parseFloat(cafe_silo4)*10));
-
-                        caixa_mensagens.insertString(caixa_mensagens.getLength(), "Dados enviados com sucesso!" , cor_novo_processo);
-                        JOptionPane.showMessageDialog(null, "Dados enviados com sucesso!");
-                    }
-                    else{
-                        JOptionPane.showMessageDialog(null, "Falha ao enviar dados! Tente novamente");
-                    }
-                }
-                    
-            }
-            
-          
             } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException | BadLocationException ex) {
                 JOptionPane.showMessageDialog(null, "Falha ao enviar dados para CLP!");
                 System.out.println(ex);
-            } catch(Exception e){
+            } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, "Não foi possivel enviar os dados para o PLC!");
                 System.out.println(e);
             }
         }
     }
-    
+
     //Envia metas para CLP
-    private void set_meta(){
+    private void set_meta() {
         String MetaMoido = txtBlendMetaMoido.getText();
         String MetaGrao = txtBlendMetaGrao.getText();
-        
-        if(MetaMoido.isEmpty() || MetaGrao.isEmpty()){
+
+        if (MetaMoido.isEmpty() || MetaGrao.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Preencha os valores das metas!");
             block_campos();
-        }
-        else if(Integer.parseInt(MetaMoido) < 1 || Integer.parseInt(MetaGrao) < 1){
+        } else if (Integer.parseInt(MetaMoido) < 1 || Integer.parseInt(MetaGrao) < 1) {
             JOptionPane.showMessageDialog(null, "Insira um valor válido para as metas!");
             block_campos();
-        }
-        else{
+        } else {
             try {
                 m.writeSingleRegister(escravo, 40, Integer.parseInt(MetaMoido));
                 m.writeSingleRegister(escravo, 41, Integer.parseInt(MetaGrao));
                 JOptionPane.showMessageDialog(null, "Nova meta definida com sucesso!");
-                
+
                 btnBlendNewMeta.setBackground(new Color(255, 255, 255));
-                
+
                 txtBlendMetaMoido.setEditable(false);
                 txtBlendMetaGrao.setEditable(false);
             } catch (Exception e) {
@@ -3415,7 +3294,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
         }
     }
 
-    
     public static boolean check_float(String text) {
         try {
             Float.parseFloat(text);
@@ -3424,7 +3302,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             return false;
         }
     }
-     
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -3517,6 +3395,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblTipo2 = new javax.swing.JLabel();
         footerBlend = new javax.swing.JPanel();
         lblData = new javax.swing.JLabel();
+        lblStatusConexao = new javax.swing.JLabel();
         jPanel42 = new javax.swing.JPanel();
         btnBlendEnviar = new javax.swing.JButton();
         cbBlendOperacao = new javax.swing.JComboBox<>();
@@ -4104,7 +3983,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblData.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         lblData.setForeground(new java.awt.Color(255, 255, 255));
         lblData.setText("Data - Observação");
-        footerBlend.add(lblData, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 0, 920, 50));
+        footerBlend.add(lblData, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 0, 890, 50));
+
+        lblStatusConexao.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        lblStatusConexao.setForeground(new java.awt.Color(255, 255, 255));
+        lblStatusConexao.setText("Conexao");
+        footerBlend.add(lblStatusConexao, new org.netbeans.lib.awtextra.AbsoluteConstraints(950, 0, 330, 50));
 
         getContentPane().add(footerBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 790, 1400, 120));
 
@@ -4352,45 +4236,39 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void tbBlendMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tbBlendMouseClicked
         // Chama função para preencher os campos de texto e muda o metodo
         Metodo = "pesquisar";
-        if(modo_manual == true){
+        if (modo_manual == true) {
             return;
-        }
-        else{
+        } else {
             set_campos_blend();
         }
     }//GEN-LAST:event_tbBlendMouseClicked
 
     private void tbBlendKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tbBlendKeyReleased
-        
+
     }//GEN-LAST:event_tbBlendKeyReleased
 
     private void btnBlendSalvarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendSalvarActionPerformed
         // Checa o metodo e chama a função correspondente
-        if(Metodo == "pesquisar"){
-            
-        }
-        else{
-            if(Metodo == "new_meta"){
+        if (Metodo == "pesquisar") {
+
+        } else {
+            if (Metodo == "new_meta") {
                 set_meta();
-            }
-            else if(Metodo == null){
+            } else if (Metodo == null) {
                 return;
-            }
-            else{
+            } else {
                 JOptionPane.showMessageDialog(null, "Erro inesperado ao salvar!");
             }
         }
     }//GEN-LAST:event_btnBlendSalvarActionPerformed
 
     private void btnBlendEnviarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendEnviarActionPerformed
-      //Checa se operação está selecionada e envia dados
-        if(cbBlendOperacao.getSelectedIndex() == 0){
+        //Checa se operação está selecionada e envia dados
+        if (cbBlendOperacao.getSelectedIndex() == 0) {
             JOptionPane.showMessageDialog(null, "Selecione uma operação!");
-        }
-        else if(blend == false){
+        } else if (blend == false) {
             JOptionPane.showMessageDialog(null, "Selecione uma receita cadastrada!");
-        }
-        else {
+        } else {
             //exibe_msg_enviando();
             enviar_para_clp();
         }
@@ -4403,11 +4281,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     private void btnBlendCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendCancelarActionPerformed
         // Cancela ações do usuário
-        if(Metodo != null){
+        if (Metodo != null) {
             block_campos();
             buscar_blend_atual();
-        }
-        else{
+        } else {
             return;
         }
     }//GEN-LAST:event_btnBlendCancelarActionPerformed
@@ -4424,29 +4301,29 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     private void btnBlendPowerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendPowerActionPerformed
         // Desliga/Liga Blendador
-            switch (blendador_ligado) {
+        switch (blendador_ligado) {
             case 0:
                 blendador_ligado = 1;
-            {
-                try {
-                    m.writeSingleCoil(escravo, 0, true);
-                    btnBlendPower.setText("PARAR");
-                    btnBlendPower.setBackground(new Color(255,51,51));
-                } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
-                    falha_conexao();
-                    clp_conectado = false;
-                    Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+                 {
+                    try {
+                        m.writeSingleCoil(escravo, 0, true);
+                        btnBlendPower.setText("PARAR");
+                        btnBlendPower.setBackground(new Color(255, 51, 51));
+                    } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
+                        falha_conexao();
+                        clp_conectado = false;
+                        Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
-            }
                 break;
             case 1:
-                int confirma = JOptionPane.showConfirmDialog(null,"Tem certeza de que quer parar o ciclo?","Atenção",JOptionPane.YES_NO_OPTION);
-                if(confirma == JOptionPane.YES_OPTION){
+                int confirma = JOptionPane.showConfirmDialog(null, "Tem certeza de que quer parar o ciclo?", "Atenção", JOptionPane.YES_NO_OPTION);
+                if (confirma == JOptionPane.YES_OPTION) {
                     blendador_ligado = 0;
                     try {
                         m.writeSingleCoil(escravo, 0, false);
                         btnBlendPower.setText("INICIAR");
-                        btnBlendPower.setBackground(new Color(68,141,41));
+                        btnBlendPower.setBackground(new Color(68, 141, 41));
                     } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                         falha_conexao();
                         clp_conectado = false;
@@ -4454,7 +4331,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     }
                     break;
                 }
-            }
+        }
     }//GEN-LAST:event_btnBlendPowerActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
@@ -4476,8 +4353,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     private void btnEmergenciaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEmergenciaActionPerformed
         // Causa PARADA DE EMERGENCIA
-        int confirma = JOptionPane.showConfirmDialog(null,"Tem certeza de que quer parar todos os processos?","Atenção",JOptionPane.YES_NO_OPTION);
-        if(confirma == JOptionPane.YES_OPTION){
+        int confirma = JOptionPane.showConfirmDialog(null, "Tem certeza de que quer parar todos os processos?", "Atenção", JOptionPane.YES_NO_OPTION);
+        if (confirma == JOptionPane.YES_OPTION) {
             try {
                 m.writeSingleCoil(escravo, Integer.parseInt(EMERGENCIA), true);
             } catch (Exception e) {
@@ -4491,21 +4368,20 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void btnSilo1AbrirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSilo1AbrirActionPerformed
         // Abre ou fecha silo 1
         switch (silo1) {
-            case 0:
-            {
+            case 0: {
                 silo1 = 1;
                 silo_1_abriu = true;
                 try {
                     btnBlendManual.setEnabled(false);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_1), true);
                     btnSilo1Abrir.setText("FECHAR");
-                    btnSilo1Abrir.setBackground(new Color(255,51,51));
+                    btnSilo1Abrir.setBackground(new Color(255, 51, 51));
                     lblSilosOpen1.setVisible(true);
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     System.out.println(ex);
                 }
             }
-                break;
+            break;
             case 1:
                 silo1 = 0;
                 silo_1_fechou = true;
@@ -4513,33 +4389,32 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     btnBlendManual.setEnabled(true);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_1), false);
                     btnSilo1Abrir.setText("ABRIR");
-                    btnSilo1Abrir.setBackground(new Color(68,141,41));
+                    btnSilo1Abrir.setBackground(new Color(68, 141, 41));
                     lblSilosOpen1.setVisible(false);
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     System.out.println(ex);
                 }
                 break;
-            }
+        }
     }//GEN-LAST:event_btnSilo1AbrirActionPerformed
 
     private void btnSilo2AbrirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSilo2AbrirActionPerformed
         // Abre ou fecha silo 2
         switch (silo2) {
-            case 0:
-            {
+            case 0: {
                 silo2 = 1;
                 silo_2_abriu = true;
                 try {
                     btnBlendManual.setEnabled(false);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_2), true);
                     btnSilo2Abrir.setText("FECHAR");
-                    btnSilo2Abrir.setBackground(new Color(255,51,51));
+                    btnSilo2Abrir.setBackground(new Color(255, 51, 51));
                     lblSilosOpen2.setVisible(true);
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     System.out.println(ex);
                 }
             }
-                break;
+            break;
             case 1:
                 silo2 = 0;
                 silo_2_fechou = true;
@@ -4547,33 +4422,32 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     btnBlendManual.setEnabled(true);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_2), false);
                     btnSilo2Abrir.setText("ABRIR");
-                    btnSilo2Abrir.setBackground(new Color(68,141,41));
+                    btnSilo2Abrir.setBackground(new Color(68, 141, 41));
                     lblSilosOpen2.setVisible(false);
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     System.out.println(ex);
                 }
                 break;
-            }
+        }
     }//GEN-LAST:event_btnSilo2AbrirActionPerformed
 
     private void btnSilo3AbrirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSilo3AbrirActionPerformed
         // Abre ou fecha silo 3
         switch (silo3) {
-            case 0:
-            {
+            case 0: {
                 silo3 = 1;
                 silo_3_abriu = true;
                 try {
                     btnBlendManual.setEnabled(false);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_3), true);
                     btnSilo3Abrir.setText("FECHAR");
-                    btnSilo3Abrir.setBackground(new Color(255,51,51));
+                    btnSilo3Abrir.setBackground(new Color(255, 51, 51));
                     lblSilosOpen3.setVisible(true);
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     System.out.println(ex);
                 }
             }
-                break;
+            break;
             case 1:
                 silo3 = 0;
                 silo_3_fechou = true;
@@ -4581,33 +4455,32 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     btnBlendManual.setEnabled(true);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_3), false);
                     btnSilo3Abrir.setText("ABRIR");
-                    btnSilo3Abrir.setBackground(new Color(68,141,41));
+                    btnSilo3Abrir.setBackground(new Color(68, 141, 41));
                     lblSilosOpen3.setVisible(false);
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 break;
-            }
+        }
     }//GEN-LAST:event_btnSilo3AbrirActionPerformed
 
     private void btnSilo4AbrirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSilo4AbrirActionPerformed
         // Abrir ou fechar silo 4
         switch (silo4) {
-            case 0:
-            {
+            case 0: {
                 silo4 = 1;
                 silo_4_abriu = true;
                 try {
                     btnBlendManual.setEnabled(false);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_4), true);
                     btnSilo4Abrir.setText("FECHAR");
-                    btnSilo4Abrir.setBackground(new Color(255,51,51));
+                    btnSilo4Abrir.setBackground(new Color(255, 51, 51));
                     lblSilosOpen4.setVisible(true);
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     System.out.println(ex);
                 }
             }
-                break;
+            break;
             case 1:
                 silo4 = 0;
                 silo_4_fechou = true;
@@ -4615,19 +4488,19 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     btnBlendManual.setEnabled(true);
                     m.writeSingleCoil(escravo, Integer.parseInt(SILO_4), false);
                     btnSilo4Abrir.setText("ABRIR");
-                    btnSilo4Abrir.setBackground(new Color(68,141,41));
+                    btnSilo4Abrir.setBackground(new Color(68, 141, 41));
                     lblSilosOpen4.setVisible(false);
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     System.out.println(ex);
                 }
                 break;
-            }
+        }
     }//GEN-LAST:event_btnSilo4AbrirActionPerformed
 
     private void btnBlendNewMetaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendNewMetaActionPerformed
         // Edita metas
         Metodo = "new_meta";
-        btnBlendNewMeta.setBackground(new Color(198,198,198));
+        btnBlendNewMeta.setBackground(new Color(198, 198, 198));
         btnBlendEnviar.setEnabled(false);
         txtBlendMetaMoido.setEditable(true);
         txtBlendMetaGrao.setEditable(true);
@@ -4636,43 +4509,38 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void btnBlendManualActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendManualActionPerformed
         // ATIVA/DESATIVA MODO MANUAL
         switch (manual) {
-            case 0:
-            {
-               if(blendador_ligado == 1){
-                   JOptionPane.showMessageDialog(null, "Pare o ciclo para ativar modo manual!");
-               }
-               else{
-                   try {
-                       m.writeSingleCoil(escravo, 42, true);
-                       manual = 1;
-                       modo_manual = true;
-                       btnBlendManual.setText("MODO AUTOMÁTICO");
-                       unlock_manual();
-                       /*txtQtdSilo1.setText(null);
+            case 0: {
+                if (blendador_ligado == 1) {
+                    JOptionPane.showMessageDialog(null, "Pare o ciclo para ativar modo manual!");
+                } else {
+                    try {
+                        m.writeSingleCoil(escravo, 42, true);
+                        manual = 1;
+                        modo_manual = true;
+                        btnBlendManual.setText("MODO AUTOMÁTICO");
+                        unlock_manual();
+                        /*txtQtdSilo1.setText(null);
                        txtQtdSilo2.setText(null);
                        txtQtdSilo3.setText(null);
                        txtQtdSilo4.setText(null);*/
-                   } catch (Exception e) {
-                       falha_conexao();
-                       JOptionPane.showMessageDialog(null, "Falha ao ativar modo manual");
-                       System.out.println(e);
-                   }
-                    
-               }
-               //System.out.println("MODO MANUAL ATIVADO");
+                    } catch (Exception e) {
+                        falha_conexao();
+                        JOptionPane.showMessageDialog(null, "Falha ao ativar modo manual");
+                        System.out.println(e);
+                    }
+
+                }
+                //System.out.println("MODO MANUAL ATIVADO");
             }
-                break;
+            break;
             case 1:
-                if(mexedor == 1){
+                if (mexedor == 1) {
                     JOptionPane.showMessageDialog(null, "Desligue o mexedor para ativar modo automático");
-                }
-                else if(elevador == 1){
+                } else if (elevador == 1) {
                     JOptionPane.showMessageDialog(null, "Desligue o elevador para ativar modo automático");
-                }
-                else if(silo1 == 1 || silo2 == 1 || silo3 == 1 || silo4 == 1){
-                   JOptionPane.showMessageDialog(null, "Feche todos os silos para ativar o modo automático!");
-                }
-                else{
+                } else if (silo1 == 1 || silo2 == 1 || silo3 == 1 || silo4 == 1) {
+                    JOptionPane.showMessageDialog(null, "Feche todos os silos para ativar o modo automático!");
+                } else {
                     try {
                         m.writeSingleCoil(escravo, 42, false);
                         manual = 0;
@@ -4681,39 +4549,38 @@ public class TelaPrincipal extends javax.swing.JFrame {
                         unlock_manual();
                         //System.out.println("MODO MANUAL DESATIVADO");
                     } catch (Exception e) {
-                       falha_conexao();
-                       JOptionPane.showMessageDialog(null, "Falha ao ativar modo manual");
-                       System.out.println(e);
+                        falha_conexao();
+                        JOptionPane.showMessageDialog(null, "Falha ao ativar modo manual");
+                        System.out.println(e);
                     }
                 }
                 break;
-            }
+        }
     }//GEN-LAST:event_btnBlendManualActionPerformed
 
     private void btnBlendMexedorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendMexedorActionPerformed
         // Liga/Desliga mexedor
         switch (mexedor) {
-            case 0:
-            {   
+            case 0: {
                 mexedor = 1;
                 try {
                     m.writeSingleCoil(escravo, Integer.parseInt(MEXEDOR), true);
                     btnBlendMexedor.setText("DESLIGAR");
-                    btnBlendMexedor.setBackground(new Color(255,51,51));
+                    btnBlendMexedor.setBackground(new Color(255, 51, 51));
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     falha_conexao();
                     System.out.println(ex);
                 }
-                
+
                 //System.out.println("Mexedor ligado");
             }
-                break;
+            break;
             case 1:
                 mexedor = 0;
                 try {
                     m.writeSingleCoil(escravo, Integer.parseInt(MEXEDOR), false);
                     btnBlendMexedor.setText("LIGAR");
-                    btnBlendMexedor.setBackground(new Color(68,141,41));
+                    btnBlendMexedor.setBackground(new Color(68, 141, 41));
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     falha_conexao();
                     System.out.println(ex);
@@ -4726,44 +4593,42 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void btnBlendElevadorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendElevadorActionPerformed
         // Ativa/Desativa elevador
         switch (elevador) {
-            case 0:
-            {   
+            case 0: {
                 elevador = 1;
                 try {
                     m.writeSingleCoil(escravo, Integer.parseInt(ESTEIRA), true);
                     btnBlendElevador.setText("DESLIGAR");
-                    btnBlendElevador.setBackground(new Color(255,51,51));
+                    btnBlendElevador.setBackground(new Color(255, 51, 51));
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     falha_conexao();
                     System.out.println(ex);
                 }
-                
+
                 //System.out.println("Elevador ligado");
             }
-                break;
+            break;
             case 1:
                 elevador = 0;
                 try {
                     m.writeSingleCoil(escravo, Integer.parseInt(ESTEIRA), false);
                     btnBlendElevador.setText("LIGAR");
-                    btnBlendElevador.setBackground(new Color(68,141,41));
-                    
-                    if(gerou_blend_manual == true){
-                        if(temos_internet == true){
+                    btnBlendElevador.setBackground(new Color(68, 141, 41));
+
+                    if (gerou_blend_manual == true) {
+                        if (temos_internet == true) {
                             gerar_registro_manual(qtd_cafe1, qtd_cafe2, qtd_cafe3, qtd_cafe4, qtd_total);
                             gerar_registro_manual_nuvem(qtd_cafe1, qtd_cafe2, qtd_cafe3, qtd_cafe4, qtd_total);
                             //resetando variveis para gerar novo relatório posteriormente
                             reset_variaveis_registro();
-                        }
-                        else{
+                        } else {
                             gerar_registro_manual(qtd_cafe1, qtd_cafe2, qtd_cafe3, qtd_cafe4, qtd_total);
                             reset_variaveis_registro();
                             set_sincronizar_1();
                             precisa_sincrinizar = true;
                         }
-                        
+
                         try {
-                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nBlend manual concuído! " , cor_conectado_internet);
+                            caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nBlend manual concuído! ", cor_conectado_internet);
                         } catch (Exception e) {
                             System.out.println(e);
                         }
@@ -4780,9 +4645,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void btnBlendLimparActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendLimparActionPerformed
         // Limpa caixa de mensagens
         limpa_mensagens();
-        if(clp_conectado == true){
+        if (clp_conectado == true) {
             try {
-                caixa_mensagens.insertString(caixa_mensagens.getLength(), "Conexão com CLP iniciada!" , cor_conectado);
+                caixa_mensagens.insertString(caixa_mensagens.getLength(), "Conexão com CLP iniciada!", cor_conectado);
             } catch (Exception e) {
                 System.out.println("Falha ao insirir msg 4253");
             }
@@ -4803,15 +4668,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }//GEN-LAST:event_MenuLoteGraoActionPerformed
 
     private void MenuSilosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MenuSilosActionPerformed
-        
+
     }//GEN-LAST:event_MenuSilosActionPerformed
 
     private void MenuCLPActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MenuCLPActionPerformed
-       
+
     }//GEN-LAST:event_MenuCLPActionPerformed
 
     private void btnModBusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnModBusActionPerformed
-         // Chama tela do ModBus
+        // Chama tela do ModBus
         TelaSenhaModbus senhaModbus = new TelaSenhaModbus();
         senhaModbus.setVisible(true);
     }//GEN-LAST:event_btnModBusActionPerformed
@@ -4824,17 +4689,28 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     private void cbBlendOperacaoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbBlendOperacaoActionPerformed
         //Muda Lote selecionado de acordo
-        if(cbBlendOperacao.getSelectedIndex() == 1){
+        if (cbBlendOperacao.getSelectedIndex() == 1) {
             //System.out.println("Lote de moido");
             cbBlendLote.setSelectedIndex(1);
-        }
-        else if(cbBlendOperacao.getSelectedIndex() == 2){
+        } else if (cbBlendOperacao.getSelectedIndex() == 2) {
             //System.out.println("Lote de grau");
             cbBlendLote.setSelectedIndex(2);
         }
     }//GEN-LAST:event_cbBlendOperacaoActionPerformed
 
     public static void main(String args[]) {
+
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Windows".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(TelaPrincipal.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new TelaPrincipal().setVisible(true);
@@ -4942,6 +4818,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JLabel lblSilosOpen2;
     private javax.swing.JLabel lblSilosOpen3;
     private javax.swing.JLabel lblSilosOpen4;
+    private javax.swing.JLabel lblStatusConexao;
     private javax.swing.JLabel lblTipo1;
     private javax.swing.JLabel lblTipo2;
     private javax.swing.JLabel lblTipo3;

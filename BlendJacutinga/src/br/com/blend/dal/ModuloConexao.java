@@ -17,7 +17,7 @@ public class ModuloConexao {
         java.sql.Connection conexao = null;
         
         String driver = "com.mysql.jdbc.Driver";
-        String url = "jdbc:mysql://localhost:3434/db_blendjacutinga";
+        String url = "jdbc:mysql://localhost:3307/db_blendjacutinga";
         String user = "root";
         String password = "";
         

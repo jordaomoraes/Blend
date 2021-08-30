@@ -23,7 +23,7 @@ public class ModuloConexaoNuvem {
             return conexao;
         }
         catch (Exception e){
-            JOptionPane.showMessageDialog(null, "Falha ao se conectar com banco ONLINE");
+           // JOptionPane.showMessageDialog(null, "Falha ao se conectar com banco ONLINE");
             return null;
         }
     }
