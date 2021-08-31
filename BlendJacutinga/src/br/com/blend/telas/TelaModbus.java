@@ -351,15 +351,15 @@ public class TelaModbus extends javax.swing.JFrame {
 
         jLabel37.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel37.setForeground(new java.awt.Color(250, 250, 250));
-        jLabel37.setText("MEXEDOR");
-        jPanel14.add(jLabel37, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 40, -1, 30));
-        jPanel14.add(txtMexedor, new org.netbeans.lib.awtextra.AbsoluteConstraints(780, 40, 140, 31));
-        jPanel14.add(txtPistMex, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 240, 140, 31));
+        jLabel37.setText("MISTURADOR");
+        jPanel14.add(jLabel37, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 190, -1, 30));
+        jPanel14.add(txtMexedor, new org.netbeans.lib.awtextra.AbsoluteConstraints(780, 190, 140, 31));
+        jPanel14.add(txtPistMex, new org.netbeans.lib.awtextra.AbsoluteConstraints(780, 240, 140, 31));
 
         jLabel38.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel38.setForeground(new java.awt.Color(250, 250, 250));
-        jLabel38.setText("PISTÃO MEXEDOR");
-        jPanel14.add(jLabel38, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 240, -1, 30));
+        jLabel38.setText("SAÍDA MISTURADOR");
+        jPanel14.add(jLabel38, new org.netbeans.lib.awtextra.AbsoluteConstraints(600, 240, -1, 30));
 
         jLabel39.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel39.setForeground(new java.awt.Color(250, 250, 250));

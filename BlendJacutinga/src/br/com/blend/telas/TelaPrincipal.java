@@ -606,7 +606,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 if (check_blendador() == true) {
                     blendador_ligado = 1;
                     btnBlendPower.setText("PARAR");
-                    btnBlendPower.setBackground(new Color(255, 51, 51));
+                    panelCiclo.setBackground(new Color(47, 54, 64));
                     inseriu_msg_blnd2 = false;
                     if (inseriu_msg_blnd1 == false && clp_conectado == true) {
                         try {
@@ -626,7 +626,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 } else if (check_blendador() == false) {
                     blendador_ligado = 0;
                     btnBlendPower.setText("INICIAR");
-                    btnBlendPower.setBackground(new Color(68, 141, 41));
+                    panelCiclo.setBackground(new Color(68, 141, 41));
                     inseriu_msg_blnd1 = false;
                     if (inseriu_msg_blnd2 == false && clp_conectado == true) {
                         try {
@@ -705,7 +705,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 try {
                     if (check_modo_blendador()) {
                         btnBlendManual.setText("MODO AUTOMATICO");
-                        //System.out.println("MANUAL LIGADO");
+                        panelModo.setBackground(new Color(102, 0, 102));
                         manual = 1;
                         modo_manual = true;
                         unlock_manual();
@@ -721,7 +721,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
                     } else if (!check_modo_blendador()) {
                         btnBlendManual.setText("MODO MANUAL");
-                        //System.out.println("MANUAL DESLIGADO");
+                        panelModo.setBackground(new Color(255, 102, 0));
                         modo_manual = false;
                         manual = 0;
                         unlock_manual();
@@ -757,7 +757,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     if (check_mexedor()) {
                         mexedor = 1;
                         btnBlendMexedor.setText("DESLIGAR");
-                        btnBlendMexedor.setBackground(new Color(255, 51, 51));
+                        panelMisturador.setBackground(new Color(47, 54, 64));
+
                         //System.out.println("Mexedor está ligado");
                         inseriu_msg_msx2 = false;
                         if (inseriu_msg_msx1 == false) {
@@ -771,7 +772,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     } else if (!check_mexedor()) {
                         mexedor = 0;
                         btnBlendMexedor.setText("LIGAR");
-                        btnBlendMexedor.setBackground(new Color(68, 141, 41));
+                        panelMisturador.setBackground(new Color(68, 141, 41));
                         //System.out.println("Mexedor está desligado");
                         inseriu_msg_msx1 = false;
                         if (inseriu_msg_msx2 == false) {
@@ -805,7 +806,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     if (check_elevador()) {
                         elevador = 1;
                         btnBlendElevador.setText("DESLIGAR");
-                        btnBlendElevador.setBackground(new Color(255, 51, 51));
+                        panelSaidaMisturador.setBackground(new Color(47, 54, 64));
                         //System.out.println("Mexedor está ligado");
                         inseriu_msg_elev2 = false;
                         if (inseriu_msg_elev1 == false) {
@@ -819,7 +820,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     } else if (!check_elevador()) {
                         elevador = 0;
                         btnBlendElevador.setText("LIGAR");
-                        btnBlendElevador.setBackground(new Color(68, 141, 41));
+                        panelSaidaMisturador.setBackground(new Color(68, 141, 41));
                         //System.out.println("Mexedor está desligado");
                         inseriu_msg_elev1 = false;
                         if (inseriu_msg_elev2 == false) {
@@ -882,11 +883,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     try {
 
                         //Atualiza balanca em tempo real
-                     
                         peso = m.readHoldingRegisters(escravo, Integer.parseInt(PESO), 1);
                         peso_real = peso[0];
                         String peso_string = String.format("%.2f", peso_real / 10);
-                        lblBlendPeso.setText(peso_string + "Kg");
+                        lblBlendPeso.setText(peso_string);
 
                         //Obtém peso inical uma vez que algum silo for aberto
                         if (silo_1_abriu == true && pegou_peso_inicia_l == false) {
@@ -2210,7 +2210,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     private void buscar_blend() {
-      String sql = "select id_blend as ID, nome as Nome, qtd_silo1 as Silo1, qtd_silo2 as Silo2, qtd_silo3 as Silo3,qtd_silo4 as Silo4 from tb_blend";
+        String sql = "select id_blend as ID, nome as Nome, qtd_silo1 as Silo1, qtd_silo2 as Silo2, qtd_silo3 as Silo3,qtd_silo4 as Silo4 from tb_blend";
 
         try {
             if (temos_internet == true && banco_nuvem == true) {
@@ -2228,10 +2228,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
             }
 
             //Remove campos desnecessários da table
-           // remove_colunas();
+            // remove_colunas();
         } catch (Exception e) {
             System.out.println(e);
-         //   JOptionPane.showMessageDialog(null, "Falha ao buscar blend");
+            //   JOptionPane.showMessageDialog(null, "Falha ao buscar blend");
         }
     }
 
@@ -2249,8 +2249,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
                 tbBlend.setModel(DbUtils.resultSetToTableModel(rsNuvem));
             } else {
-                
-                
+
                 pst = conexao.prepareStatement(sql);
 
                 pst.setString(1, txtBlendPesq.getText() + '%');
@@ -2259,7 +2258,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 tbBlend.setModel(DbUtils.resultSetToTableModel(rs));
             }
 
-          //  remove_colunas();
+            //  remove_colunas();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao pesquisar blend");
         }
@@ -2267,18 +2266,17 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     private void set_campos_blend() {
-        
-           String sql = "select id_blend,nome,qtd_silo1, qtd_silo2,qtd_silo3,qtd_silo4 from tb_blend where nome like ?";
-        
-        
+
+        String sql = "select id_blend,nome,qtd_silo1, qtd_silo2,qtd_silo3,qtd_silo4 from tb_blend where nome like ?";
+
         try {
-           pst = conexao.prepareStatement(sql);
+            pst = conexao.prepareStatement(sql);
             //bloco abaixo, pega o valor que está no campo da receitaid da tabela e jogar como parametro para a consulta
             int setar = tbBlend.getSelectedRow();
             tbBlend.getColumnModel().getColumn(1).setHeaderValue("Id");
             tbBlend.getTableHeader().resizeAndRepaint();
             pst.setString(1, tbBlend.getModel().getValueAt(setar, 0).toString());
-            
+
             rs = pst.executeQuery();//executa a consulta
             rs.next();
 
@@ -2345,31 +2343,39 @@ public class TelaPrincipal extends javax.swing.JFrame {
             btnSilo2Abrir.setEnabled(true);
             btnSilo3Abrir.setEnabled(true);
             btnSilo4Abrir.setEnabled(true);
+            panelAbrirSilo1.setEnabled(true);
+            panelAbrirSilo2.setEnabled(true);
+            panelAbrirSilo3.setEnabled(true);
+            panelAbrirSilo4.setEnabled(true);
+            panelSilo1.setEnabled(true);
+            panelSilo2.setEnabled(true);
+            panelSilo3.setEnabled(true);
+            panelSilo4.setEnabled(true);
 
-            btnBlendPower.setEnabled(false);
-            btnBlendMexedor.setEnabled(true);
-            btnBlendElevador.setEnabled(true);
-
-            btnBlendEnviar.setEnabled(false);
-            cbBlendOperacao.setEnabled(true);
-            btnBlendAtual.setEnabled(false);
+            //  btnBlendEnviar.setEnabled(false);
+            // cbBlendOperacao.setEnabled(true);
+            //   btnBlendAtual.setEnabled(false);
         } else {
             btnSilo1Abrir.setEnabled(false);
             btnSilo2Abrir.setEnabled(false);
             btnSilo3Abrir.setEnabled(false);
             btnSilo4Abrir.setEnabled(false);
+            panelAbrirSilo1.setEnabled(false);
+            panelAbrirSilo2.setEnabled(false);
+            panelAbrirSilo3.setEnabled(false);
+            panelAbrirSilo4.setEnabled(false);
+            panelSilo1.setEnabled(false);
+            panelSilo2.setEnabled(false);
+            panelSilo3.setEnabled(false);
+            panelSilo4.setEnabled(false);
 
-            btnBlendPower.setEnabled(true);
-            btnBlendMexedor.setEnabled(false);
-            btnBlendElevador.setEnabled(false);
-
-            if (blendando == false) {
+            /*  if (blendando == false) {
                 btnBlendEnviar.setEnabled(true);
             } else {
                 btnBlendEnviar.setEnabled(true);
-            }
-            cbBlendOperacao.setEnabled(true);
-            btnBlendAtual.setEnabled(true);
+            }*/
+            //  cbBlendOperacao.setEnabled(true);
+            //  btnBlendAtual.setEnabled(true);
         }
     }
 
@@ -3122,9 +3128,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 System.out.println("Não foi possível se conectar com CLP!");
                 JOptionPane.showMessageDialog(null, "Não foi possível se conectar com CLP!");
             }
-        } else if (blendador_ligado == 0) {
-            JOptionPane.showMessageDialog(null, "Inicie um ciclo para enviar dados!");
-        } else if (cbBlendLote.getSelectedIndex() == 0) {
+        } //  else if (blendador_ligado == 0) {
+        //   JOptionPane.showMessageDialog(null, "Inicie um ciclo para enviar dados!");
+        //   }
+        else if (cbBlendLote.getSelectedIndex() == 0) {
             JOptionPane.showMessageDialog(null, "Selecione um lote!");
         } else if (sincronizando == true) {
             JOptionPane.showMessageDialog(null, "Aguarde o fim da sincronização!");
@@ -3141,14 +3148,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 // Gera um array com as quantidades individuais de cada silo
                 qtd_silos = null;
                 qtd_silos = new float[]{Float.parseFloat(cafe_silo1), Float.parseFloat(cafe_silo2), Float.parseFloat(cafe_silo3), Float.parseFloat(cafe_silo4)};
-                System.out.println("Passo 2.1 - qtd_silos: " + qtd_silos[0] + "a" + qtd_silos[1] + "b" + qtd_silos[2] + "c" + qtd_silos[3]);
+                System.out.println("Passo 2.1 - qtd_silos: 1 " + qtd_silos[0] + "2 " + qtd_silos[1] + "3 " + qtd_silos[2] + "4 " + qtd_silos[3]);
 
                 //2.2 - Gera preços totais do cafe usado no blend
                 //passa array de quantidades para metodo de gerar preço
                 gerar_preco_torrado(qtd_silos);
                 gerar_preco_cru(qtd_silos);
 
-                if (testa_url("http://192.169.80.2")) {
+                if (banco_nuvem == true && temos_internet == true) {
 
                     try {
                         // System.out.println("Entrou try conexao com o banco");
@@ -3235,7 +3242,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     nuvem = ModuloConexaoNuvem.conector();
 
                 } //Operação no modo OFFLINE
-                else if (!testa_url("http://192.169.80.2")) {
+                else {
+
+                    System.out.println("Chegou OFF enviar Receita");
                     set_sincronizar_1();
                     set_aparencia_desconectado();
                     precisa_sincrinizar = true;
@@ -3302,6 +3311,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void set_meta() {
         String MetaMoido = txtBlendMetaMoido.getText();
         String MetaGrao = txtBlendMetaGrao.getText();
+        
+      //  acc misturador - 46101
+//acc esteira - 46102
+//lastro - 37009
 
         if (MetaMoido.isEmpty() || MetaGrao.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Preencha os valores das metas!");
@@ -3356,17 +3369,13 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel2 = new javax.swing.JPanel();
         lblBlendHeader = new javax.swing.JLabel();
         jPanel3 = new javax.swing.JPanel();
-        btnBlendSalvar = new javax.swing.JButton();
-        btnBlendCancelar = new javax.swing.JButton();
-        btnBlendAdd1 = new javax.swing.JButton();
-        jScrollPane3 = new javax.swing.JScrollPane();
-        txtStatus = new javax.swing.JTextPane();
-        btnBlendTarar = new javax.swing.JButton();
-        btnBlendNewMeta = new javax.swing.JButton();
-        btnBlendManual = new javax.swing.JButton();
-        btnBlendLimpar = new javax.swing.JButton();
-        btnEmergencia = new javax.swing.JButton();
-        jPanel11 = new javax.swing.JPanel();
+        jLabel9 = new javax.swing.JLabel();
+        jLabel13 = new javax.swing.JLabel();
+        jLabel14 = new javax.swing.JLabel();
+        txtAccEsteira = new javax.swing.JTextField();
+        txtAccMisturador = new javax.swing.JTextField();
+        txtLastro = new javax.swing.JTextField();
+        panelSilo3 = new javax.swing.JPanel();
         jPanel15 = new javax.swing.JPanel();
         jPanel18 = new javax.swing.JPanel();
         jPanel19 = new javax.swing.JPanel();
@@ -3374,11 +3383,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel21 = new javax.swing.JPanel();
         jPanel22 = new javax.swing.JPanel();
         jPanel23 = new javax.swing.JPanel();
-        jLabel12 = new javax.swing.JLabel();
         txtQtdSilo3 = new javax.swing.JTextField();
         lblSilosOpen3 = new javax.swing.JLabel();
-        btnSilo3Abrir = new javax.swing.JButton();
         lblTipo3 = new javax.swing.JLabel();
+        panelAbrirSilo3 = new javax.swing.JPanel();
+        btnSilo3Abrir = new javax.swing.JButton();
+        jLabel17 = new javax.swing.JLabel();
         jPanel14 = new javax.swing.JPanel();
         txtNomeBlend = new javax.swing.JTextField();
         txtIdBlend = new javax.swing.JTextField();
@@ -3393,14 +3403,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         tbBlend = new javax.swing.JTable();
         tbBlendTitulo = new javax.swing.JLabel();
-        jPanel16 = new javax.swing.JPanel();
+        panelSilo1 = new javax.swing.JPanel();
         jPanel17 = new javax.swing.JPanel();
         jLabel8 = new javax.swing.JLabel();
         txtQtdSilo1 = new javax.swing.JTextField();
         lblSilosOpen1 = new javax.swing.JLabel();
-        btnSilo1Abrir = new javax.swing.JButton();
         lblTipo1 = new javax.swing.JLabel();
-        jPanel24 = new javax.swing.JPanel();
+        panelAbrirSilo1 = new javax.swing.JPanel();
+        btnSilo1Abrir = new javax.swing.JButton();
+        panelSilo4 = new javax.swing.JPanel();
         jPanel25 = new javax.swing.JPanel();
         jPanel26 = new javax.swing.JPanel();
         jPanel27 = new javax.swing.JPanel();
@@ -3410,10 +3421,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel31 = new javax.swing.JPanel();
         txtQtdSilo4 = new javax.swing.JTextField();
         lblSilosOpen4 = new javax.swing.JLabel();
-        btnSilo4Abrir = new javax.swing.JButton();
-        jLabel15 = new javax.swing.JLabel();
         lblTipo4 = new javax.swing.JLabel();
-        jPanel32 = new javax.swing.JPanel();
+        panelAbrirSilo4 = new javax.swing.JPanel();
+        btnSilo4Abrir = new javax.swing.JButton();
+        jLabel18 = new javax.swing.JLabel();
+        panelSilo2 = new javax.swing.JPanel();
         jPanel33 = new javax.swing.JPanel();
         jPanel34 = new javax.swing.JPanel();
         jPanel35 = new javax.swing.JPanel();
@@ -3422,17 +3434,19 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel38 = new javax.swing.JPanel();
         jPanel39 = new javax.swing.JPanel();
         txtQtdSilo2 = new javax.swing.JTextField();
-        jLabel6 = new javax.swing.JLabel();
         lblSilosOpen2 = new javax.swing.JLabel();
-        btnSilo2Abrir = new javax.swing.JButton();
         lblTipo2 = new javax.swing.JLabel();
+        panelAbrirSilo2 = new javax.swing.JPanel();
+        btnSilo2Abrir = new javax.swing.JButton();
+        jLabel16 = new javax.swing.JLabel();
         footerBlend = new javax.swing.JPanel();
         lblData = new javax.swing.JLabel();
         lblStatusConexao = new javax.swing.JLabel();
         jPanel42 = new javax.swing.JPanel();
-        btnBlendEnviar = new javax.swing.JButton();
         cbBlendOperacao = new javax.swing.JComboBox<>();
         btnBlendAtual = new javax.swing.JButton();
+        jPanel6 = new javax.swing.JPanel();
+        btnBlendEnviar = new javax.swing.JButton();
         jPanel7 = new javax.swing.JPanel();
         txtBlendMetaGrao = new javax.swing.JTextField();
         jLabel7 = new javax.swing.JLabel();
@@ -3442,16 +3456,30 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel40 = new javax.swing.JPanel();
         lblBlendPeso = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
-        jPanel50 = new javax.swing.JPanel();
+        panelMisturador = new javax.swing.JPanel();
         jPanel51 = new javax.swing.JPanel();
         btnBlendMexedor = new javax.swing.JButton();
-        jPanel52 = new javax.swing.JPanel();
+        panelSaidaMisturador = new javax.swing.JPanel();
         jPanel53 = new javax.swing.JPanel();
         btnBlendElevador = new javax.swing.JButton();
-        jPanel12 = new javax.swing.JPanel();
+        panelCiclo = new javax.swing.JPanel();
         btnBlendPower = new javax.swing.JButton();
-        lblWifiDesc = new javax.swing.JLabel();
+        jPanel8 = new javax.swing.JPanel();
+        btnBlendNewMeta = new javax.swing.JButton();
+        panelModo = new javax.swing.JPanel();
+        btnBlendManual = new javax.swing.JButton();
+        btnBlendTarar = new javax.swing.JButton();
+        jPanel1 = new javax.swing.JPanel();
+        btnEmergencia = new javax.swing.JButton();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        txtStatus = new javax.swing.JTextPane();
+        jPanel9 = new javax.swing.JPanel();
+        btnBlendSalvar = new javax.swing.JButton();
+        btnBlendCancelar = new javax.swing.JButton();
+        btnBlendLimpar = new javax.swing.JButton();
+        btnBlendAdd1 = new javax.swing.JButton();
         lblBlendWifi = new javax.swing.JLabel();
+        lblWifiDesc = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         MenuCLP = new javax.swing.JMenu();
         btnModBus = new javax.swing.JMenuItem();
@@ -3504,135 +3532,44 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         lblBlendHeader.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
         lblBlendHeader.setForeground(new java.awt.Color(255, 255, 255));
-        lblBlendHeader.setText("BLEND SELECIONADO");
-        jPanel2.add(lblBlendHeader, new org.netbeans.lib.awtextra.AbsoluteConstraints(360, 10, -1, -1));
+        lblBlendHeader.setText("Blend Selecionado");
+        jPanel2.add(lblBlendHeader, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
 
-        getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 70, 990, 50));
+        getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 70, 710, 50));
 
         jPanel3.setBackground(new java.awt.Color(25, 42, 86));
         jPanel3.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        btnBlendSalvar.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendSalvar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/save_48px.png"))); // NOI18N
-        btnBlendSalvar.setToolTipText("Salvar alterações");
-        btnBlendSalvar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendSalvar.setFocusPainted(false);
-        btnBlendSalvar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendSalvarActionPerformed(evt);
-            }
-        });
-        jPanel3.add(btnBlendSalvar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, 100, 90));
-        btnBlendSalvar.getAccessibleContext().setAccessibleName("Salvar");
-        btnBlendSalvar.getAccessibleContext().setAccessibleDescription("Salvar");
+        jLabel9.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
+        jLabel9.setForeground(new java.awt.Color(240, 240, 240));
+        jLabel9.setText("Acc Esteira");
+        jPanel3.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 110, -1, 50));
 
-        btnBlendCancelar.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendCancelar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/cancel_48px.png"))); // NOI18N
-        btnBlendCancelar.setToolTipText("Cancelar");
-        btnBlendCancelar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendCancelar.setFocusPainted(false);
-        btnBlendCancelar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendCancelarActionPerformed(evt);
-            }
-        });
-        jPanel3.add(btnBlendCancelar, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 10, 100, 90));
-        btnBlendCancelar.getAccessibleContext().setAccessibleName("Cancelar");
+        jLabel13.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
+        jLabel13.setForeground(new java.awt.Color(240, 240, 240));
+        jLabel13.setText("Acc Misturador");
+        jPanel3.add(jLabel13, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 0, 190, 50));
 
-        btnBlendAdd1.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendAdd1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/info.png"))); // NOI18N
-        btnBlendAdd1.setToolTipText("Informações");
-        btnBlendAdd1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendAdd1.setFocusPainted(false);
-        btnBlendAdd1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendAdd1ActionPerformed(evt);
-            }
-        });
-        jPanel3.add(btnBlendAdd1, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 120, 100, 90));
+        jLabel14.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
+        jLabel14.setForeground(new java.awt.Color(240, 240, 240));
+        jLabel14.setText("Lastro");
+        jPanel3.add(jLabel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 50, -1, 50));
+        jPanel3.add(txtAccEsteira, new org.netbeans.lib.awtextra.AbsoluteConstraints(210, 110, 110, 40));
+        jPanel3.add(txtAccMisturador, new org.netbeans.lib.awtextra.AbsoluteConstraints(210, 10, 110, 40));
+        jPanel3.add(txtLastro, new org.netbeans.lib.awtextra.AbsoluteConstraints(210, 60, 110, 40));
 
-        jScrollPane3.setViewportView(txtStatus);
+        getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1010, 10, 340, 170));
 
-        jPanel3.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 510, 200, 150));
-
-        btnBlendTarar.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendTarar.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        btnBlendTarar.setForeground(new java.awt.Color(0, 0, 153));
-        btnBlendTarar.setText("TARAR BALANÇA");
-        btnBlendTarar.setBorderPainted(false);
-        btnBlendTarar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendTarar.setFocusPainted(false);
-        btnBlendTarar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendTararActionPerformed(evt);
-            }
-        });
-        jPanel3.add(btnBlendTarar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 430, 230, 50));
-
-        btnBlendNewMeta.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendNewMeta.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        btnBlendNewMeta.setForeground(new java.awt.Color(0, 102, 0));
-        btnBlendNewMeta.setText("NOVA META");
-        btnBlendNewMeta.setBorderPainted(false);
-        btnBlendNewMeta.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendNewMeta.setFocusPainted(false);
-        btnBlendNewMeta.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendNewMetaActionPerformed(evt);
-            }
-        });
-        jPanel3.add(btnBlendNewMeta, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 370, 230, 50));
-
-        btnBlendManual.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendManual.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        btnBlendManual.setText("MODO MANUAL");
-        btnBlendManual.setBorderPainted(false);
-        btnBlendManual.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendManual.setFocusPainted(false);
-        btnBlendManual.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendManualActionPerformed(evt);
-            }
-        });
-        jPanel3.add(btnBlendManual, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 310, 230, 50));
-
-        btnBlendLimpar.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendLimpar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/erase_48px.png"))); // NOI18N
-        btnBlendLimpar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendLimpar.setFocusPainted(false);
-        btnBlendLimpar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendLimparActionPerformed(evt);
-            }
-        });
-        jPanel3.add(btnBlendLimpar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 120, 100, 90));
-
-        btnEmergencia.setBackground(new java.awt.Color(255, 51, 51));
-        btnEmergencia.setFont(new java.awt.Font("Segoe UI", 1, 19)); // NOI18N
-        btnEmergencia.setForeground(new java.awt.Color(204, 0, 0));
-        btnEmergencia.setText("EMERGENCIA");
-        btnEmergencia.setBorderPainted(false);
-        btnEmergencia.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnEmergencia.setFocusPainted(false);
-        btnEmergencia.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnEmergenciaActionPerformed(evt);
-            }
-        });
-        jPanel3.add(btnEmergencia, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 240, 230, 60));
-
-        getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1010, 10, 260, 680));
-
-        jPanel11.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel11.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 3", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
-        jPanel11.setPreferredSize(new java.awt.Dimension(210, 180));
-        jPanel11.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        panelSilo3.setBackground(new java.awt.Color(72, 126, 176));
+        panelSilo3.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "Silo 3", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
+        panelSilo3.setPreferredSize(new java.awt.Dimension(210, 180));
+        panelSilo3.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jPanel15.setBackground(new java.awt.Color(72, 126, 176));
         jPanel15.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3), "SILO 2", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
         jPanel15.setPreferredSize(new java.awt.Dimension(210, 180));
         jPanel15.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-        jPanel11.add(jPanel15, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 210, 240, 180));
+        panelSilo3.add(jPanel15, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 210, 240, 180));
 
         jPanel18.setBackground(new java.awt.Color(72, 126, 176));
         jPanel18.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3), "SILO 2", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3645,7 +3582,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel19.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
         jPanel18.add(jPanel19, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 210, 240, 180));
 
-        jPanel11.add(jPanel18, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
+        panelSilo3.add(jPanel18, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
 
         jPanel20.setBackground(new java.awt.Color(72, 126, 176));
         jPanel20.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3), "SILO 2", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3671,40 +3608,55 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         jPanel20.add(jPanel22, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
 
-        jPanel11.add(jPanel20, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
-
-        jLabel12.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jLabel12.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel12.setText("QUANTIDADE (Kg)");
-        jPanel11.add(jLabel12, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 130, -1, 20));
+        panelSilo3.add(jPanel20, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
 
         txtQtdSilo3.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         txtQtdSilo3.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txtQtdSilo3.setToolTipText("");
-        jPanel11.add(txtQtdSilo3, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 160, 150, 30));
+        panelSilo3.add(txtQtdSilo3, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 230, 150, 30));
 
         lblSilosOpen3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/bol1.gif"))); // NOI18N
-        jPanel11.add(lblSilosOpen3, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
+        panelSilo3.add(lblSilosOpen3, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
+
+        lblTipo3.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        lblTipo3.setForeground(new java.awt.Color(255, 255, 255));
+        lblTipo3.setText("TIPO");
+        panelSilo3.add(lblTipo3, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 50, 110, 30));
+
+        panelAbrirSilo3.setBackground(new java.awt.Color(68, 141, 41));
+        panelAbrirSilo3.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         btnSilo3Abrir.setBackground(new java.awt.Color(68, 141, 41));
         btnSilo3Abrir.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        btnSilo3Abrir.setForeground(new java.awt.Color(0, 102, 0));
+        btnSilo3Abrir.setForeground(new java.awt.Color(255, 255, 255));
         btnSilo3Abrir.setText("ABRIR");
         btnSilo3Abrir.setBorderPainted(false);
+        btnSilo3Abrir.setContentAreaFilled(false);
+        btnSilo3Abrir.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnSilo3Abrir.setFocusPainted(false);
+        btnSilo3Abrir.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnSilo3AbrirMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnSilo3AbrirMouseExited(evt);
+            }
+        });
         btnSilo3Abrir.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnSilo3AbrirActionPerformed(evt);
             }
         });
-        jPanel11.add(btnSilo3Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 80, 130, 45));
+        panelAbrirSilo3.add(btnSilo3Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 200, 50));
 
-        lblTipo3.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        lblTipo3.setForeground(new java.awt.Color(255, 255, 255));
-        lblTipo3.setText("TIPO");
-        jPanel11.add(lblTipo3, new org.netbeans.lib.awtextra.AbsoluteConstraints(78, 40, 110, 30));
+        panelSilo3.add(panelAbrirSilo3, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 110, 220, 70));
 
-        getContentPane().add(jPanel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 190, 240, 210));
+        jLabel17.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel17.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel17.setText("Quantidade (Kg)");
+        panelSilo3.add(jLabel17, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 200, -1, -1));
+
+        getContentPane().add(panelSilo3, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 190, 240, 280));
 
         jPanel14.setBackground(new java.awt.Color(72, 126, 176));
         jPanel14.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3719,16 +3671,16 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         jLabel10.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel10.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel10.setText("LOTE");
+        jLabel10.setText("Lote");
         jPanel14.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(600, 10, -1, 30));
 
         jLabel11.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel11.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel11.setText("NOME DO BLEND");
+        jLabel11.setText("Nome do Blend");
         jPanel14.add(jLabel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, 30));
 
-        cbBlendLote.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        cbBlendLote.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SELECIONE UM LOTE..." }));
+        cbBlendLote.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        cbBlendLote.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Selecione um lote..." }));
         cbBlendLote.setToolTipText("Selecionar Lote");
         jPanel14.add(cbBlendLote, new org.netbeans.lib.awtextra.AbsoluteConstraints(670, 10, 300, 30));
 
@@ -3764,7 +3716,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         });
         jPanel4.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 10, 100, -1));
 
-        getContentPane().add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 530, 660, 50));
+        getContentPane().add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 610, 660, 50));
 
         jPanel5.setBackground(new java.awt.Color(72, 126, 176));
         jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -3799,66 +3751,81 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         tbBlendTitulo.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         tbBlendTitulo.setForeground(new java.awt.Color(255, 255, 255));
-        tbBlendTitulo.setText("RECEITAS CADASTRADAS");
+        tbBlendTitulo.setText("Receitas Cadastradas");
         jPanel5.add(tbBlendTitulo, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
 
-        getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 590, 660, 190));
+        getContentPane().add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 670, 660, 190));
 
-        jPanel16.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel16.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 1", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
-        jPanel16.setPreferredSize(new java.awt.Dimension(210, 180));
-        jPanel16.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        panelSilo1.setBackground(new java.awt.Color(72, 126, 176));
+        panelSilo1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 1", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
+        panelSilo1.setPreferredSize(new java.awt.Dimension(210, 180));
+        panelSilo1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jPanel17.setBackground(new java.awt.Color(72, 126, 176));
         jPanel17.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3), "SILO 2", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
         jPanel17.setPreferredSize(new java.awt.Dimension(210, 180));
         jPanel17.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-        jPanel16.add(jPanel17, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 210, 240, 180));
+        panelSilo1.add(jPanel17, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 210, 240, 180));
 
         jLabel8.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel8.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel8.setText("QUANTIDADE (Kg)");
-        jPanel16.add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 130, -1, -1));
+        jLabel8.setText("Quantidade (Kg)");
+        panelSilo1.add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 200, -1, -1));
 
         txtQtdSilo1.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         txtQtdSilo1.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        jPanel16.add(txtQtdSilo1, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 160, 150, -1));
+        panelSilo1.add(txtQtdSilo1, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 230, 150, -1));
 
         lblSilosOpen1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/bol1.gif"))); // NOI18N
-        jPanel16.add(lblSilosOpen1, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
-
-        btnSilo1Abrir.setBackground(new java.awt.Color(68, 141, 41));
-        btnSilo1Abrir.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        btnSilo1Abrir.setForeground(new java.awt.Color(0, 102, 0));
-        btnSilo1Abrir.setText("ABRIR");
-        btnSilo1Abrir.setBorderPainted(false);
-        btnSilo1Abrir.setFocusPainted(false);
-        btnSilo1Abrir.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnSilo1AbrirActionPerformed(evt);
-            }
-        });
-        jPanel16.add(btnSilo1Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 80, 130, 45));
+        panelSilo1.add(lblSilosOpen1, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
 
         lblTipo1.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         lblTipo1.setForeground(new java.awt.Color(255, 255, 255));
         lblTipo1.setText("TIPO");
         lblTipo1.setToolTipText("");
         lblTipo1.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jPanel16.add(lblTipo1, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 40, 110, 30));
+        panelSilo1.add(lblTipo1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 50, 110, 30));
 
-        getContentPane().add(jPanel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 190, 240, 210));
+        panelAbrirSilo1.setBackground(new java.awt.Color(68, 141, 41));
+        panelAbrirSilo1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        jPanel24.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel24.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 4", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
-        jPanel24.setPreferredSize(new java.awt.Dimension(210, 180));
-        jPanel24.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        btnSilo1Abrir.setBackground(new java.awt.Color(68, 141, 41));
+        btnSilo1Abrir.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        btnSilo1Abrir.setForeground(new java.awt.Color(255, 255, 255));
+        btnSilo1Abrir.setText("ABRIR");
+        btnSilo1Abrir.setBorderPainted(false);
+        btnSilo1Abrir.setContentAreaFilled(false);
+        btnSilo1Abrir.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnSilo1Abrir.setFocusPainted(false);
+        btnSilo1Abrir.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnSilo1AbrirMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnSilo1AbrirMouseExited(evt);
+            }
+        });
+        btnSilo1Abrir.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSilo1AbrirActionPerformed(evt);
+            }
+        });
+        panelAbrirSilo1.add(btnSilo1Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 200, 50));
+
+        panelSilo1.add(panelAbrirSilo1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 110, 220, 70));
+
+        getContentPane().add(panelSilo1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 190, 240, 280));
+
+        panelSilo4.setBackground(new java.awt.Color(72, 126, 176));
+        panelSilo4.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "Silo 4", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
+        panelSilo4.setPreferredSize(new java.awt.Dimension(210, 180));
+        panelSilo4.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jPanel25.setBackground(new java.awt.Color(72, 126, 176));
         jPanel25.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3), "SILO 2", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
         jPanel25.setPreferredSize(new java.awt.Dimension(210, 180));
         jPanel25.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-        jPanel24.add(jPanel25, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 210, 240, 180));
+        panelSilo4.add(jPanel25, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 210, 240, 180));
 
         jPanel26.setBackground(new java.awt.Color(72, 126, 176));
         jPanel26.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3), "SILO 2", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3871,7 +3838,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel27.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
         jPanel26.add(jPanel27, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 210, 240, 180));
 
-        jPanel24.add(jPanel26, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
+        panelSilo4.add(jPanel26, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
 
         jPanel28.setBackground(new java.awt.Color(72, 126, 176));
         jPanel28.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3), "SILO 2", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3897,50 +3864,65 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         jPanel28.add(jPanel30, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
 
-        jPanel24.add(jPanel28, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
+        panelSilo4.add(jPanel28, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
 
         txtQtdSilo4.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         txtQtdSilo4.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        jPanel24.add(txtQtdSilo4, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 160, 150, -1));
+        panelSilo4.add(txtQtdSilo4, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 230, 150, -1));
 
         lblSilosOpen4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/bol1.gif"))); // NOI18N
-        jPanel24.add(lblSilosOpen4, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
+        panelSilo4.add(lblSilosOpen4, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
+
+        lblTipo4.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        lblTipo4.setForeground(new java.awt.Color(255, 255, 255));
+        lblTipo4.setText("TIPO");
+        panelSilo4.add(lblTipo4, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 50, 110, 30));
+
+        panelAbrirSilo4.setBackground(new java.awt.Color(68, 141, 41));
+        panelAbrirSilo4.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         btnSilo4Abrir.setBackground(new java.awt.Color(68, 141, 41));
         btnSilo4Abrir.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        btnSilo4Abrir.setForeground(new java.awt.Color(0, 102, 0));
+        btnSilo4Abrir.setForeground(new java.awt.Color(255, 255, 255));
         btnSilo4Abrir.setText("ABRIR");
         btnSilo4Abrir.setBorderPainted(false);
+        btnSilo4Abrir.setContentAreaFilled(false);
+        btnSilo4Abrir.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnSilo4Abrir.setFocusPainted(false);
+        btnSilo4Abrir.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnSilo4AbrirMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnSilo4AbrirMouseExited(evt);
+            }
+        });
         btnSilo4Abrir.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnSilo4AbrirActionPerformed(evt);
             }
         });
-        jPanel24.add(btnSilo4Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 80, 130, 45));
+        panelAbrirSilo4.add(btnSilo4Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 200, 50));
 
-        jLabel15.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jLabel15.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel15.setText("QUANTIDADE (Kg)");
-        jPanel24.add(jLabel15, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 130, -1, -1));
+        panelSilo4.add(panelAbrirSilo4, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 110, 220, 70));
 
-        lblTipo4.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        lblTipo4.setForeground(new java.awt.Color(255, 255, 255));
-        lblTipo4.setText("TIPO");
-        jPanel24.add(lblTipo4, new org.netbeans.lib.awtextra.AbsoluteConstraints(78, 40, 110, 30));
+        jLabel18.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel18.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel18.setText("Quantidade (Kg)");
+        panelSilo4.add(jLabel18, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 200, -1, -1));
 
-        getContentPane().add(jPanel24, new org.netbeans.lib.awtextra.AbsoluteConstraints(760, 190, 240, 210));
+        getContentPane().add(panelSilo4, new org.netbeans.lib.awtextra.AbsoluteConstraints(760, 190, 240, 280));
 
-        jPanel32.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel32.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 2", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
-        jPanel32.setPreferredSize(new java.awt.Dimension(210, 180));
-        jPanel32.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        panelSilo2.setBackground(new java.awt.Color(72, 126, 176));
+        panelSilo2.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 2", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
+        panelSilo2.setPreferredSize(new java.awt.Dimension(210, 180));
+        panelSilo2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jPanel33.setBackground(new java.awt.Color(72, 126, 176));
         jPanel33.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3), "SILO 2", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
         jPanel33.setPreferredSize(new java.awt.Dimension(210, 180));
         jPanel33.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-        jPanel32.add(jPanel33, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 210, 240, 180));
+        panelSilo2.add(jPanel33, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 210, 240, 180));
 
         jPanel34.setBackground(new java.awt.Color(72, 126, 176));
         jPanel34.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3), "SILO 2", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3953,7 +3935,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel35.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
         jPanel34.add(jPanel35, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 210, 240, 180));
 
-        jPanel32.add(jPanel34, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
+        panelSilo2.add(jPanel34, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
 
         jPanel36.setBackground(new java.awt.Color(72, 126, 176));
         jPanel36.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3), "SILO 2", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3979,39 +3961,54 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         jPanel36.add(jPanel38, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
 
-        jPanel32.add(jPanel36, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
+        panelSilo2.add(jPanel36, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 210, 240, 180));
 
         txtQtdSilo2.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         txtQtdSilo2.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        jPanel32.add(txtQtdSilo2, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 160, 150, -1));
-
-        jLabel6.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jLabel6.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel6.setText("QUANTIDADE (Kg)");
-        jPanel32.add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 130, -1, -1));
+        panelSilo2.add(txtQtdSilo2, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 230, 150, -1));
 
         lblSilosOpen2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/bol1.gif"))); // NOI18N
-        jPanel32.add(lblSilosOpen2, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
+        panelSilo2.add(lblSilosOpen2, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
+
+        lblTipo2.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        lblTipo2.setForeground(new java.awt.Color(255, 255, 255));
+        lblTipo2.setText("TIPO");
+        panelSilo2.add(lblTipo2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 50, 110, 30));
+
+        panelAbrirSilo2.setBackground(new java.awt.Color(68, 141, 41));
+        panelAbrirSilo2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         btnSilo2Abrir.setBackground(new java.awt.Color(68, 141, 41));
         btnSilo2Abrir.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        btnSilo2Abrir.setForeground(new java.awt.Color(0, 102, 0));
+        btnSilo2Abrir.setForeground(new java.awt.Color(255, 255, 255));
         btnSilo2Abrir.setText("ABRIR");
         btnSilo2Abrir.setBorderPainted(false);
+        btnSilo2Abrir.setContentAreaFilled(false);
+        btnSilo2Abrir.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnSilo2Abrir.setFocusPainted(false);
+        btnSilo2Abrir.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnSilo2AbrirMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnSilo2AbrirMouseExited(evt);
+            }
+        });
         btnSilo2Abrir.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnSilo2AbrirActionPerformed(evt);
             }
         });
-        jPanel32.add(btnSilo2Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 80, 130, 45));
+        panelAbrirSilo2.add(btnSilo2Abrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 200, 50));
 
-        lblTipo2.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        lblTipo2.setForeground(new java.awt.Color(255, 255, 255));
-        lblTipo2.setText("TIPO");
-        jPanel32.add(lblTipo2, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 40, 110, 30));
+        panelSilo2.add(panelAbrirSilo2, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 110, 220, 70));
 
-        getContentPane().add(jPanel32, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 190, 240, 210));
+        jLabel16.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel16.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel16.setText("Quantidade (Kg)");
+        panelSilo2.add(jLabel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 200, -1, -1));
+
+        getContentPane().add(panelSilo2, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 190, 240, 280));
 
         footerBlend.setBackground(new java.awt.Color(68, 141, 41));
         footerBlend.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -4024,26 +4021,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblStatusConexao.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         lblStatusConexao.setForeground(new java.awt.Color(255, 255, 255));
         lblStatusConexao.setText("Conexao");
-        footerBlend.add(lblStatusConexao, new org.netbeans.lib.awtextra.AbsoluteConstraints(950, 0, 330, 50));
+        footerBlend.add(lblStatusConexao, new org.netbeans.lib.awtextra.AbsoluteConstraints(950, 0, 390, 50));
 
-        getContentPane().add(footerBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 790, 1400, 120));
+        getContentPane().add(footerBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 870, -1, 50));
 
         jPanel42.setBackground(new java.awt.Color(25, 42, 86));
         jPanel42.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        btnBlendEnviar.setBackground(new java.awt.Color(255, 51, 51));
-        btnBlendEnviar.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        btnBlendEnviar.setForeground(new java.awt.Color(255, 102, 0));
-        btnBlendEnviar.setText("Enviar para CLP");
-        btnBlendEnviar.setToolTipText("Enviar dados ao CLP");
-        btnBlendEnviar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnBlendEnviar.setFocusPainted(false);
-        btnBlendEnviar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBlendEnviarActionPerformed(evt);
-            }
-        });
-        jPanel42.add(btnBlendEnviar, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 20, 230, 70));
 
         cbBlendOperacao.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         cbBlendOperacao.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SELECIONE UMA OPERAÇÃO...", "TRADICIONAL MOÍDO", "GRÃO" }));
@@ -4053,7 +4036,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 cbBlendOperacaoActionPerformed(evt);
             }
         });
-        jPanel42.add(cbBlendOperacao, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 100, 230, 40));
+        jPanel42.add(cbBlendOperacao, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 140, 300, 40));
 
         btnBlendAtual.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendAtual.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
@@ -4065,9 +4048,37 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendAtualActionPerformed(evt);
             }
         });
-        jPanel42.add(btnBlendAtual, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 150, 230, 40));
+        jPanel42.add(btnBlendAtual, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 200, 300, 40));
 
-        getContentPane().add(jPanel42, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 530, 320, 250));
+        jPanel6.setBackground(new java.awt.Color(0, 0, 0));
+        jPanel6.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        btnBlendEnviar.setBackground(new java.awt.Color(255, 51, 51));
+        btnBlendEnviar.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        btnBlendEnviar.setForeground(new java.awt.Color(255, 255, 255));
+        btnBlendEnviar.setText("Enviar para CLP");
+        btnBlendEnviar.setToolTipText("Enviar dados ao CLP");
+        btnBlendEnviar.setContentAreaFilled(false);
+        btnBlendEnviar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendEnviar.setFocusPainted(false);
+        btnBlendEnviar.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnBlendEnviarMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnBlendEnviarMouseExited(evt);
+            }
+        });
+        btnBlendEnviar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBlendEnviarActionPerformed(evt);
+            }
+        });
+        jPanel6.add(btnBlendEnviar, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 280, 90));
+
+        jPanel42.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 300, 110));
+
+        getContentPane().add(jPanel42, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 610, 320, 250));
 
         jPanel7.setBackground(new java.awt.Color(25, 42, 86));
         jPanel7.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -4079,7 +4090,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         jLabel7.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
         jLabel7.setForeground(new java.awt.Color(240, 240, 240));
-        jLabel7.setText("META GRÃO:");
+        jLabel7.setText("Meta Grão");
         jPanel7.add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 0, -1, 50));
 
         getContentPane().add(jPanel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 10, 340, 50));
@@ -4089,7 +4100,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
         jLabel3.setForeground(new java.awt.Color(240, 240, 240));
-        jLabel3.setText("META MOÍDO:");
+        jLabel3.setText("Meta Moído");
         jPanel13.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 0, -1, 50));
 
         txtBlendMetaMoido.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
@@ -4102,92 +4113,290 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel40.setBackground(new java.awt.Color(25, 42, 86));
         jPanel40.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        lblBlendPeso.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
+        lblBlendPeso.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
         lblBlendPeso.setForeground(new java.awt.Color(240, 240, 240));
         lblBlendPeso.setText("00,0");
-        jPanel40.add(lblBlendPeso, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 0, -1, 50));
+        jPanel40.add(lblBlendPeso, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 30, 110, 50));
 
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
+        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(240, 240, 240));
         jLabel2.setText("PESO:");
-        jPanel40.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 0, -1, 50));
+        jPanel40.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 30, -1, 50));
 
-        getContentPane().add(jPanel40, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 270, 50));
+        getContentPane().add(jPanel40, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 270, 110));
 
-        jPanel50.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel50.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "MEXEDOR", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
-        jPanel50.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        panelMisturador.setBackground(new java.awt.Color(68, 141, 41));
+        panelMisturador.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "Misturador", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
+        panelMisturador.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jPanel51.setBackground(new java.awt.Color(72, 126, 176));
         jPanel51.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-        jPanel50.add(jPanel51, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 490, 240, 120));
+        panelMisturador.add(jPanel51, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 490, 240, 120));
 
         btnBlendMexedor.setBackground(new java.awt.Color(68, 141, 41));
-        btnBlendMexedor.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnBlendMexedor.setText("MEXEDOR");
+        btnBlendMexedor.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        btnBlendMexedor.setForeground(new java.awt.Color(255, 255, 255));
+        btnBlendMexedor.setText("--");
         btnBlendMexedor.setBorderPainted(false);
+        btnBlendMexedor.setContentAreaFilled(false);
         btnBlendMexedor.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnBlendMexedor.setFocusPainted(false);
+        btnBlendMexedor.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnBlendMexedorMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnBlendMexedorMouseExited(evt);
+            }
+        });
         btnBlendMexedor.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendMexedorActionPerformed(evt);
             }
         });
-        jPanel50.add(btnBlendMexedor, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 40, 140, 42));
+        panelMisturador.add(btnBlendMexedor, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 30, 240, 70));
 
-        getContentPane().add(jPanel50, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 410, 330, 110));
+        getContentPane().add(panelMisturador, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 490, 330, 110));
 
-        jPanel52.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel52.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "ELEVADOR", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
-        jPanel52.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        panelSaidaMisturador.setBackground(new java.awt.Color(68, 141, 41));
+        panelSaidaMisturador.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "Saída Misturador", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
+        panelSaidaMisturador.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jPanel53.setBackground(new java.awt.Color(72, 126, 176));
         jPanel53.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-        jPanel52.add(jPanel53, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 490, 240, 120));
+        panelSaidaMisturador.add(jPanel53, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 490, 240, 120));
 
         btnBlendElevador.setBackground(new java.awt.Color(68, 141, 41));
-        btnBlendElevador.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnBlendElevador.setText("ELEVADOR");
+        btnBlendElevador.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        btnBlendElevador.setForeground(new java.awt.Color(255, 255, 255));
+        btnBlendElevador.setText("--");
         btnBlendElevador.setBorderPainted(false);
+        btnBlendElevador.setContentAreaFilled(false);
         btnBlendElevador.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnBlendElevador.setFocusPainted(false);
+        btnBlendElevador.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnBlendElevadorMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnBlendElevadorMouseExited(evt);
+            }
+        });
         btnBlendElevador.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendElevadorActionPerformed(evt);
             }
         });
-        jPanel52.add(btnBlendElevador, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 40, 140, 40));
+        panelSaidaMisturador.add(btnBlendElevador, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 30, 290, 70));
 
-        getContentPane().add(jPanel52, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 410, 320, 110));
+        getContentPane().add(panelSaidaMisturador, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 490, 320, 110));
 
-        jPanel12.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel12.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "INICIAR CICLO", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
-        jPanel12.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        panelCiclo.setBackground(new java.awt.Color(68, 141, 41));
+        panelCiclo.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "Processo de Blendagem", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 18), new java.awt.Color(255, 255, 255))); // NOI18N
+        panelCiclo.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         btnBlendPower.setBackground(new java.awt.Color(68, 141, 41));
-        btnBlendPower.setFont(new java.awt.Font("Segoe UI", 1, 20)); // NOI18N
-        btnBlendPower.setForeground(new java.awt.Color(0, 102, 0));
-        btnBlendPower.setText("INICIAR");
+        btnBlendPower.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        btnBlendPower.setForeground(new java.awt.Color(255, 255, 255));
+        btnBlendPower.setText("--");
         btnBlendPower.setBorderPainted(false);
+        btnBlendPower.setContentAreaFilled(false);
         btnBlendPower.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnBlendPower.setFocusPainted(false);
         btnBlendPower.setPreferredSize(new java.awt.Dimension(97, 73));
+        btnBlendPower.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnBlendPowerMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnBlendPowerMouseExited(evt);
+            }
+        });
         btnBlendPower.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBlendPowerActionPerformed(evt);
             }
         });
-        jPanel12.add(btnBlendPower, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 40, 140, 42));
+        panelCiclo.add(btnBlendPower, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 32, 300, -1));
 
-        getContentPane().add(jPanel12, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 410, 320, 110));
+        getContentPane().add(panelCiclo, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 490, 320, 110));
+
+        jPanel8.setBackground(new java.awt.Color(25, 42, 86));
+        jPanel8.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        btnBlendNewMeta.setBackground(new java.awt.Color(255, 255, 255));
+        btnBlendNewMeta.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        btnBlendNewMeta.setForeground(new java.awt.Color(0, 102, 0));
+        btnBlendNewMeta.setText("NOVA META");
+        btnBlendNewMeta.setBorderPainted(false);
+        btnBlendNewMeta.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendNewMeta.setFocusPainted(false);
+        btnBlendNewMeta.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnBlendNewMetaMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnBlendNewMetaMouseExited(evt);
+            }
+        });
+        btnBlendNewMeta.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBlendNewMetaActionPerformed(evt);
+            }
+        });
+        jPanel8.add(btnBlendNewMeta, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 320, 60));
+
+        panelModo.setBackground(new java.awt.Color(255, 102, 0));
+        panelModo.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        btnBlendManual.setBackground(new java.awt.Color(255, 51, 0));
+        btnBlendManual.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        btnBlendManual.setForeground(new java.awt.Color(255, 255, 255));
+        btnBlendManual.setText("MODO MANUAL");
+        btnBlendManual.setBorderPainted(false);
+        btnBlendManual.setContentAreaFilled(false);
+        btnBlendManual.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendManual.setFocusPainted(false);
+        btnBlendManual.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnBlendManualMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnBlendManualMouseExited(evt);
+            }
+        });
+        btnBlendManual.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBlendManualActionPerformed(evt);
+            }
+        });
+        panelModo.add(btnBlendManual, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 0, 300, 60));
+
+        jPanel8.add(panelModo, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 80, 320, 60));
+
+        btnBlendTarar.setBackground(new java.awt.Color(255, 255, 255));
+        btnBlendTarar.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        btnBlendTarar.setForeground(new java.awt.Color(0, 0, 153));
+        btnBlendTarar.setText("TARAR BALANÇA");
+        btnBlendTarar.setBorderPainted(false);
+        btnBlendTarar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendTarar.setFocusPainted(false);
+        btnBlendTarar.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnBlendTararMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnBlendTararMouseExited(evt);
+            }
+        });
+        btnBlendTarar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBlendTararActionPerformed(evt);
+            }
+        });
+        jPanel8.add(btnBlendTarar, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 150, 320, 60));
+
+        jPanel1.setBackground(new java.awt.Color(204, 0, 0));
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        btnEmergencia.setBackground(new java.awt.Color(255, 51, 51));
+        btnEmergencia.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        btnEmergencia.setForeground(new java.awt.Color(255, 255, 255));
+        btnEmergencia.setText("EMERGENCIA");
+        btnEmergencia.setBorderPainted(false);
+        btnEmergencia.setContentAreaFilled(false);
+        btnEmergencia.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnEmergencia.setFocusPainted(false);
+        btnEmergencia.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnEmergenciaMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnEmergenciaMouseExited(evt);
+            }
+        });
+        btnEmergencia.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnEmergenciaActionPerformed(evt);
+            }
+        });
+        jPanel1.add(btnEmergencia, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 0, 300, 90));
+
+        jPanel8.add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 220, 320, 90));
+
+        jScrollPane3.setViewportView(txtStatus);
+
+        jPanel8.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 320, 320, 160));
+
+        getContentPane().add(jPanel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(1010, 295, 340, 490));
+
+        jPanel9.setBackground(new java.awt.Color(0, 0, 153));
+        jPanel9.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Operações", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
+        jPanel9.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        btnBlendSalvar.setBackground(new java.awt.Color(255, 255, 255));
+        btnBlendSalvar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/save_48px.png"))); // NOI18N
+        btnBlendSalvar.setToolTipText("Salvar alterações");
+        btnBlendSalvar.setContentAreaFilled(false);
+        btnBlendSalvar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendSalvar.setFocusPainted(false);
+        btnBlendSalvar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBlendSalvarActionPerformed(evt);
+            }
+        });
+        jPanel9.add(btnBlendSalvar, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 30, 60, 70));
+        btnBlendSalvar.getAccessibleContext().setAccessibleName("Salvar");
+        btnBlendSalvar.getAccessibleContext().setAccessibleDescription("Salvar");
+
+        btnBlendCancelar.setBackground(new java.awt.Color(255, 255, 255));
+        btnBlendCancelar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/cancel_48px.png"))); // NOI18N
+        btnBlendCancelar.setToolTipText("Cancelar");
+        btnBlendCancelar.setContentAreaFilled(false);
+        btnBlendCancelar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendCancelar.setFocusPainted(false);
+        btnBlendCancelar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBlendCancelarActionPerformed(evt);
+            }
+        });
+        jPanel9.add(btnBlendCancelar, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 30, 60, 70));
+        btnBlendCancelar.getAccessibleContext().setAccessibleName("Cancelar");
+
+        btnBlendLimpar.setBackground(new java.awt.Color(255, 255, 255));
+        btnBlendLimpar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/erase_48px.png"))); // NOI18N
+        btnBlendLimpar.setContentAreaFilled(false);
+        btnBlendLimpar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendLimpar.setFocusPainted(false);
+        btnBlendLimpar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBlendLimparActionPerformed(evt);
+            }
+        });
+        jPanel9.add(btnBlendLimpar, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 30, 60, 70));
+
+        btnBlendAdd1.setBackground(new java.awt.Color(255, 255, 255));
+        btnBlendAdd1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/info.png"))); // NOI18N
+        btnBlendAdd1.setToolTipText("Informações");
+        btnBlendAdd1.setContentAreaFilled(false);
+        btnBlendAdd1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnBlendAdd1.setFocusPainted(false);
+        btnBlendAdd1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBlendAdd1ActionPerformed(evt);
+            }
+        });
+        jPanel9.add(btnBlendAdd1, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 30, 60, 70));
+
+        getContentPane().add(jPanel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(1010, 190, 340, 100));
+
+        lblBlendWifi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/no-wifi.png"))); // NOI18N
+        getContentPane().add(lblBlendWifi, new org.netbeans.lib.awtextra.AbsoluteConstraints(1030, 800, 70, 70));
 
         lblWifiDesc.setFont(new java.awt.Font("Segoe UI", 0, 16)); // NOI18N
         lblWifiDesc.setForeground(new java.awt.Color(255, 51, 51));
         lblWifiDesc.setText("* Operando OFFLINE");
-        getContentPane().add(lblWifiDesc, new org.netbeans.lib.awtextra.AbsoluteConstraints(1110, 720, 160, 30));
-
-        lblBlendWifi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/no-wifi.png"))); // NOI18N
-        getContentPane().add(lblBlendWifi, new org.netbeans.lib.awtextra.AbsoluteConstraints(1030, 700, 70, 70));
+        getContentPane().add(lblWifiDesc, new org.netbeans.lib.awtextra.AbsoluteConstraints(1130, 820, 160, 30));
 
         jMenuBar1.setBackground(new java.awt.Color(250, 250, 250));
         jMenuBar1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(204, 204, 204)));
@@ -4260,7 +4469,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         setJMenuBar(jMenuBar1);
 
-        setSize(new java.awt.Dimension(1299, 914));
+        setSize(new java.awt.Dimension(1370, 1000));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -4350,7 +4559,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     try {
                         m.writeSingleCoil(escravo, INICIO_BLEND, true);
                         btnBlendPower.setText("PARAR");
-                        btnBlendPower.setBackground(new Color(255, 51, 51));
+                        panelCiclo.setBackground(new Color(47, 54, 64));
                     } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                         falha_conexao();
                         clp_conectado = false;
@@ -4365,7 +4574,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     try {
                         m.writeSingleCoil(escravo, INICIO_BLEND, false);
                         btnBlendPower.setText("INICIAR");
-                        btnBlendPower.setBackground(new Color(68, 141, 41));
+                        panelCiclo.setBackground(new Color(68, 141, 41));
                     } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                         falha_conexao();
                         clp_conectado = false;
@@ -4565,6 +4774,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
                         manual = 1;
                         modo_manual = true;
                         btnBlendManual.setText("MODO AUTOMÁTICO");
+                        panelModo.setBackground(new Color(102, 0, 102));
+
                         unlock_manual();
 
                     } catch (Exception e) {
@@ -4590,6 +4801,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                         manual = 0;
                         modo_manual = false;
                         btnBlendManual.setText("MODO MANUAL");
+                        panelModo.setBackground(new Color(255, 102, 0));
                         unlock_manual();
                         //System.out.println("MODO MANUAL DESATIVADO");
                     } catch (Exception e) {
@@ -4610,7 +4822,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 try {
                     m.writeSingleCoil(escravo, Integer.parseInt(MEXEDOR), true);
                     btnBlendMexedor.setText("DESLIGAR");
-                    btnBlendMexedor.setBackground(new Color(255, 51, 51));
+                    panelMisturador.setBackground(new Color(47, 54, 64));
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     falha_conexao();
                     System.out.println(ex);
@@ -4624,7 +4836,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 try {
                     m.writeSingleCoil(escravo, Integer.parseInt(MEXEDOR), false);
                     btnBlendMexedor.setText("LIGAR");
-                    btnBlendMexedor.setBackground(new Color(68, 141, 41));
+                    panelMisturador.setBackground(new Color(68, 141, 41));
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     falha_conexao();
                     System.out.println(ex);
@@ -4642,7 +4854,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 try {
                     m.writeSingleCoil(escravo, Integer.parseInt(ESTEIRA), true);
                     btnBlendElevador.setText("DESLIGAR");
-                    btnBlendElevador.setBackground(new Color(255, 51, 51));
+                    panelSaidaMisturador.setBackground(new Color(47, 54, 64));
                 } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                     falha_conexao();
                     System.out.println(ex);
@@ -4656,7 +4868,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 try {
                     m.writeSingleCoil(escravo, Integer.parseInt(ESTEIRA), false);
                     btnBlendElevador.setText("LIGAR");
-                    btnBlendElevador.setBackground(new Color(68, 141, 41));
+                    panelSaidaMisturador.setBackground(new Color(68, 141, 41));
 
                     if (gerou_blend_manual == true) {
                         if (temos_internet == true && banco_nuvem == true) {
@@ -4742,6 +4954,139 @@ public class TelaPrincipal extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_cbBlendOperacaoActionPerformed
 
+    private void btnSilo1AbrirMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSilo1AbrirMouseEntered
+        // TODO add your handling code here:
+
+        btnSilo1Abrir.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    }//GEN-LAST:event_btnSilo1AbrirMouseEntered
+
+    private void btnSilo1AbrirMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSilo1AbrirMouseExited
+        // TODO add your handling code here:
+        btnSilo1Abrir.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    }//GEN-LAST:event_btnSilo1AbrirMouseExited
+
+    private void btnSilo2AbrirMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSilo2AbrirMouseEntered
+        // TODO add your handling code here:
+
+        btnSilo2Abrir.setFont(new Font("Segoe UI", Font.BOLD, 22));
+
+
+    }//GEN-LAST:event_btnSilo2AbrirMouseEntered
+
+    private void btnSilo2AbrirMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSilo2AbrirMouseExited
+        // TODO add your handling code here:
+
+        btnSilo2Abrir.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    }//GEN-LAST:event_btnSilo2AbrirMouseExited
+
+    private void btnSilo3AbrirMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSilo3AbrirMouseEntered
+        // TODO add your handling code here:
+        btnSilo3Abrir.setFont(new Font("Segoe UI", Font.BOLD, 22));
+
+    }//GEN-LAST:event_btnSilo3AbrirMouseEntered
+
+    private void btnSilo3AbrirMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSilo3AbrirMouseExited
+        // TODO add your handling code here:
+        btnSilo3Abrir.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    }//GEN-LAST:event_btnSilo3AbrirMouseExited
+
+    private void btnSilo4AbrirMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSilo4AbrirMouseEntered
+        // TODO add your handling code here:
+        btnSilo4Abrir.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    }//GEN-LAST:event_btnSilo4AbrirMouseEntered
+
+    private void btnSilo4AbrirMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSilo4AbrirMouseExited
+        // TODO add your handling code here:
+        btnSilo4Abrir.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    }//GEN-LAST:event_btnSilo4AbrirMouseExited
+
+    private void btnBlendMexedorMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendMexedorMouseEntered
+        // TODO add your handling code here:
+
+        btnBlendMexedor.setFont(new Font("Segoe UI", Font.BOLD, 28));
+    }//GEN-LAST:event_btnBlendMexedorMouseEntered
+
+    private void btnBlendMexedorMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendMexedorMouseExited
+        // TODO add your handling code here:
+        btnBlendMexedor.setFont(new Font("Segoe UI", Font.BOLD, 24));
+    }//GEN-LAST:event_btnBlendMexedorMouseExited
+
+    private void btnBlendElevadorMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendElevadorMouseEntered
+        // TODO add your handling code here:
+
+        btnBlendElevador.setFont(new Font("Segoe UI", Font.BOLD, 28));
+    }//GEN-LAST:event_btnBlendElevadorMouseEntered
+
+    private void btnBlendElevadorMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendElevadorMouseExited
+        // TODO add your handling code here:
+        btnBlendElevador.setFont(new Font("Segoe UI", Font.BOLD, 24));
+    }//GEN-LAST:event_btnBlendElevadorMouseExited
+
+    private void btnEmergenciaMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnEmergenciaMouseEntered
+        // TODO add your handling code here:
+
+        btnEmergencia.setFont(new Font("Segoe UI", Font.BOLD, 28));
+    }//GEN-LAST:event_btnEmergenciaMouseEntered
+
+    private void btnEmergenciaMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnEmergenciaMouseExited
+        // TODO add your handling code here:
+
+        btnEmergencia.setFont(new Font("Segoe UI", Font.BOLD, 24));
+    }//GEN-LAST:event_btnEmergenciaMouseExited
+
+    private void btnBlendTararMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendTararMouseEntered
+        // TODO add your handling code here:
+        btnBlendTarar.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    }//GEN-LAST:event_btnBlendTararMouseEntered
+
+    private void btnBlendTararMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendTararMouseExited
+        // TODO add your handling code here:
+        btnBlendTarar.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    }//GEN-LAST:event_btnBlendTararMouseExited
+
+    private void btnBlendNewMetaMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendNewMetaMouseEntered
+        // TODO add your handling code here:
+
+        btnBlendNewMeta.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    }//GEN-LAST:event_btnBlendNewMetaMouseEntered
+
+    private void btnBlendNewMetaMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendNewMetaMouseExited
+        // TODO add your handling code here:
+        btnBlendNewMeta.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    }//GEN-LAST:event_btnBlendNewMetaMouseExited
+
+    private void btnBlendManualMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendManualMouseEntered
+        // TODO add your handling code here:
+        btnBlendManual.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    }//GEN-LAST:event_btnBlendManualMouseEntered
+
+    private void btnBlendManualMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendManualMouseExited
+        // TODO add your handling code here:
+
+        btnBlendManual.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    }//GEN-LAST:event_btnBlendManualMouseExited
+
+    private void btnBlendEnviarMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendEnviarMouseEntered
+        // TODO add your handling code here:
+        btnBlendEnviar.setFont(new Font("Segoe UI", Font.BOLD, 28));
+    }//GEN-LAST:event_btnBlendEnviarMouseEntered
+
+    private void btnBlendEnviarMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendEnviarMouseExited
+        // TODO add your handling code here:
+        btnBlendEnviar.setFont(new Font("Segoe UI", Font.BOLD, 24));
+    }//GEN-LAST:event_btnBlendEnviarMouseExited
+
+    private void btnBlendPowerMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendPowerMouseEntered
+        // TODO add your handling code here:
+        
+           btnBlendPower.setFont(new Font("Segoe UI", Font.BOLD, 28));
+    }//GEN-LAST:event_btnBlendPowerMouseEntered
+
+    private void btnBlendPowerMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendPowerMouseExited
+        // TODO add your handling code here:
+          btnBlendPower.setFont(new Font("Segoe UI", Font.BOLD, 24));
+    }//GEN-LAST:event_btnBlendPowerMouseExited
+
     public static void main(String args[]) {
 
         try {
@@ -4793,13 +5138,16 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
-    private javax.swing.JLabel jLabel12;
-    private javax.swing.JLabel jLabel15;
+    private javax.swing.JLabel jLabel13;
+    private javax.swing.JLabel jLabel14;
+    private javax.swing.JLabel jLabel16;
+    private javax.swing.JLabel jLabel17;
+    private javax.swing.JLabel jLabel18;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel9;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenu4;
@@ -4809,12 +5157,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem5;
-    private javax.swing.JPanel jPanel11;
-    private javax.swing.JPanel jPanel12;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel13;
     private javax.swing.JPanel jPanel14;
     private javax.swing.JPanel jPanel15;
-    private javax.swing.JPanel jPanel16;
     private javax.swing.JPanel jPanel17;
     private javax.swing.JPanel jPanel18;
     private javax.swing.JPanel jPanel19;
@@ -4823,7 +5169,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel21;
     private javax.swing.JPanel jPanel22;
     private javax.swing.JPanel jPanel23;
-    private javax.swing.JPanel jPanel24;
     private javax.swing.JPanel jPanel25;
     private javax.swing.JPanel jPanel26;
     private javax.swing.JPanel jPanel27;
@@ -4832,7 +5177,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel30;
     private javax.swing.JPanel jPanel31;
-    private javax.swing.JPanel jPanel32;
     private javax.swing.JPanel jPanel33;
     private javax.swing.JPanel jPanel34;
     private javax.swing.JPanel jPanel35;
@@ -4844,11 +5188,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel40;
     private javax.swing.JPanel jPanel42;
     private javax.swing.JPanel jPanel5;
-    private javax.swing.JPanel jPanel50;
     private javax.swing.JPanel jPanel51;
-    private javax.swing.JPanel jPanel52;
     private javax.swing.JPanel jPanel53;
+    private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
+    private javax.swing.JPanel jPanel8;
+    private javax.swing.JPanel jPanel9;
     private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane3;
@@ -4871,12 +5216,27 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private java.awt.Menu menu1;
     private java.awt.Menu menu2;
     private java.awt.MenuBar menuBar1;
+    private javax.swing.JPanel panelAbrirSilo1;
+    private javax.swing.JPanel panelAbrirSilo2;
+    private javax.swing.JPanel panelAbrirSilo3;
+    private javax.swing.JPanel panelAbrirSilo4;
+    private javax.swing.JPanel panelCiclo;
+    private javax.swing.JPanel panelMisturador;
+    private javax.swing.JPanel panelModo;
+    private javax.swing.JPanel panelSaidaMisturador;
+    private javax.swing.JPanel panelSilo1;
+    private javax.swing.JPanel panelSilo2;
+    private javax.swing.JPanel panelSilo3;
+    private javax.swing.JPanel panelSilo4;
     private javax.swing.JTable tbBlend;
     private javax.swing.JLabel tbBlendTitulo;
+    private javax.swing.JTextField txtAccEsteira;
+    private javax.swing.JTextField txtAccMisturador;
     private javax.swing.JTextField txtBlendMetaGrao;
     private javax.swing.JTextField txtBlendMetaMoido;
     private javax.swing.JTextField txtBlendPesq;
     private javax.swing.JTextField txtIdBlend;
+    private javax.swing.JTextField txtLastro;
     private javax.swing.JTextField txtNomeBlend;
     private javax.swing.JTextField txtQtdSilo1;
     private javax.swing.JTextField txtQtdSilo2;

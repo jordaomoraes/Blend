@@ -611,25 +611,25 @@
             <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
               <Color blue="fa" green="fa" red="fa" type="rgb"/>
             </Property>
-            <Property name="text" type="java.lang.String" value="MEXEDOR"/>
+            <Property name="text" type="java.lang.String" value="MISTURADOR"/>
           </Properties>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-              <AbsoluteConstraints x="680" y="40" width="-1" height="30"/>
+              <AbsoluteConstraints x="660" y="190" width="-1" height="30"/>
             </Constraint>
           </Constraints>
         </Component>
         <Component class="javax.swing.JTextField" name="txtMexedor">
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-              <AbsoluteConstraints x="780" y="40" width="140" height="31"/>
+              <AbsoluteConstraints x="780" y="190" width="140" height="31"/>
             </Constraint>
           </Constraints>
         </Component>
         <Component class="javax.swing.JTextField" name="txtPistMex">
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-              <AbsoluteConstraints x="500" y="240" width="140" height="31"/>
+              <AbsoluteConstraints x="780" y="240" width="140" height="31"/>
             </Constraint>
           </Constraints>
         </Component>
@@ -641,11 +641,11 @@
             <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
               <Color blue="fa" green="fa" red="fa" type="rgb"/>
             </Property>
-            <Property name="text" type="java.lang.String" value="PIST&#xc3;O MEXEDOR"/>
+            <Property name="text" type="java.lang.String" value="SA&#xcd;DA MISTURADOR"/>
           </Properties>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-              <AbsoluteConstraints x="330" y="240" width="-1" height="30"/>
+              <AbsoluteConstraints x="600" y="240" width="-1" height="30"/>
             </Constraint>
           </Constraints>
         </Component>
