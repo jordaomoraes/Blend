@@ -132,7 +132,7 @@
         </Property>
         <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
           <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
-            <TitledBorder justification="2" title="VALOR SILOS">
+            <TitledBorder justification="2" title="VALOR RECEITA SILOS">
               <Border PropertyName="innerBorder" info="org.netbeans.modules.form.compat2.border.LineBorderInfo">
                 <LineBorder thickness="3">
                   <Color PropertyName="color" blue="fa" green="fa" red="fa" type="rgb"/>
@@ -704,7 +704,7 @@
         </Property>
         <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
           <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
-            <TitledBorder justification="2" title="SILOS">
+            <TitledBorder justification="2" title="SILOS ABRIR MANUAL">
               <Border PropertyName="innerBorder" info="org.netbeans.modules.form.compat2.border.LineBorderInfo">
                 <LineBorder thickness="3">
                   <Color PropertyName="color" blue="fa" green="fa" red="fa" type="rgb"/>

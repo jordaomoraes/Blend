@@ -236,7 +236,7 @@ public class TelaModbus extends javax.swing.JFrame {
         getContentPane().add(jPanel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1410, 80));
 
         jPanel1.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(250, 250, 250), 3), "VALOR SILOS", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 0, 18), new java.awt.Color(250, 250, 250))); // NOI18N
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(250, 250, 250), 3), "VALOR RECEITA SILOS", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 0, 18), new java.awt.Color(250, 250, 250))); // NOI18N
         jPanel1.setForeground(new java.awt.Color(250, 250, 250));
         jPanel1.setPreferredSize(new java.awt.Dimension(360, 260));
         jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -376,7 +376,7 @@ public class TelaModbus extends javax.swing.JFrame {
         getContentPane().add(jPanel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 100, 950, 300));
 
         jPanel9.setBackground(new java.awt.Color(72, 126, 176));
-        jPanel9.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(250, 250, 250), 3), "SILOS", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 0, 18), new java.awt.Color(250, 250, 250))); // NOI18N
+        jPanel9.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(250, 250, 250), 3), "SILOS ABRIR MANUAL", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 0, 18), new java.awt.Color(250, 250, 250))); // NOI18N
         jPanel9.setForeground(new java.awt.Color(250, 250, 250));
         jPanel9.setPreferredSize(new java.awt.Dimension(360, 260));
         jPanel9.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());

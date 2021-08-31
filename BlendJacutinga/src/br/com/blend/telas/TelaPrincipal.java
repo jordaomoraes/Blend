@@ -65,6 +65,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
     int POWER = 0;
     boolean blendando = false, terminou_blendar = false, novo_blend = false;
     int blendador_ligado = 0;
+    int MODO_MANUAL_AUTOMATICO = 46098, META_TORRADO = 37001, META_GRAO = 37002, INICIO_BLEND = 46091,
+            BLENDANDO = 46091, BLENDADOR = 46091, DESTINO_BLEND = 37000;
 
     boolean inseriu_msg_blnd1 = false, inseriu_msg_blnd2 = true;
     boolean inseriu_blendando1 = false, inseriu_blendando2 = false;
@@ -289,7 +291,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 //System.out.println("vou checar connection");
                 try {
                     m.readCoils(escravo, 46003, 1);
-                } catch (Exception e) {
+                } catch (ModbusIOException | ModbusNumberException | ModbusProtocolException e) {
                     clp_conectado = false;
                 }
                 if (clp_conectado == false) {
@@ -306,8 +308,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
                         Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (BadLocationException ex) {
                         Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (Exception e) {
-                        System.out.println(e);
                     }
                 }
             }
@@ -345,7 +345,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 }
 
                 //Cancela as operações de editar e deletar caso internet caia no meio do processo (deprecated)
-                if (temos_internet == false && Metodo == "editar") {
+                if (temos_internet == false && "editar".equals(Metodo)) {
                     Metodo = null;
                     block_campos();
                     buscar_blend_atual();
@@ -378,9 +378,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
             @Override
             public void run() {
                 //Checa variavel para ver se tem blend
-              
+
                 if (temos_internet == true && banco_nuvem == true) {
-                      System.out.println("Procurando por blends na Nuvem");
+                    System.out.println("Procurando por blends na Nuvem");
                     if (consulta_blends()) {
                         JOptionPane.showMessageDialog(null, "Novo blend disponível!");
                         //sincronizar_blends();
@@ -408,7 +408,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     return true;
                 }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             temos_internet = false;
             System.out.println("Falha ao checar se há novos blends (nuvem)");
         }
@@ -428,7 +428,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.executeUpdate();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.out.println("Falha ao setar novo_blend = 0 (nuvem) " + e);
         }
     }
@@ -448,7 +448,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
                         sincronizar_tipos_cafe_cadastros();
                         sincronizar_tipos_cafe_alteracoes();
                     } else {
-                        return;
                     }
                 }
             }
@@ -470,7 +469,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     return true;
                 }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             temos_internet = false;
             System.out.println("Falha ao checar por novos tipos (marcas) de café (nuvem) " + e);
         }
@@ -487,7 +486,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             if (rs.next()) {
                 ultimo_id_tipo_cafe_nuvem = rs.getString(1);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.out.println("Falha ao obter ultimo registro de tipo de cafe (nuvem) " + e);
         }
     }
@@ -578,8 +577,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
                         int[] MetaTorrado = new int[2];
                         int[] MetaGrao = new int[2];
 
-                        MetaTorrado = m.readHoldingRegisters(escravo, 37003, 1);
-                        MetaGrao = m.readHoldingRegisters(escravo, 37004, 1);
+                        MetaTorrado = m.readHoldingRegisters(escravo, META_TORRADO, 1);
+                        MetaGrao = m.readHoldingRegisters(escravo, META_GRAO, 1);
 
                         txtBlendMetaMoido.setText(String.valueOf(MetaTorrado[0]));
                         txtBlendMetaGrao.setText(String.valueOf(MetaGrao[0]));
@@ -883,6 +882,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     try {
 
                         //Atualiza balanca em tempo real
+                     
                         peso = m.readHoldingRegisters(escravo, Integer.parseInt(PESO), 1);
                         peso_real = peso[0];
                         String peso_string = String.format("%.2f", peso_real / 10);
@@ -1144,7 +1144,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             //resetando variveis para gerar novo relatório posteriormente
             reset_variaveis_registro();
             //System.out.println("RELATORIO MANUAL GERADO COM SUCESSO (NUVEM)!");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             JOptionPane.showMessageDialog(null, "Falha ao gerar relatório após blend manual (nuvem)!");
             System.out.println(e);
         }
@@ -1177,7 +1177,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     return false;
                 }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.out.println("Falha ao consultar se há lote disponível");
             System.out.println(e);
         }
@@ -1269,7 +1269,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void esta_blendando() {
         boolean[] array_coils;
         try {
-            array_coils = m.readCoils(escravo, 46000, 1);
+            array_coils = m.readCoils(escravo, BLENDANDO, 1);
             //System.out.println(array_coils[0]);
             if (array_coils[0] == true) {
                 set_blendando = true;
@@ -1280,7 +1280,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 set_blendando = false;
                 contador_tempo = 0;
             }
-        } catch (Exception e) {
+        } catch (ModbusIOException | ModbusNumberException | ModbusProtocolException e) {
             clp_conectado = false;
             falha_conexao();
             System.out.println("Falha ao checar se está blendando");
@@ -1302,7 +1302,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private boolean check_blendador() {
         try {
             boolean[] array_coils;
-            array_coils = m.readCoils(escravo, 46001, 1);
+            array_coils = m.readCoils(escravo, BLENDADOR, 1);
 
             if (array_coils[0] == false) {
                 return false;
@@ -1322,7 +1322,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.executeUpdate();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.out.println("Falha ao setar status blendador para 0 (nuvem)");
             System.out.println(e);
         }
@@ -1334,7 +1334,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.executeUpdate();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.out.println("Falha ao setar status de blendador para 1 (Nuvem)");
             System.out.println(e);
         }
@@ -1343,7 +1343,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private boolean check_modo_blendador() {
         try {
             boolean[] array_coils;
-            array_coils = m.readCoils(escravo, 46002, 1);
+            array_coils = m.readCoils(escravo, MODO_MANUAL_AUTOMATICO, 1);
 
             if (array_coils[0] == false) {
                 return false;
@@ -1409,7 +1409,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     limpa_mensagens();
                     caixa_mensagens.insertString(caixa_mensagens.getLength(), "Conexão com CLP iniciada! ", cor_conectado);
                     System.out.println("Conectado ao CLP com sucesso");
-                } catch (Exception e) {
+                } catch (BadLocationException e) {
                     falha_conexao();
                     System.out.println(e + " Erro na linha 731");
                 }
@@ -1558,7 +1558,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 TARAR = rs.getString(24);
                 BLENDADO = rs.getString(25);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             JOptionPane.showMessageDialog(null, "Falha ao buscar endereçamento de PLC");
             System.out.println(e);
         }
@@ -1620,7 +1620,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             sincronizar_status_blendador();
             caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nDados sincronizados! ", cor_sincronizar);
             sincronizando = false;
-        } catch (Exception e) {
+        } catch (BadLocationException e) {
             sincronizando = false;
             JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados!");
             System.out.println(e);
@@ -1643,7 +1643,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             JOptionPane.showMessageDialog(null, "Falha ao sincronizar dados ao iniciar");
             System.out.println(e);
         }
@@ -1655,7 +1655,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         try {
             pst = conexao.prepareStatement(sql);
             pst.executeUpdate();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.out.println("Falha ao alterar variavel sincronizado para 1");
             System.out.println(e);
         }
@@ -1667,7 +1667,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         try {
             pst = conexao.prepareStatement(sql);
             pst.executeUpdate();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.out.println("Falha ao alterar variavel sincronizado para 0");
             System.out.println(e);
         }
@@ -1683,7 +1683,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
             if (rs.next()) {
                 ultimo_id_blend_local = rs.getString(1);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.out.println("Falha ao obter ultimo id de blend local");
             System.out.println(e);
         }
@@ -2210,7 +2210,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     private void buscar_blend() {
-        String sql = "select * from tb_blend";
+      String sql = "select id_blend as ID, nome as Nome, qtd_silo1 as Silo1, qtd_silo2 as Silo2, qtd_silo3 as Silo3,qtd_silo4 as Silo4 from tb_blend";
 
         try {
             if (temos_internet == true && banco_nuvem == true) {
@@ -2228,15 +2228,16 @@ public class TelaPrincipal extends javax.swing.JFrame {
             }
 
             //Remove campos desnecessários da table
-            remove_colunas();
+           // remove_colunas();
         } catch (Exception e) {
             System.out.println(e);
-            JOptionPane.showMessageDialog(null, "Falha ao buscar blend");
+         //   JOptionPane.showMessageDialog(null, "Falha ao buscar blend");
         }
     }
 
     private void pesquisar_blend() {
-        String sql = "select * from tb_blend where nome like ?";
+        String sql = "select id_blend as ID, nome as Nome, qtd_silo1 as Silo1, qtd_silo2 as Silo2,"
+                + " qtd_silo3 as Silo3,qtd_silo4 as Silo4 from tb_blend where nome like ?";
 
         try {
             if (temos_internet == true && banco_nuvem == true) {
@@ -2248,6 +2249,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
                 tbBlend.setModel(DbUtils.resultSetToTableModel(rsNuvem));
             } else {
+                
+                
                 pst = conexao.prepareStatement(sql);
 
                 pst.setString(1, txtBlendPesq.getText() + '%');
@@ -2256,7 +2259,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 tbBlend.setModel(DbUtils.resultSetToTableModel(rs));
             }
 
-            remove_colunas();
+          //  remove_colunas();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Falha ao pesquisar blend");
         }
@@ -2264,16 +2267,28 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     private void set_campos_blend() {
+        
+           String sql = "select id_blend,nome,qtd_silo1, qtd_silo2,qtd_silo3,qtd_silo4 from tb_blend where nome like ?";
+        
+        
         try {
+           pst = conexao.prepareStatement(sql);
+            //bloco abaixo, pega o valor que está no campo da receitaid da tabela e jogar como parametro para a consulta
             int setar = tbBlend.getSelectedRow();
+            tbBlend.getColumnModel().getColumn(1).setHeaderValue("Id");
+            tbBlend.getTableHeader().resizeAndRepaint();
+            pst.setString(1, tbBlend.getModel().getValueAt(setar, 0).toString());
+            
+            rs = pst.executeQuery();//executa a consulta
+            rs.next();
 
             //lblNomeBlend.setText(tbBlend.getModel().getValueAt(setar,1).toString());
             txtIdBlend.setText(tbBlend.getModel().getValueAt(setar, 0).toString());
             txtNomeBlend.setText(tbBlend.getModel().getValueAt(setar, 1).toString());
-            txtQtdSilo1.setText(tbBlend.getModel().getValueAt(setar, 4).toString());
-            txtQtdSilo2.setText(tbBlend.getModel().getValueAt(setar, 7).toString());
-            txtQtdSilo3.setText(tbBlend.getModel().getValueAt(setar, 10).toString());
-            txtQtdSilo4.setText(tbBlend.getModel().getValueAt(setar, 13).toString());
+            txtQtdSilo1.setText(tbBlend.getModel().getValueAt(setar, 2).toString());
+            txtQtdSilo2.setText(tbBlend.getModel().getValueAt(setar, 3).toString());
+            txtQtdSilo3.setText(tbBlend.getModel().getValueAt(setar, 4).toString());
+            txtQtdSilo4.setText(tbBlend.getModel().getValueAt(setar, 5).toString());
 
         } catch (Exception e) {
             System.out.println("Falha ao setar campos da tabela" + e);
@@ -3252,10 +3267,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
                             //7 - Atualiza quantidade nos silos de cafe moido e inteiro de acordo com operação
                             if (cbBlendOperacao.getSelectedIndex() == 1) {
                                 atualizar_estoque_moido(QtdTotal);
-                                m.writeSingleRegister(escravo, 47, 0);
+                                m.writeSingleRegister(escravo, DESTINO_BLEND, 0);
                             } else if (cbBlendOperacao.getSelectedIndex() == 2) {
                                 atualizar_estoque_grao(QtdTotal);
-                                m.writeSingleRegister(escravo, 47, 1);
+                                m.writeSingleRegister(escravo, DESTINO_BLEND, 1);
                             }
 
                             //4 - Envia dados do blend para PLC
@@ -3296,8 +3311,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
             block_campos();
         } else {
             try {
-                m.writeSingleRegister(escravo, 40, Integer.parseInt(MetaMoido));
-                m.writeSingleRegister(escravo, 41, Integer.parseInt(MetaGrao));
+                m.writeSingleRegister(escravo, 37001, Integer.parseInt(MetaMoido));
+                m.writeSingleRegister(escravo, 37002, Integer.parseInt(MetaGrao));
                 JOptionPane.showMessageDialog(null, "Nova meta definida com sucesso!");
 
                 btnBlendNewMeta.setBackground(new Color(255, 255, 255));
@@ -3507,7 +3522,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendSalvarActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendSalvar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, 90, 90));
+        jPanel3.add(btnBlendSalvar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, 100, 90));
         btnBlendSalvar.getAccessibleContext().setAccessibleName("Salvar");
         btnBlendSalvar.getAccessibleContext().setAccessibleDescription("Salvar");
 
@@ -3521,7 +3536,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendCancelarActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendCancelar, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 10, 90, 90));
+        jPanel3.add(btnBlendCancelar, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 10, 100, 90));
         btnBlendCancelar.getAccessibleContext().setAccessibleName("Cancelar");
 
         btnBlendAdd1.setBackground(new java.awt.Color(255, 255, 255));
@@ -3534,14 +3549,15 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendAdd1ActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendAdd1, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 120, 90, 90));
+        jPanel3.add(btnBlendAdd1, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 120, 100, 90));
 
         jScrollPane3.setViewportView(txtStatus);
 
         jPanel3.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 510, 200, 150));
 
         btnBlendTarar.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendTarar.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        btnBlendTarar.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        btnBlendTarar.setForeground(new java.awt.Color(0, 0, 153));
         btnBlendTarar.setText("TARAR BALANÇA");
         btnBlendTarar.setBorderPainted(false);
         btnBlendTarar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -3551,10 +3567,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendTararActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendTarar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 430, 200, 50));
+        jPanel3.add(btnBlendTarar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 430, 230, 50));
 
         btnBlendNewMeta.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendNewMeta.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        btnBlendNewMeta.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        btnBlendNewMeta.setForeground(new java.awt.Color(0, 102, 0));
         btnBlendNewMeta.setText("NOVA META");
         btnBlendNewMeta.setBorderPainted(false);
         btnBlendNewMeta.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -3564,10 +3581,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendNewMetaActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendNewMeta, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 370, 200, 50));
+        jPanel3.add(btnBlendNewMeta, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 370, 230, 50));
 
         btnBlendManual.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendManual.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        btnBlendManual.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         btnBlendManual.setText("MODO MANUAL");
         btnBlendManual.setBorderPainted(false);
         btnBlendManual.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -3577,7 +3594,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendManualActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendManual, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 310, 200, 50));
+        jPanel3.add(btnBlendManual, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 310, 230, 50));
 
         btnBlendLimpar.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendLimpar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/blend/icones/erase_48px.png"))); // NOI18N
@@ -3588,11 +3605,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnBlendLimparActionPerformed(evt);
             }
         });
-        jPanel3.add(btnBlendLimpar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 120, 90, 90));
+        jPanel3.add(btnBlendLimpar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 120, 100, 90));
 
         btnEmergencia.setBackground(new java.awt.Color(255, 51, 51));
         btnEmergencia.setFont(new java.awt.Font("Segoe UI", 1, 19)); // NOI18N
-        btnEmergencia.setForeground(new java.awt.Color(250, 250, 250));
+        btnEmergencia.setForeground(new java.awt.Color(204, 0, 0));
         btnEmergencia.setText("EMERGENCIA");
         btnEmergencia.setBorderPainted(false);
         btnEmergencia.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -3602,9 +3619,9 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 btnEmergenciaActionPerformed(evt);
             }
         });
-        jPanel3.add(btnEmergencia, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 240, 200, 60));
+        jPanel3.add(btnEmergencia, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 240, 230, 60));
 
-        getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1030, 10, 240, 680));
+        getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1010, 10, 260, 680));
 
         jPanel11.setBackground(new java.awt.Color(72, 126, 176));
         jPanel11.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 2), "SILO 3", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 20), new java.awt.Color(255, 255, 255))); // NOI18N
@@ -3670,8 +3687,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel11.add(lblSilosOpen3, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
 
         btnSilo3Abrir.setBackground(new java.awt.Color(68, 141, 41));
-        btnSilo3Abrir.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnSilo3Abrir.setForeground(new java.awt.Color(250, 250, 250));
+        btnSilo3Abrir.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        btnSilo3Abrir.setForeground(new java.awt.Color(0, 102, 0));
         btnSilo3Abrir.setText("ABRIR");
         btnSilo3Abrir.setBorderPainted(false);
         btnSilo3Abrir.setFocusPainted(false);
@@ -3697,7 +3714,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         txtIdBlend.setEditable(false);
         txtIdBlend.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jPanel14.add(txtIdBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(460, 10, 40, -1));
+        txtIdBlend.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        jPanel14.add(txtIdBlend, new org.netbeans.lib.awtextra.AbsoluteConstraints(460, 10, 50, -1));
 
         jLabel10.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel10.setForeground(new java.awt.Color(255, 255, 255));
@@ -3712,7 +3730,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         cbBlendLote.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         cbBlendLote.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SELECIONE UM LOTE..." }));
         cbBlendLote.setToolTipText("Selecionar Lote");
-        jPanel14.add(cbBlendLote, new org.netbeans.lib.awtextra.AbsoluteConstraints(670, 10, 210, 30));
+        jPanel14.add(cbBlendLote, new org.netbeans.lib.awtextra.AbsoluteConstraints(670, 10, 300, 30));
 
         getContentPane().add(jPanel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 130, 990, 50));
 
@@ -3754,13 +3772,13 @@ public class TelaPrincipal extends javax.swing.JFrame {
         tbBlend.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         tbBlend.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null}
+                {null, null, null, null, null, null},
+                {null, null, null, null, null, null},
+                {null, null, null, null, null, null},
+                {null, null, null, null, null, null}
             },
             new String [] {
-                "Nome", "Quantidade Silo 1", "Quantidade Silo 2", "Quantidade Silo 3", "Quantidade Silo 4"
+                "ID", "Nome", "Quantidade Silo 1", "Quantidade Silo 2", "Quantidade Silo 3", "Quantidade Silo 4"
             }
         ));
         tbBlend.setToolTipText("Receitas cadastradas");
@@ -3810,8 +3828,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel16.add(lblSilosOpen1, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
 
         btnSilo1Abrir.setBackground(new java.awt.Color(68, 141, 41));
-        btnSilo1Abrir.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnSilo1Abrir.setForeground(new java.awt.Color(250, 250, 250));
+        btnSilo1Abrir.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        btnSilo1Abrir.setForeground(new java.awt.Color(0, 102, 0));
         btnSilo1Abrir.setText("ABRIR");
         btnSilo1Abrir.setBorderPainted(false);
         btnSilo1Abrir.setFocusPainted(false);
@@ -3889,8 +3907,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel24.add(lblSilosOpen4, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
 
         btnSilo4Abrir.setBackground(new java.awt.Color(68, 141, 41));
-        btnSilo4Abrir.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnSilo4Abrir.setForeground(new java.awt.Color(250, 250, 250));
+        btnSilo4Abrir.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        btnSilo4Abrir.setForeground(new java.awt.Color(0, 102, 0));
         btnSilo4Abrir.setText("ABRIR");
         btnSilo4Abrir.setBorderPainted(false);
         btnSilo4Abrir.setFocusPainted(false);
@@ -3976,8 +3994,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel32.add(lblSilosOpen2, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 20, -1, -1));
 
         btnSilo2Abrir.setBackground(new java.awt.Color(68, 141, 41));
-        btnSilo2Abrir.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnSilo2Abrir.setForeground(new java.awt.Color(250, 250, 250));
+        btnSilo2Abrir.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        btnSilo2Abrir.setForeground(new java.awt.Color(0, 102, 0));
         btnSilo2Abrir.setText("ABRIR");
         btnSilo2Abrir.setBorderPainted(false);
         btnSilo2Abrir.setFocusPainted(false);
@@ -4015,7 +4033,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         btnBlendEnviar.setBackground(new java.awt.Color(255, 51, 51));
         btnBlendEnviar.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        btnBlendEnviar.setForeground(new java.awt.Color(255, 255, 255));
+        btnBlendEnviar.setForeground(new java.awt.Color(255, 102, 0));
         btnBlendEnviar.setText("Enviar para CLP");
         btnBlendEnviar.setToolTipText("Enviar dados ao CLP");
         btnBlendEnviar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -4053,6 +4071,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         jPanel7.setBackground(new java.awt.Color(25, 42, 86));
         jPanel7.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        txtBlendMetaGrao.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        txtBlendMetaGrao.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        txtBlendMetaGrao.setText("000");
         jPanel7.add(txtBlendMetaGrao, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 10, 100, 31));
 
         jLabel7.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
@@ -4069,6 +4091,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jLabel3.setForeground(new java.awt.Color(240, 240, 240));
         jLabel3.setText("META MOÍDO:");
         jPanel13.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 0, -1, 50));
+
+        txtBlendMetaMoido.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        txtBlendMetaMoido.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        txtBlendMetaMoido.setText("000");
         jPanel13.add(txtBlendMetaMoido, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 10, 100, 31));
 
         getContentPane().add(jPanel13, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 10, 360, 50));
@@ -4098,7 +4124,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         btnBlendMexedor.setBackground(new java.awt.Color(68, 141, 41));
         btnBlendMexedor.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnBlendMexedor.setForeground(new java.awt.Color(255, 255, 255));
         btnBlendMexedor.setText("MEXEDOR");
         btnBlendMexedor.setBorderPainted(false);
         btnBlendMexedor.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -4122,7 +4147,6 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         btnBlendElevador.setBackground(new java.awt.Color(68, 141, 41));
         btnBlendElevador.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnBlendElevador.setForeground(new java.awt.Color(255, 255, 255));
         btnBlendElevador.setText("ELEVADOR");
         btnBlendElevador.setBorderPainted(false);
         btnBlendElevador.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -4142,7 +4166,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         btnBlendPower.setBackground(new java.awt.Color(68, 141, 41));
         btnBlendPower.setFont(new java.awt.Font("Segoe UI", 1, 20)); // NOI18N
-        btnBlendPower.setForeground(new java.awt.Color(255, 255, 255));
+        btnBlendPower.setForeground(new java.awt.Color(0, 102, 0));
         btnBlendPower.setText("INICIAR");
         btnBlendPower.setBorderPainted(false);
         btnBlendPower.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -4324,7 +4348,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 blendador_ligado = 1;
                  {
                     try {
-                        m.writeSingleCoil(escravo, 0, true);
+                        m.writeSingleCoil(escravo, INICIO_BLEND, true);
                         btnBlendPower.setText("PARAR");
                         btnBlendPower.setBackground(new Color(255, 51, 51));
                     } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
@@ -4339,7 +4363,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                 if (confirma == JOptionPane.YES_OPTION) {
                     blendador_ligado = 0;
                     try {
-                        m.writeSingleCoil(escravo, 0, false);
+                        m.writeSingleCoil(escravo, INICIO_BLEND, false);
                         btnBlendPower.setText("INICIAR");
                         btnBlendPower.setBackground(new Color(68, 141, 41));
                     } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
@@ -4359,8 +4383,13 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     private void btnBlendTararActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBlendTararActionPerformed
         // Tara o peso da balança
+
+        boolean ligataraCru = true;
+        boolean destaraCru = false;
+
         try {
-            m.writeSingleRegister(escravo, Integer.parseInt(PESO), 0);
+            m.writeSingleCoil(escravo, 46090, ligataraCru);
+            m.writeSingleCoil(escravo, 46090, destaraCru);
         } catch (Exception e) {
             falha_conexao();
             clp_conectado = false;
@@ -4532,15 +4561,12 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     JOptionPane.showMessageDialog(null, "Pare o ciclo para ativar modo manual!");
                 } else {
                     try {
-                        m.writeSingleCoil(escravo, 42, true);
+                        m.writeSingleCoil(escravo, MODO_MANUAL_AUTOMATICO, true);
                         manual = 1;
                         modo_manual = true;
                         btnBlendManual.setText("MODO AUTOMÁTICO");
                         unlock_manual();
-                        /*txtQtdSilo1.setText(null);
-                       txtQtdSilo2.setText(null);
-                       txtQtdSilo3.setText(null);
-                       txtQtdSilo4.setText(null);*/
+
                     } catch (Exception e) {
                         falha_conexao();
                         JOptionPane.showMessageDialog(null, "Falha ao ativar modo manual");
@@ -4560,7 +4586,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     JOptionPane.showMessageDialog(null, "Feche todos os silos para ativar o modo automático!");
                 } else {
                     try {
-                        m.writeSingleCoil(escravo, 42, false);
+                        m.writeSingleCoil(escravo, MODO_MANUAL_AUTOMATICO, false);
                         manual = 0;
                         modo_manual = false;
                         btnBlendManual.setText("MODO MANUAL");
