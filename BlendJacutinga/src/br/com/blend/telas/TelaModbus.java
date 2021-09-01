@@ -18,7 +18,7 @@ public class TelaModbus extends javax.swing.JFrame {
     }
     
     private void carregar_campos(){
-        String sql="select * from tb_modbus";
+        String sql="select * from tb_modbus_blend";
         
         try {
             pst = conexao.prepareStatement(sql);

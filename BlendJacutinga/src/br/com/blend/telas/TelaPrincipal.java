@@ -57,12 +57,20 @@ public class TelaPrincipal extends javax.swing.JFrame {
     Connection nuvem = null;
     PreparedStatement pst = null;
     ResultSet rs = null;
+
+    PreparedStatement pstString = null;
+    ResultSet rsString = null;
     PreparedStatement pstNuvem = null;
     ResultSet rsNuvem = null;
     String Metodo;
 
     //Variáveis de CONTROLE GERAL
     int POWER = 0;
+    int[] MetaTorrado = new int[2];
+    int[] MetaGrao = new int[2];
+    int[] CLPMisturador = new int[10];
+    int[] CLPEsteira = new int[2];
+    int[] CLPLastro = new int[2];
     boolean blendando = false, terminou_blendar = false, novo_blend = false;
     int blendador_ligado = 0;
     int MODO_MANUAL_AUTOMATICO = 46098, META_TORRADO = 37001, META_GRAO = 37002, INICIO_BLEND = 46091,
@@ -88,6 +96,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     static URL conexaoURL;
     static URLConnection conn;
     static InputStream fechar;
+    String acc_misturador, lastro, acc_esteira, MetaMoido_CLP, MetaGrao_CLP;
 
     int i = 0;
 
@@ -163,6 +172,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
     //Variaveis para conectar com PLC
     //  String host = "127.0.0.1";
     String host = "192.168.0.10";
+    String ip_servidor, string_conexao, user, password;
+
     int escravo = 1;
     boolean clp_conectado = false;
 
@@ -184,11 +195,14 @@ public class TelaPrincipal extends javax.swing.JFrame {
     public TelaPrincipal() {
         initComponents();
         conexao = ModuloConexao.conector();
-        conecta_nuvem();
 
         //Caixa de saida
         caixa_mensagens = txtStatus.getStyledDocument();
         define_cores_mensagens();
+
+        buscar_string_conexao();
+
+        conecta_nuvem();
 
         //Busca lotes cadastrados e os coloca na Combo box
         set_lotes();
@@ -221,7 +235,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         //Loops de checagem
         checa_conexao_clp();
         checa_conexao_internet();
-        //checa_conexao_nuvem();
+        // checa_conexao_nuvem();
         checa_status_blendador();
         checa_modo_blendador();
         checa_status_mexedor();
@@ -237,10 +251,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     //Checa se tem net e conecta com banco na nuvem
     private void conecta_nuvem() {
-        if (testa_url("http://192.169.80.2")) {
+        if (testa_url(ip_servidor)) {
             try {
                 // System.out.println("Entrou try conexao com o banco");
-                nuvem = ModuloConexaoNuvem.conector();
+                nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
                 if (nuvem != null) {
                     banco_nuvem = true;
                     temos_internet = true;
@@ -324,11 +338,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
             @Override
             public void run() {
                 //Checa conexao com INTERNET
-                if (testa_url("http://192.169.80.2")) {
+                if (testa_url(ip_servidor)) {
 
                     try {
-                        // System.out.println("Entrou try conexao com o banco");
-                        nuvem = ModuloConexaoNuvem.conector();
+                       // System.out.println("Entrou try conexao com o banco");
+                       nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
                         if (nuvem != null) {
                             set_aparencia_conectado();
                         }
@@ -340,7 +354,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     }
 
                     //checa_conexao_nuvem();
-                } else if (!testa_url("http://192.169.80.2")) {
+                } else if (!testa_url(ip_servidor)) {
                     set_aparencia_desconectado();
                 }
 
@@ -396,7 +410,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     private boolean consulta_blends() {
-        nuvem = ModuloConexaoNuvem.conector();
+        nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
         String sql = "select novo_blend from tb_blend_atual";
 
         try {
@@ -446,7 +460,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
                     if (consulta_tipos_cafe()) {
                         //Sincronizar tipos cafe
                         sincronizar_tipos_cafe_cadastros();
-                        sincronizar_tipos_cafe_alteracoes();
+                        try {
+                            sincronizar_tipos_cafe_alteracoes();
+                        } catch (SQLException ex) {
+                            Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+                        }
                     } else {
                     }
                 }
@@ -457,7 +475,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     //Verifica se tem marcas de café novas ou alteralções
     private boolean consulta_tipos_cafe() {
-        nuvem = ModuloConexaoNuvem.conector();
+      nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
         String sql = "select embalagens from tb_dados_web where id_dados_web = 1";
 
         try {
@@ -491,8 +509,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
         }
     }
 
-    private void sincronizar_tipos_cafe_alteracoes() {
-        nuvem = ModuloConexaoNuvem.conector();
+    private void sincronizar_tipos_cafe_alteracoes() throws SQLException {
+     nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
 
         String sqlNuvem = "select * from tb_embalagem";
         String sqlLocal = "update tb_embalagem set id_embalagem = ?, marca = ?, volume = ? where id_embalagem = ?";
@@ -526,7 +544,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         String sql = "insert into tb_embalagem (marca, volume) values(?, ?)";
 
         try {
-            nuvem = ModuloConexaoNuvem.conector();
+           nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
             //Pega dados salvos apenas na nuvem
             pstNuvem = nuvem.prepareStatement(sqlNuvem);
             pstNuvem.setString(1, ultimo_id_tipo_cafe_nuvem);
@@ -553,7 +571,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     private void set_tipos_cafe_0() {
-        nuvem = ModuloConexaoNuvem.conector();
+        nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
         String sql = "update tb_dados_web set embalagens = 0";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
@@ -574,14 +592,22 @@ public class TelaPrincipal extends javax.swing.JFrame {
             public void run() {
                 if (clp_conectado == true) {
                     try {
-                        int[] MetaTorrado = new int[2];
-                        int[] MetaGrao = new int[2];
 
                         MetaTorrado = m.readHoldingRegisters(escravo, META_TORRADO, 1);
                         MetaGrao = m.readHoldingRegisters(escravo, META_GRAO, 1);
 
+                        CLPMisturador = m.readHoldingRegisters(escravo, 37007, 4);
+                        CLPEsteira = m.readHoldingRegisters(escravo, 37008, 1);
+                        CLPLastro = m.readHoldingRegisters(escravo, 37009, 1);
+
                         txtBlendMetaMoido.setText(String.valueOf(MetaTorrado[0]));
                         txtBlendMetaGrao.setText(String.valueOf(MetaGrao[0]));
+
+                        txtAccMisturador.setText(String.valueOf(CLPMisturador[0]));
+
+                        txtAccEsteira.setText(String.valueOf(CLPMisturador[1]));
+                        txtLastro.setText(String.valueOf(CLPMisturador[2]));
+
                     } catch (ModbusProtocolException | ModbusNumberException | ModbusIOException ex) {
                         System.out.println("Falha ao ler metas");
                         Logger.getLogger(TelaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
@@ -1101,7 +1127,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         float valor_total = 0;
 
         try {
-            nuvem = ModuloConexaoNuvem.conector();
+           nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
 
             consultar_lote_atual();
 
@@ -1245,7 +1271,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         consultar_estoque_silos();
         String sql_nuvem = "update tb_silos set qtd_atual=? where id_silo=?";
         try {
-            nuvem = ModuloConexaoNuvem.conector();
+          nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
 
             float peso_update = array_silos[id_silo] - peso;
             try {
@@ -1318,7 +1344,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     private void set_blendador_nuvem_0() {
         //nuvem = ModuloConexaoNuvem.conector();
-        String sql = "update tb_modbus set STATUS_BLENDADOR = 0 where id_modbus";
+        String sql = "update tb_modbus_blend set STATUS_BLENDADOR = 0 where id_modbus";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.executeUpdate();
@@ -1330,7 +1356,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     private void set_blendador_nuvem_1() {
         //nuvem = ModuloConexaoNuvem.conector();
-        String sql = "update tb_modbus set STATUS_BLENDADOR = 1 where id_modbus";
+        String sql = "update tb_modbus_blend set STATUS_BLENDADOR = 1 where id_modbus";
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.executeUpdate();
@@ -1524,7 +1550,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     private void buscar_modbus() {
-        String sql = "select * from tb_modbus";
+        String sql = "select * from tb_modbus_blend";
 
         try {
             pst = conexao.prepareStatement(sql);
@@ -1596,7 +1622,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         try {
             set_sincronizar_0();
-            nuvem = ModuloConexaoNuvem.conector();
+          nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
             caixa_mensagens.insertString(caixa_mensagens.getLength(), "\nSincronizando dados...", cor_tentando_conectar);
             //ultimo_blend_local();
             ultimo_lote_nuvem();
@@ -1628,7 +1654,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     private void check_sincronizar() {
-        String sql = "select SINCRONIZADO from tb_modbus";
+        String sql = "select SINCRONIZADO from tb_modbus_blend";
 
         try {
             pst = conexao.prepareStatement(sql);
@@ -1650,7 +1676,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     private void set_sincronizar_1() {
-        String sql = "update tb_modbus set SINCRONIZADO = 1 where id_modbus";
+        String sql = "update tb_modbus_blend set SINCRONIZADO = 1 where id_modbus";
 
         try {
             pst = conexao.prepareStatement(sql);
@@ -1662,7 +1688,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }
 
     private void set_sincronizar_0() {
-        String sql = "update tb_modbus set SINCRONIZADO = 0 where id_modbus";
+        String sql = "update tb_modbus_blend set SINCRONIZADO = 0 where id_modbus";
 
         try {
             pst = conexao.prepareStatement(sql);
@@ -2156,7 +2182,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     private void buscar_tipos_silo() {
         String sql = "select cafe_atual from tb_silos";
 
-        String[] tipos = new String[4];
+        String[] tipos = new String[5];
         int i = 0;
 
         try {
@@ -2174,6 +2200,26 @@ public class TelaPrincipal extends javax.swing.JFrame {
             lblTipo4.setText("ATUAL: " + tipos[3]);
 
         } catch (Exception e) {
+            System.out.println("erro buscar tipos silos " + e);
+        }
+    }
+
+    private void buscar_string_conexao() {
+        //Busca blend atual, ultimo enviado ao plc
+        String sql = "select string_conexao, ip_servidor,user,password from tb_config_torra";
+        try {
+            pstString = conexao.prepareStatement(sql);
+            rsString = pstString.executeQuery();
+
+            if (rsString.next()) {
+                string_conexao = (rsString.getString(1));
+                ip_servidor = (rsString.getString(2));
+                user = (rsString.getString(3));
+                password = (rsString.getString(4));
+            }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao buscar blend atual");
             System.out.println(e);
         }
     }
@@ -3159,7 +3205,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
                     try {
                         // System.out.println("Entrou try conexao com o banco");
-                        nuvem = ModuloConexaoNuvem.conector();
+                       nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
                         if (nuvem != null) {
 
                             set_aparencia_conectado();
@@ -3239,7 +3285,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
                         // System.out.println("Nao conectou ao servidor");
                     }
 
-                    nuvem = ModuloConexaoNuvem.conector();
+                nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
 
                 } //Operação no modo OFFLINE
                 else {
@@ -3309,24 +3355,30 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     //Envia metas para CLP
     private void set_meta() {
-        String MetaMoido = txtBlendMetaMoido.getText();
-        String MetaGrao = txtBlendMetaGrao.getText();
-        
-      //  acc misturador - 46101
+        MetaMoido_CLP = txtBlendMetaMoido.getText();
+        MetaGrao_CLP = txtBlendMetaGrao.getText();
+        acc_misturador = txtAccMisturador.getText();
+        lastro = txtLastro.getText();
+        acc_esteira = txtAccEsteira.getText();
+
+        //  acc misturador - 46101
 //acc esteira - 46102
 //lastro - 37009
-
-        if (MetaMoido.isEmpty() || MetaGrao.isEmpty()) {
+        if (MetaMoido_CLP.isEmpty() || MetaGrao_CLP.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Preencha os valores das metas!");
             block_campos();
-        } else if (Integer.parseInt(MetaMoido) < 1 || Integer.parseInt(MetaGrao) < 1) {
+        } else if (Integer.parseInt(MetaMoido_CLP) < 1 || Integer.parseInt(MetaGrao_CLP) < 1) {
             JOptionPane.showMessageDialog(null, "Insira um valor válido para as metas!");
             block_campos();
         } else {
             try {
-                m.writeSingleRegister(escravo, 37001, Integer.parseInt(MetaMoido));
-                m.writeSingleRegister(escravo, 37002, Integer.parseInt(MetaGrao));
-                JOptionPane.showMessageDialog(null, "Nova meta definida com sucesso!");
+                m.writeSingleRegister(escravo, 37001, Integer.parseInt(MetaMoido_CLP));
+                m.writeSingleRegister(escravo, 37002, Integer.parseInt(MetaGrao_CLP));
+                m.writeSingleRegister(escravo, 37007, Integer.parseInt(acc_misturador));
+                m.writeSingleRegister(escravo, 37009, Integer.parseInt(lastro));
+                m.writeSingleRegister(escravo, 37008, Integer.parseInt(acc_esteira));
+
+                JOptionPane.showMessageDialog(null, "Valores Atualizados com Sucesso!");
 
                 btnBlendNewMeta.setBackground(new Color(255, 255, 255));
 
@@ -3554,8 +3606,20 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jLabel14.setForeground(new java.awt.Color(240, 240, 240));
         jLabel14.setText("Lastro");
         jPanel3.add(jLabel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 50, -1, 50));
+
+        txtAccEsteira.setFont(new java.awt.Font("Tahoma", 1, 24)); // NOI18N
+        txtAccEsteira.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        txtAccEsteira.setText("000");
         jPanel3.add(txtAccEsteira, new org.netbeans.lib.awtextra.AbsoluteConstraints(210, 110, 110, 40));
+
+        txtAccMisturador.setFont(new java.awt.Font("Tahoma", 1, 24)); // NOI18N
+        txtAccMisturador.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        txtAccMisturador.setText("000");
         jPanel3.add(txtAccMisturador, new org.netbeans.lib.awtextra.AbsoluteConstraints(210, 10, 110, 40));
+
+        txtLastro.setFont(new java.awt.Font("Tahoma", 1, 24)); // NOI18N
+        txtLastro.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        txtLastro.setText("000");
         jPanel3.add(txtLastro, new org.netbeans.lib.awtextra.AbsoluteConstraints(210, 60, 110, 40));
 
         getContentPane().add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(1010, 10, 340, 170));
@@ -3708,6 +3772,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
         jButton1.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         jButton1.setText("BUSCAR");
+        jButton1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         jButton1.setPreferredSize(new java.awt.Dimension(87, 31));
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -4039,9 +4104,10 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel42.add(cbBlendOperacao, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 140, 300, 40));
 
         btnBlendAtual.setBackground(new java.awt.Color(255, 255, 255));
-        btnBlendAtual.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        btnBlendAtual.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         btnBlendAtual.setText("ULTIMO BLEND ENVIADO");
         btnBlendAtual.setToolTipText("Ultimo blend enviado");
+        btnBlendAtual.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnBlendAtual.setFocusPainted(false);
         btnBlendAtual.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -4083,7 +4149,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jPanel7.setBackground(new java.awt.Color(25, 42, 86));
         jPanel7.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        txtBlendMetaGrao.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        txtBlendMetaGrao.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
         txtBlendMetaGrao.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txtBlendMetaGrao.setText("000");
         jPanel7.add(txtBlendMetaGrao, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 10, 100, 31));
@@ -4103,7 +4169,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         jLabel3.setText("Meta Moído");
         jPanel13.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 0, -1, 50));
 
-        txtBlendMetaMoido.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        txtBlendMetaMoido.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
         txtBlendMetaMoido.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txtBlendMetaMoido.setText("000");
         jPanel13.add(txtBlendMetaMoido, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 10, 100, 31));
@@ -4116,7 +4182,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         lblBlendPeso.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
         lblBlendPeso.setForeground(new java.awt.Color(240, 240, 240));
         lblBlendPeso.setText("00,0");
-        jPanel40.add(lblBlendPeso, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 30, 110, 50));
+        jPanel40.add(lblBlendPeso, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 30, 130, 50));
 
         jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(240, 240, 240));
@@ -4227,7 +4293,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
         btnBlendNewMeta.setBackground(new java.awt.Color(255, 255, 255));
         btnBlendNewMeta.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         btnBlendNewMeta.setForeground(new java.awt.Color(0, 102, 0));
-        btnBlendNewMeta.setText("NOVA META");
+        btnBlendNewMeta.setText("NOVA META / TEMPOS");
         btnBlendNewMeta.setBorderPainted(false);
         btnBlendNewMeta.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnBlendNewMeta.setFocusPainted(false);
@@ -5078,13 +5144,13 @@ public class TelaPrincipal extends javax.swing.JFrame {
 
     private void btnBlendPowerMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendPowerMouseEntered
         // TODO add your handling code here:
-        
-           btnBlendPower.setFont(new Font("Segoe UI", Font.BOLD, 28));
+
+        btnBlendPower.setFont(new Font("Segoe UI", Font.BOLD, 28));
     }//GEN-LAST:event_btnBlendPowerMouseEntered
 
     private void btnBlendPowerMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBlendPowerMouseExited
         // TODO add your handling code here:
-          btnBlendPower.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        btnBlendPower.setFont(new Font("Segoe UI", Font.BOLD, 24));
     }//GEN-LAST:event_btnBlendPowerMouseExited
 
     public static void main(String args[]) {

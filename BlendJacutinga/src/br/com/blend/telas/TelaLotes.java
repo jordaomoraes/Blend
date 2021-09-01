@@ -17,49 +17,51 @@ import java.awt.Toolkit;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-
 public class TelaLotes extends javax.swing.JFrame {
+
     Connection conexao = null;
     Connection nuvem = null;
     PreparedStatement pst = null;
     ResultSet rs = null;
+
+    PreparedStatement pstString = null;
+    ResultSet rsString = null;
     PreparedStatement pstNuvem = null;
     ResultSet rsNuvem = null;
-    
+
     //Variaveis de timer(loop)
     final private Timer timer = new Timer();
     private TimerTask timer_internet, timer_tipo_cafe;
     int tempo_internet = (1000), tempo_tipo_cafe = (1000);
-    
+    String ip_servidor, string_conexao, user, password;
+
     //Variaveis JSON
     JSONObject Jlotetorra = new JSONObject();
     JSONArray Jtorras = new JSONArray();
-    
-    
+
     //Variáveis de internet
     static URL conexaoURL;
     static URLConnection conn;
     boolean temos_internet = false;
-    
+
     //Variaveis de lote
     String num_lote;
     String nome_lote;
     String tipo_cafe;
     String obs;
-       
-    
+
     public TelaLotes() {
         initComponents();
         conexao = ModuloConexao.conector();
         txtObservacao.setLineWrap(true);
-        
+
         set_tipos_cafe();
-        
+         buscar_string_conexao();
+
         //Loops de checagem
         checa_conexao_internet();
     }
-    
-    
+
     //Metodo para checar se há internet
     public boolean testa_url(String endereco) {
         try {
@@ -73,9 +75,9 @@ public class TelaLotes extends javax.swing.JFrame {
             return false;
         }
     }
-    
+
     //Loop para testar conexao com internet
-    private void checa_conexao_internet(){
+    private void checa_conexao_internet() {
         if (timer_internet != null) {
             return;
         }
@@ -83,51 +85,67 @@ public class TelaLotes extends javax.swing.JFrame {
             @Override
             public void run() {
                 //Checa conexao com INTERNET
-                if(testa_url("http://192.169.80.2")){
+                if (testa_url(ip_servidor)) {
                     temos_internet = true;
-                }
-                
-                else if(!testa_url("http://192.169.80.2")){
+                } else if (!testa_url(ip_servidor)) {
                     temos_internet = false;
                 }
-            }};
+            }
+        };
         timer.scheduleAtFixedRate(timer_internet, 1, tempo_internet);
     }
-    
-    
+
     //Loop para checar se há novos tipos de café
-   
-    
-    private void set_tipos_cafe(){
+    private void buscar_string_conexao() {
+        //Busca blend atual, ultimo enviado ao plc
+        String sql = "select string_conexao, ip_servidor,user,password from tb_config_torra";
+        try {
+            pstString = conexao.prepareStatement(sql);
+            rsString = pstString.executeQuery();
+
+            if (rsString.next()) {
+                string_conexao = (rsString.getString(1));
+                ip_servidor = (rsString.getString(2));
+                user = (rsString.getString(3));
+                password = (rsString.getString(4));
+            }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao buscar blend atual");
+            System.out.println(e);
+        }
+    }
+
+    private void set_tipos_cafe() {
         //Popula combobox com tipos de café
         String sql = "select marca from tb_embalagem";
-        nuvem = ModuloConexaoNuvem.conector();
+        nuvem = ModuloConexaoNuvem.conector(string_conexao, user, password);
         try {
             cbLoteTipoCafe.removeAllItems();
             cbLoteTipoCafe.addItem("TIPO DO CAFÉ...");
             pstNuvem = nuvem.prepareStatement(sql);
             rsNuvem = pstNuvem.executeQuery();
-            
-            while(rsNuvem.next()){
+
+            while (rsNuvem.next()) {
                 String nome_tipo_cafe = rsNuvem.getString(1);
                 cbLoteTipoCafe.addItem(nome_tipo_cafe);
             }
         } catch (Exception e) {
-            System.out.println("Falha ao popular combobox com tipos de café da numvem "+e);
+            System.out.println("Falha ao popular combobox com tipos de café da numvem " + e);
             set_tipos_cafe_off();
         }
     }
-    
-    private void set_tipos_cafe_off(){
+
+    private void set_tipos_cafe_off() {
         String sql = "select marca from tb_embalagem";
-            
+
         try {
             cbLoteTipoCafe.removeAllItems();
             cbLoteTipoCafe.addItem("TIPO DO CAFÉ...");
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            while(rs.next()){
+
+            while (rs.next()) {
                 String nome_tipo_cafe = rs.getString(1);
                 cbLoteTipoCafe.addItem(nome_tipo_cafe);
             }
@@ -136,12 +154,11 @@ public class TelaLotes extends javax.swing.JFrame {
             this.dispose();
         }
     }
-    
-    
+
     //Salva no banco que há novo lote disponível, para depois notificar o usuário e sincronizar
-    private void set_novo_lote_1(){
+    private void set_novo_lote_1() {
         String sql = "update tb_lote_atual set novo_lote = 1";
-        
+
         try {
             pst = conexao.prepareStatement(sql);
             pst.executeUpdate();
@@ -150,110 +167,100 @@ public class TelaLotes extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    private void novo_lote(){
+
+    private void novo_lote() {
         String sql = "insert into tb_lotes_grao(nome_lote_grao, num_lote_grao, tipo_cafe_grao, obs) values(?, ?, ?, ?)";
-        
+
         try {
             nome_lote = txtNomeLote.getText();
             num_lote = txtNumLote.getText();
             tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
             obs = txtObservacao.getText();
-            
-           if((nome_lote.isEmpty() || num_lote.isEmpty())){
+
+            if ((nome_lote.isEmpty() || num_lote.isEmpty())) {
                 JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
-            }
-            else if(check_float(num_lote) == false){
+            } else if (check_float(num_lote) == false) {
                 JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
-            }
-            else if(tipo_cafe == "TIPO DO CAFÉ..."){
+            } else if (tipo_cafe == "TIPO DO CAFÉ...") {
                 JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
-            }
-            else{
+            } else {
                 pst = conexao.prepareStatement(sql);
                 pst.setString(1, nome_lote);
                 pst.setInt(2, Integer.parseInt(num_lote));
-                pst.setString(3,tipo_cafe);
+                pst.setString(3, tipo_cafe);
                 pst.setString(4, obs);
-                
+
                 int lote_adicionado = pst.executeUpdate();
                 set_lote_atual_grao(Integer.parseInt(num_lote), nome_lote);
                 set_novo_lote_1();
-                if(lote_adicionado > 0){
+                if (lote_adicionado > 0) {
                     JOptionPane.showMessageDialog(null, "Lote cadastrado com sucesso");
-                }
-                else{
-                        JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote");
+                } else {
+                    JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote");
                 }
             }
-           
+
         } catch (Exception e) {
             System.out.println(e + "Falha ao cadastrar lote");
         }
     }
-    
+
     //Atualiza lote atal com dados do último criado
-        private void set_lote_atual_grao(int num_lote, String nome_lote){
-            String sql = "update tb_lote_atual set num_lote_atual = ?, nome_lote_atual = ? where id_lote_atual = 2";
-            
-            try {
-                pst = conexao.prepareStatement(sql);
-                pst.setFloat(1, num_lote);
-                pst.setString(2, nome_lote);
-                pst.executeUpdate();
-            } catch (Exception e) {
-                System.out.println("Falha ao configurar lote atual_grao "+e);
-            }
-        }
-        
-        private void set_lote_atual_grao_nuvem(int num_lote, String nome_lote){
-            String sql = "update tb_lote_atual set num_lote_atual = ?, nome_lote_atual = ? where id_lote_atual = 2";
-            
-            try {
-                pstNuvem = nuvem.prepareStatement(sql);
-                pstNuvem.setFloat(1, num_lote);
-                pstNuvem.setString(2, nome_lote);
-                pstNuvem.executeUpdate();
-            } catch (Exception e) {
-                System.out.println("Falha ao configurar lote atual_grao (nuvem) "+e);
-            }
-        }
-    
-    
-    private void novo_lote_nuvem(){
-        String sql = "insert into tb_lotes_grao(nome_lote_grao, num_lote_grao, tipo_cafe_grao, obs) values(?, ?, ?, ?)";
-        
+    private void set_lote_atual_grao(int num_lote, String nome_lote) {
+        String sql = "update tb_lote_atual set num_lote_atual = ?, nome_lote_atual = ? where id_lote_atual = 2";
+
         try {
-            nuvem = ModuloConexaoNuvem.conector();
-            
+            pst = conexao.prepareStatement(sql);
+            pst.setFloat(1, num_lote);
+            pst.setString(2, nome_lote);
+            pst.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao configurar lote atual_grao " + e);
+        }
+    }
+
+    private void set_lote_atual_grao_nuvem(int num_lote, String nome_lote) {
+        String sql = "update tb_lote_atual set num_lote_atual = ?, nome_lote_atual = ? where id_lote_atual = 2";
+
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.setFloat(1, num_lote);
+            pstNuvem.setString(2, nome_lote);
+            pstNuvem.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Falha ao configurar lote atual_grao (nuvem) " + e);
+        }
+    }
+
+    private void novo_lote_nuvem() {
+        String sql = "insert into tb_lotes_grao(nome_lote_grao, num_lote_grao, tipo_cafe_grao, obs) values(?, ?, ?, ?)";
+
+        try {
+        nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
+
             nome_lote = txtNomeLote.getText();
             num_lote = txtNumLote.getText();
             tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
             obs = txtObservacao.getText();
-            
-            
-           if((nome_lote.isEmpty() || num_lote.isEmpty())){
+
+            if ((nome_lote.isEmpty() || num_lote.isEmpty())) {
                 //JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
-            }
-            else if(check_float(num_lote) == false){
+            } else if (check_float(num_lote) == false) {
                 //JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
-            }
-            else if(tipo_cafe == "TIPO DO CAFÉ..."){
+            } else if (tipo_cafe == "TIPO DO CAFÉ...") {
                 //JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
-            }
-            else{ 
+            } else {
                 pstNuvem = nuvem.prepareStatement(sql);
                 pstNuvem.setString(1, nome_lote);
                 pstNuvem.setInt(2, Integer.parseInt(num_lote));
-                pstNuvem.setString(3,tipo_cafe);
+                pstNuvem.setString(3, tipo_cafe);
                 pstNuvem.setString(4, obs);
-                
+
                 int lote_adicionado = pstNuvem.executeUpdate();
                 set_lote_atual_grao_nuvem(Integer.parseInt(num_lote), nome_lote);
-                if(lote_adicionado > 0){
+                if (lote_adicionado > 0) {
                     System.out.println("Lote cadastrado na nuvem");
-                }
-                else{
+                } else {
                     JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote (nuvem)");
                 }
             }
@@ -261,83 +268,79 @@ public class TelaLotes extends javax.swing.JFrame {
             System.out.println(e + "Falha ao cadastrar lote");
         }
     }
-    
-    
-    private void gerar_json_lote_torras_local(){
+
+    private void gerar_json_lote_torras_local() {
         String sql = "select idTorra from tb_torras_lote_grao";
-        
+
         Jlotetorra = new JSONObject();
         Jtorras = new JSONArray();
-        
-       try {
+
+        try {
             pst = conexao.prepareStatement(sql);
             rs = pst.executeQuery();
-            
-            while(rs.next()){
+
+            while (rs.next()) {
                 Jtorras.put(rs.getInt(1));
             }
             Jlotetorra.put("Torras", Jtorras);
             System.out.println(Jlotetorra.toString());
         } catch (Exception e) {
-            System.out.println("Falha ao gerar json (local)! "+e);
+            System.out.println("Falha ao gerar json (local)! " + e);
         }
     }
-    
-    private void incrementa_lote_com_torras_local(){
+
+    private void incrementa_lote_com_torras_local() {
         gerar_json_lote_torras_local();
         String sql_update = "update tb_lotes_grao set torras = ? order by id_lote_grao desc limit 1";
-        
+
         try {
             pst = conexao.prepareStatement(sql_update);
             pst.setString(1, Jlotetorra.toString());
             pst.executeUpdate();
-            
+
             System.out.println("DEU CERTO");
         } catch (Exception e) {
-             System.out.println(e + " Falha ao incrementar ultimo lote com torras (local)");
+            System.out.println(e + " Falha ao incrementar ultimo lote com torras (local)");
         }
     }
-    
-    
-    private void gerar_json_lote_torras_nuvem(){
+
+    private void gerar_json_lote_torras_nuvem() {
         String sqlNuvem = "select idTorra from tb_torras_lote_grao";
-        nuvem = ModuloConexaoNuvem.conector();
-        
-       try {
+      nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
+
+        try {
             pstNuvem = nuvem.prepareStatement(sqlNuvem);
             rsNuvem = pstNuvem.executeQuery();
-            
+
             Jlotetorra = new JSONObject();
             Jtorras = new JSONArray();
-            
-            while(rsNuvem.next()){
+
+            while (rsNuvem.next()) {
                 Jtorras.put(rsNuvem.getInt(1));
             }
             Jlotetorra.put("Torras", Jtorras);
         } catch (Exception e) {
-            System.out.println("Falha ao gerar json! "+e);
+            System.out.println("Falha ao gerar json! " + e);
         }
     }
-    
-    
-    private void incrementa_lote_com_torras_nuvem(){
+
+    private void incrementa_lote_com_torras_nuvem() {
         gerar_json_lote_torras_nuvem();
         String sql_update_nuvem = "update tb_lotes_grao set torras = ? order by id_lote_grao desc limit 1";
-        
+
         try {
             pstNuvem = nuvem.prepareStatement(sql_update_nuvem);
             pstNuvem.setString(1, Jlotetorra.toString());
             pstNuvem.executeUpdate();
         } catch (Exception e) {
-             System.out.println(e + " Falha ao incrementar ultimo lote com torras");
+            System.out.println(e + " Falha ao incrementar ultimo lote com torras");
         }
     }
-    
-    
+
     //Metodo para avisar que precisa sincronizar
-    private void set_sincronizar_1(){
+    private void set_sincronizar_1() {
         String sql = "update tb_modbus set SINCRONIZADO = 1 where id_modbus";
-        
+
         try {
             pst = conexao.prepareStatement(sql);
             pst.executeUpdate();
@@ -346,32 +349,29 @@ public class TelaLotes extends javax.swing.JFrame {
             System.out.println(e);
         }
     }
-    
-    
-    private void truncate_torras_lote_local(){
+
+    private void truncate_torras_lote_local() {
         String sql = "delete from tb_torras_lote_grao";
-            
+
         try {
             pst = conexao.prepareStatement(sql);
             pst.executeUpdate();
         } catch (Exception e) {
-            System.out.println("Falha ao truncar torras lote local "+e);
+            System.out.println("Falha ao truncar torras lote local " + e);
         }
     }
-        
-    private void truncate_torras_lote_nuvem(){
+
+    private void truncate_torras_lote_nuvem() {
         String sql = "delete from tb_torras_lote_grao";
-            
+
         try {
             pstNuvem = nuvem.prepareStatement(sql);
             pstNuvem.executeUpdate();
         } catch (Exception e) {
-            System.out.println("Falha ao truncar torras lote local "+e);
+            System.out.println("Falha ao truncar torras lote local " + e);
         }
     }
-    
-    
-    
+
     public static boolean check_float(String text) {
         try {
             Float.parseFloat(text);
@@ -380,7 +380,7 @@ public class TelaLotes extends javax.swing.JFrame {
             return false;
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -489,17 +489,16 @@ public class TelaLotes extends javax.swing.JFrame {
 
     private void btnLoteNovoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoteNovoActionPerformed
         // Cria novo lote
-        int confirma = JOptionPane.showConfirmDialog(null,"Tem certeza de que quer encerrar o lote atual?","Atenção",JOptionPane.YES_NO_OPTION);
-            if(confirma == JOptionPane.YES_OPTION){
-                if(temos_internet == true){
+        int confirma = JOptionPane.showConfirmDialog(null, "Tem certeza de que quer encerrar o lote atual?", "Atenção", JOptionPane.YES_NO_OPTION);
+        if (confirma == JOptionPane.YES_OPTION) {
+            if (temos_internet == true) {
                 incrementa_lote_com_torras_local();
                 incrementa_lote_com_torras_nuvem();
                 novo_lote();
                 novo_lote_nuvem();
                 truncate_torras_lote_local();
                 truncate_torras_lote_nuvem();
-            }
-            else if(temos_internet == false){
+            } else if (temos_internet == false) {
                 incrementa_lote_com_torras_local();
                 novo_lote();
                 set_sincronizar_1();
@@ -507,8 +506,7 @@ public class TelaLotes extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_btnLoteNovoActionPerformed
-    
-    
+
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">

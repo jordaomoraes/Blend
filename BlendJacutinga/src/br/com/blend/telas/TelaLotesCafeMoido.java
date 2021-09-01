@@ -2,6 +2,7 @@ package br.com.blend.telas;
 
 import br.com.blend.dal.ModuloConexao;
 import br.com.blend.dal.ModuloConexaoNuvem;
+import java.awt.HeadlessException;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -12,363 +13,372 @@ import java.util.Timer;
 import java.util.TimerTask;
 import javax.swing.JOptionPane;
 import java.awt.Toolkit;
+import java.sql.SQLException;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class TelaLotesCafeMoido extends javax.swing.JFrame {
 
-        public TelaLotesCafeMoido() {
-            initComponents();
-            conexao = ModuloConexao.conector();
-            txtObservacao.setLineWrap(true);
-            set_tipos_cafe();
-            //Loops de checagem
-            checa_conexao_internet();
+    public TelaLotesCafeMoido() {
+        initComponents();
+        conexao = ModuloConexao.conector();
+        txtObservacao.setLineWrap(true);
+        set_tipos_cafe();
+        //Loops de checagem
+        checa_conexao_internet();
+    }
+
+    Connection conexao = null;
+    Connection nuvem = null;
+    PreparedStatement pst = null;
+    ResultSet rs = null;
+    PreparedStatement pstNuvem = null;
+    ResultSet rsNuvem = null;
+    PreparedStatement pstString = null;
+    ResultSet rsString = null;
+
+    //Variaveis de timer(loop)
+    final private Timer timer = new Timer();
+    private TimerTask timer_internet;
+    int tempo_internet = (1000);
+
+    //Variaveis JSON
+    JSONObject Jlotetorra = new JSONObject();
+    JSONArray Jtorras = new JSONArray();
+
+    //Variáveis de internet
+    static URL conexaoURL;
+    static URLConnection conn;
+    boolean temos_internet = false;
+
+    //Variaveis de lote
+    String num_lote;
+    String nome_lote;
+    String tipo_cafe;
+    String obs;
+    String ip_servidor, string_conexao, user, password;
+
+    //Metodo para checar se há internet
+    public boolean testa_url(String endereco) {
+        try {
+            conexaoURL = new URL(endereco);
+            conn = conexaoURL.openConnection();
+            conn.setConnectTimeout(1000);
+            conn.connect();
+            temos_internet = true;
+            return true;
+        } catch (IOException e) {
+            return false;
         }
+    }
 
-        Connection conexao = null;
-        Connection nuvem = null;
-        PreparedStatement pst = null;
-        ResultSet rs = null;
-        PreparedStatement pstNuvem = null;
-        ResultSet rsNuvem = null;
+    //Loop para testar conexao com internet
+    private void checa_conexao_internet() {
+        if (timer_internet != null) {
+            return;
+        }
+        timer_internet = new TimerTask() {
+            @Override
+            public void run() {
+                //Checa conexao com INTERNET
+                if (testa_url(ip_servidor)) {
+                    temos_internet = true;
+                } else if (!testa_url(ip_servidor)) {
+                    temos_internet = false;
+                }
+            }
+        };
+        timer.scheduleAtFixedRate(timer_internet, 1, tempo_internet);
+    }
 
-        //Variaveis de timer(loop)
-        final private Timer timer = new Timer();
-        private TimerTask timer_internet;
-        int tempo_internet = (1000);
-        
-        //Variaveis JSON
-        JSONObject Jlotetorra = new JSONObject();
-        JSONArray Jtorras = new JSONArray();
+    private void set_tipos_cafe() {
+        //Popula combobox com tipos de café
+        String sql = "select marca from tb_embalagem";
+    nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
+        try {
+            cbLoteTipoCafe.removeAllItems();
+            cbLoteTipoCafe.addItem("TIPO DO CAFÉ...");
+            pstNuvem = nuvem.prepareStatement(sql);
+            rsNuvem = pstNuvem.executeQuery();
 
-        //Variáveis de internet
-        static URL conexaoURL;
-        static URLConnection conn;
-        boolean temos_internet = false;
+            while (rsNuvem.next()) {
+                String nome_tipo_cafe = rsNuvem.getString(1);
+                cbLoteTipoCafe.addItem(nome_tipo_cafe);
+            }
+        } catch (SQLException e) {
+            System.out.println("Falha ao popular combobox com tipos de café da numvem " + e);
+            set_tipos_cafe_off();
+        }
+    }
 
-        //Variaveis de lote
-        String num_lote;
-        String nome_lote;
-        String tipo_cafe;
-        String obs;
-       
+       private void buscar_string_conexao() {
+        //Busca blend atual, ultimo enviado ao plc
+        String sql = "select string_conexao, ip_servidor,user,password from tb_config_torra";
+        try {
+            pstString = conexao.prepareStatement(sql);
+            rsString = pstString.executeQuery();
+
+            if (rsString.next()) {
+                string_conexao = (rsString.getString(1));
+                ip_servidor = (rsString.getString(2));
+                user = (rsString.getString(3));
+                password = (rsString.getString(4));
+            }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Falha ao buscar blend atual");
+            System.out.println(e);
+        }
+    }
+
     
-        //Metodo para checar se há internet
-        public boolean testa_url(String endereco) {
-            try {
-                conexaoURL = new URL(endereco);
-                conn = conexaoURL.openConnection();
-                conn.setConnectTimeout(1000);
-                conn.connect();
-                temos_internet = true;
-                return true;
-            } catch (IOException e) {
-                return false;
-            }
-        }
+    
+    private void set_tipos_cafe_off() {
+        String sql = "select marca from tb_embalagem";
 
-        //Loop para testar conexao com internet
-        private void checa_conexao_internet(){
-            if (timer_internet != null) {
-                return;
-            }
-            timer_internet = new TimerTask() {
-                @Override
-                public void run() {
-                    //Checa conexao com INTERNET
-                    if(testa_url("http://192.169.80.2")){
-                        temos_internet = true;
-                    }
+        try {
+            cbLoteTipoCafe.removeAllItems();
+            cbLoteTipoCafe.addItem("TIPO DO CAFÉ...");
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
 
-                    else if(!testa_url("http://192.169.80.2")){
-                        temos_internet = false;
-                    }
-                }};
-            timer.scheduleAtFixedRate(timer_internet, 1, tempo_internet);
+            while (rs.next()) {
+                String nome_tipo_cafe = rs.getString(1);
+                cbLoteTipoCafe.addItem(nome_tipo_cafe);
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Falha ao buscar tipos de café");
+            this.dispose();
         }
-        
-        
-        private void set_tipos_cafe(){
-             //Popula combobox com tipos de café
-            String sql = "select marca from tb_embalagem";
-            nuvem = ModuloConexaoNuvem.conector();
-            try {
-                cbLoteTipoCafe.removeAllItems();
-                cbLoteTipoCafe.addItem("TIPO DO CAFÉ...");
+    }
+
+    //Salva no banco que há novo lote disponível, para depois notificar o usuário e sincronizar
+    private void set_novo_lote_1() {
+        String sql = "update tb_lote_atual set novo_lote = 1";
+
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Falha ao setar novo lote para 1");
+            System.out.println(e);
+        }
+    }
+
+    private void novo_lote() {
+        String sql = "insert into tb_lotes(nome_lote, num_lote, tipo_cafe, obs) values(?, ?, ?, ?)";
+
+        try {
+            nome_lote = txtNomeLote.getText();
+            num_lote = txtNumLote.getText();
+            tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
+            obs = txtObservacao.getText();
+
+            if ((nome_lote.isEmpty() || num_lote.isEmpty())) {
+                JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
+            } else if (check_float(num_lote) == false) {
+                JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
+            } else if (tipo_cafe == "TIPO DO CAFÉ...") {
+                JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
+            } else {
+                pst = conexao.prepareStatement(sql);
+                pst.setString(1, nome_lote);
+                pst.setInt(2, Integer.parseInt(num_lote));
+                pst.setString(3, tipo_cafe);
+                pst.setString(4, obs);
+
+                int lote_adicionado = pst.executeUpdate();
+                set_lote_atual(Integer.parseInt(num_lote), nome_lote);
+                set_novo_lote_1();
+                if (lote_adicionado > 0) {
+                    JOptionPane.showMessageDialog(null, "Lote cadastrado com sucesso");
+                } else {
+                    JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote");
+                }
+            }
+
+        } catch (HeadlessException | NumberFormatException | SQLException e) {
+            System.out.println(e + "Falha ao cadastrar lote");
+        }
+    }
+
+    //Atualiza lote atal com dados do último criado
+    private void set_lote_atual(int num_lote, String nome_lote) {
+        String sql = "update tb_lote_atual set num_lote_atual = ?, nome_lote_atual = ? where id_lote_atual = 1";
+
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.setFloat(1, num_lote);
+            pst.setString(2, nome_lote);
+            pst.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Falha ao configurar lote atual " + e);
+        }
+    }
+
+    private void set_lote_atual_nuvem(int num_lote, String nome_lote) {
+        String sql = "update tb_lote_atual set num_lote_atual = ?, nome_lote_atual = ? where id_lote_atual = 1";
+
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.setFloat(1, num_lote);
+            pstNuvem.setString(2, nome_lote);
+            pstNuvem.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Falha ao configurar lote atual " + e);
+        }
+    }
+
+    private void novo_lote_nuvem() {
+        String sql = "insert into tb_lotes(nome_lote, num_lote, tipo_cafe, obs) values(?, ?, ?, ?)";
+
+        try {
+      nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
+
+            nome_lote = txtNomeLote.getText();
+            num_lote = txtNumLote.getText();
+            tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
+            obs = txtObservacao.getText();
+
+            if ((nome_lote.isEmpty() || num_lote.isEmpty())) {
+                //JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
+            } else if (check_float(num_lote) == false) {
+                //JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
+            } else if (tipo_cafe == "TIPO DO CAFÉ...") {
+                //JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
+            } else {
                 pstNuvem = nuvem.prepareStatement(sql);
-                rsNuvem = pstNuvem.executeQuery();
+                pstNuvem.setString(1, nome_lote);
+                pstNuvem.setInt(2, Integer.parseInt(num_lote));
+                pstNuvem.setString(3, tipo_cafe);
+                pstNuvem.setString(4, obs);
 
-                while(rsNuvem.next()){
-                    String nome_tipo_cafe = rsNuvem.getString(1);
-                    cbLoteTipoCafe.addItem(nome_tipo_cafe);
+                int lote_adicionado = pstNuvem.executeUpdate();
+                set_lote_atual_nuvem(Integer.parseInt(num_lote), nome_lote);
+                if (lote_adicionado > 0) {
+                    System.out.println("Lote cadastrado na nuvem");
+                } else {
+                    JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote (nuvem)");
                 }
-            } catch (Exception e) {
-                System.out.println("Falha ao popular combobox com tipos de café da numvem "+e);
-                set_tipos_cafe_off();
             }
+        } catch (HeadlessException | NumberFormatException | SQLException e) {
+            System.out.println(e + "Falha ao cadastrar lote");
         }
-        
-        private void set_tipos_cafe_off(){
-            String sql = "select marca from tb_embalagem";
-            
-            try {
-                cbLoteTipoCafe.removeAllItems();
-                cbLoteTipoCafe.addItem("TIPO DO CAFÉ...");
-                pst = conexao.prepareStatement(sql);
-                rs = pst.executeQuery();
+    }
 
-                while(rs.next()){
-                    String nome_tipo_cafe = rs.getString(1);
-                    cbLoteTipoCafe.addItem(nome_tipo_cafe);
-                }
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Falha ao buscar tipos de café");
-                this.dispose();
+    private void gerar_json_lote_torras_local() {
+        String sql = "select idTorra from tb_torras_lote";
+
+        Jlotetorra = new JSONObject();
+        Jtorras = new JSONArray();
+
+        try {
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
+
+            while (rs.next()) {
+                Jtorras.put(rs.getInt(1));
             }
+            Jlotetorra.put("Torras", Jtorras);
+            System.out.println(Jlotetorra.toString());
+        } catch (SQLException | JSONException e) {
+            System.out.println("Falha ao gerar json (local)! " + e);
         }
-        
+    }
 
-        //Salva no banco que há novo lote disponível, para depois notificar o usuário e sincronizar
-        private void set_novo_lote_1(){
-            String sql = "update tb_lote_atual set novo_lote = 1";
+    private void incrementa_lote_com_torras_local() {
+        gerar_json_lote_torras_local();
+        String sql_update = "update tb_lotes set torras = ? order by id_lote desc limit 1";
 
-            try {
-                pst = conexao.prepareStatement(sql);
-                pst.executeUpdate();
-            } catch (Exception e) {
-                System.out.println("Falha ao setar novo lote para 1");
-                System.out.println(e);
-            }
+        try {
+            pst = conexao.prepareStatement(sql_update);
+            pst.setString(1, Jlotetorra.toString());
+            pst.executeUpdate();
+
+            System.out.println("DEU CERTO");
+        } catch (SQLException e) {
+            System.out.println(e + " Falha ao incrementar ultimo lote com torras (local)");
         }
+    }
 
-        private void novo_lote(){
-            String sql = "insert into tb_lotes(nome_lote, num_lote, tipo_cafe, obs) values(?, ?, ?, ?)";
+    private void gerar_json_lote_torras_nuvem() {
+        String sqlNuvem = "select idTorra from tb_torras_lote";
+   nuvem = ModuloConexaoNuvem.conector(string_conexao,user,password);
 
-            try {
-                nome_lote = txtNomeLote.getText();
-                num_lote = txtNumLote.getText();
-                tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
-                obs = txtObservacao.getText();
-
-               if((nome_lote.isEmpty() || num_lote.isEmpty())){
-                    JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
-                }
-                else if(check_float(num_lote) == false){
-                    JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
-                }
-                else if(tipo_cafe == "TIPO DO CAFÉ..."){
-                    JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
-                }
-                else{
-                    pst = conexao.prepareStatement(sql);
-                    pst.setString(1, nome_lote);
-                    pst.setInt(2, Integer.parseInt(num_lote));
-                    pst.setString(3,tipo_cafe);
-                    pst.setString(4, obs);
-                    
-                    int lote_adicionado = pst.executeUpdate();
-                    set_lote_atual(Integer.parseInt(num_lote), nome_lote);
-                    set_novo_lote_1();
-                    if(lote_adicionado > 0){
-                        JOptionPane.showMessageDialog(null, "Lote cadastrado com sucesso");
-                    }
-                    else{
-                        JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote");
-                    }
-                }
-
-            } catch (Exception e) {
-                System.out.println(e + "Falha ao cadastrar lote");
-            }
-        }
-        
-        
-        //Atualiza lote atal com dados do último criado
-        private void set_lote_atual(int num_lote, String nome_lote){
-            String sql = "update tb_lote_atual set num_lote_atual = ?, nome_lote_atual = ? where id_lote_atual = 1";
-            
-            try {
-                pst = conexao.prepareStatement(sql);
-                pst.setFloat(1, num_lote);
-                pst.setString(2, nome_lote);
-                pst.executeUpdate();
-            } catch (Exception e) {
-                System.out.println("Falha ao configurar lote atual "+e);
-            }
-        }
-        
-        private void set_lote_atual_nuvem(int num_lote, String nome_lote){
-            String sql = "update tb_lote_atual set num_lote_atual = ?, nome_lote_atual = ? where id_lote_atual = 1";
-            
-            try {
-                pstNuvem = nuvem.prepareStatement(sql);
-                pstNuvem.setFloat(1, num_lote);
-                pstNuvem.setString(2, nome_lote);
-                pstNuvem.executeUpdate();
-            } catch (Exception e) {
-                System.out.println("Falha ao configurar lote atual "+e);
-            }
-        }
-        
-
-        private void novo_lote_nuvem(){
-            String sql = "insert into tb_lotes(nome_lote, num_lote, tipo_cafe, obs) values(?, ?, ?, ?)";
-
-            try {
-                nuvem = ModuloConexaoNuvem.conector();
-
-                nome_lote = txtNomeLote.getText();
-                num_lote = txtNumLote.getText();
-                tipo_cafe = cbLoteTipoCafe.getSelectedItem().toString();
-                obs = txtObservacao.getText();
-
-
-               if((nome_lote.isEmpty() || num_lote.isEmpty())){
-                    //JOptionPane.showMessageDialog(null, "Preencha todos os campos corretamente");
-                }
-                else if(check_float(num_lote) == false){
-                    //JOptionPane.showMessageDialog(null, "Insira um número válido para o lote");
-                }
-                else if(tipo_cafe == "TIPO DO CAFÉ..."){
-                    //JOptionPane.showMessageDialog(null, "Escolha o tipo do café");
-                }
-                else{ 
-                    pstNuvem = nuvem.prepareStatement(sql);
-                    pstNuvem.setString(1, nome_lote);
-                    pstNuvem.setInt(2, Integer.parseInt(num_lote));
-                    pstNuvem.setString(3,tipo_cafe);
-                    pstNuvem.setString(4, obs);
-
-                    int lote_adicionado = pstNuvem.executeUpdate();
-                    set_lote_atual_nuvem(Integer.parseInt(num_lote), nome_lote);
-                    if(lote_adicionado > 0){
-                        System.out.println("Lote cadastrado na nuvem");
-                    }
-                    else{
-                        JOptionPane.showMessageDialog(null, "Falha ao cadastrar lote (nuvem)");
-                    }
-                }
-            } catch (Exception e) {
-                System.out.println(e + "Falha ao cadastrar lote");
-            }
-        }
-        
-        
-        private void gerar_json_lote_torras_local(){
-            String sql = "select idTorra from tb_torras_lote";
+        try {
+            pstNuvem = nuvem.prepareStatement(sqlNuvem);
+            rsNuvem = pstNuvem.executeQuery();
 
             Jlotetorra = new JSONObject();
             Jtorras = new JSONArray();
 
-           try {
-                pst = conexao.prepareStatement(sql);
-                rs = pst.executeQuery();
-
-                while(rs.next()){
-                    Jtorras.put(rs.getInt(1));
-                }
-                Jlotetorra.put("Torras", Jtorras);
-                System.out.println(Jlotetorra.toString());
-            } catch (Exception e) {
-                System.out.println("Falha ao gerar json (local)! "+e);
+            while (rsNuvem.next()) {
+                Jtorras.put(rsNuvem.getInt(1));
             }
+            Jlotetorra.put("Torras", Jtorras);
+        } catch (SQLException | JSONException e) {
+            System.out.println("Falha ao gerar json! " + e);
         }
-    
-        private void incrementa_lote_com_torras_local(){
-            gerar_json_lote_torras_local();
-            String sql_update = "update tb_lotes set torras = ? order by id_lote desc limit 1";
+    }
 
-            try {
-                pst = conexao.prepareStatement(sql_update);
-                pst.setString(1, Jlotetorra.toString());
-                pst.executeUpdate();
+    private void incrementa_lote_com_torras_nuvem() {
+        gerar_json_lote_torras_nuvem();
+        String sql_update_nuvem = "update tb_lotes set torras = ? order by id_lote desc limit 1";
 
-                System.out.println("DEU CERTO");
-            } catch (Exception e) {
-                 System.out.println(e + " Falha ao incrementar ultimo lote com torras (local)");
-            }
+        try {
+            pstNuvem = nuvem.prepareStatement(sql_update_nuvem);
+            pstNuvem.setString(1, Jlotetorra.toString());
+            pstNuvem.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e + " Falha ao incrementar ultimo lote com torras");
         }
+    }
 
-        
-        private void gerar_json_lote_torras_nuvem(){
-            String sqlNuvem = "select idTorra from tb_torras_lote";
-            nuvem = ModuloConexaoNuvem.conector();
-            
-            try {
-                pstNuvem = nuvem.prepareStatement(sqlNuvem);
-                rsNuvem = pstNuvem.executeQuery();
-                 
-                Jlotetorra = new JSONObject();
-                Jtorras = new JSONArray();
+    //Metodo para avisar que precisa sincronizar
+    private void set_sincronizar_1() {
+        String sql = "update tb_modbus set SINCRONIZADO = 1 where id_modbus";
 
-                while(rsNuvem.next()){
-                    Jtorras.put(rsNuvem.getInt(1));
-                }
-                    Jlotetorra.put("Torras", Jtorras);
-             } catch (Exception e) {
-                 System.out.println("Falha ao gerar json! "+e);
-             }
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Falha ao alterar variavel sincronizado para 1");
+            System.out.println(e);
         }
-    
-    
-        private void incrementa_lote_com_torras_nuvem(){
-            gerar_json_lote_torras_nuvem();
-            String sql_update_nuvem = "update tb_lotes set torras = ? order by id_lote desc limit 1";
+    }
 
-            try {
-                pstNuvem = nuvem.prepareStatement(sql_update_nuvem);
-                pstNuvem.setString(1, Jlotetorra.toString());
-                pstNuvem.executeUpdate();
-            } catch (Exception e) {
-                System.out.println(e + " Falha ao incrementar ultimo lote com torras");
-            }
-        }
-        
+    private void truncate_torras_lote_local() {
+        String sql = "delete from tb_torras_lote";
 
-        //Metodo para avisar que precisa sincronizar
-        private void set_sincronizar_1(){
-            String sql = "update tb_modbus set SINCRONIZADO = 1 where id_modbus";
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Falha ao truncar torras lote local " + e);
+        }
+    }
 
-            try {
-                pst = conexao.prepareStatement(sql);
-                pst.executeUpdate();
-            } catch (Exception e) {
-                System.out.println("Falha ao alterar variavel sincronizado para 1");
-                System.out.println(e);
-            }
-        }
-        
-        private void truncate_torras_lote_local(){
-            String sql = "delete from tb_torras_lote";
-            
-            try {
-                pst = conexao.prepareStatement(sql);
-                pst.executeUpdate();
-            } catch (Exception e) {
-                System.out.println("Falha ao truncar torras lote local "+e);
-            }
-        }
-        
-        private void truncate_torras_lote_nuvem(){
-            String sql = "delete from tb_torras_lote";
-            
-            try {
-                pstNuvem = nuvem.prepareStatement(sql);
-                pstNuvem.executeUpdate();
-            } catch (Exception e) {
-                System.out.println("Falha ao truncar torras lote local "+e);
-            }
-        }
+    private void truncate_torras_lote_nuvem() {
+        String sql = "delete from tb_torras_lote";
 
-        public static boolean check_float(String text) {
-            try {
-                Float.parseFloat(text);
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
+        try {
+            pstNuvem = nuvem.prepareStatement(sql);
+            pstNuvem.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Falha ao truncar torras lote local " + e);
         }
+    }
+
+    public static boolean check_float(String text) {
+        try {
+            Float.parseFloat(text);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -470,18 +480,17 @@ public class TelaLotesCafeMoido extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnLoteNovoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoteNovoActionPerformed
-    int confirma = JOptionPane.showConfirmDialog(null,"Tem certeza de que quer encerrar o lote atual?","Atenção",JOptionPane.YES_NO_OPTION);
-        if(confirma == JOptionPane.YES_OPTION){
+        int confirma = JOptionPane.showConfirmDialog(null, "Tem certeza de que quer encerrar o lote atual?", "Atenção", JOptionPane.YES_NO_OPTION);
+        if (confirma == JOptionPane.YES_OPTION) {
             // Cria novo lote
-            if(temos_internet == true){
+            if (temos_internet == true) {
                 incrementa_lote_com_torras_local();
                 incrementa_lote_com_torras_nuvem();
                 novo_lote();
                 novo_lote_nuvem();
                 truncate_torras_lote_local();
                 truncate_torras_lote_nuvem();
-            }
-            else if(temos_internet == false){
+            } else if (temos_internet == false) {
                 incrementa_lote_com_torras_local();
                 novo_lote();
                 truncate_torras_lote_local();
